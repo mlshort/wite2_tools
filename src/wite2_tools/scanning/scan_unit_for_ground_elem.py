@@ -26,11 +26,9 @@ Example:
     42 are assigned.
 """
 import os
-import argparse
 from typing import cast
 
 # Internal package imports
-from wite2_tools.paths import CONF_GROUND_FULL_PATH, CONF_UNIT_FULL_PATH, CONF_OB_FULL_PATH
 from wite2_tools.constants import MAX_SQUAD_SLOTS
 from wite2_tools.generator import read_csv_dict_generator
 from wite2_tools.utils.get_type_name import get_unit_type_name, get_ground_elem_type_name
@@ -138,21 +136,3 @@ def scan_unit_for_ground_elem(
         log.exception("An error occurred during unit scanning: %s", e)
 
     return matches_found
-
-
-# --- MAIN EXECUTION ---
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Scans units for Ground Elements and displays listing")
-    parser.add_argument("ge_id", type=int, help="The target WID")
-    parser.add_argument("num_squads", type=int, nargs="?", default=-1, help="Optional: Filter by exact number of Squads")
-
-    args = parser.parse_args()
-
-    # following uses currently configured path value(s)
-    scan_unit_for_ground_elem(
-        CONF_UNIT_FULL_PATH,
-        CONF_GROUND_FULL_PATH,
-        CONF_OB_FULL_PATH,
-        args.ge_id,
-        args.num_squads
-    )

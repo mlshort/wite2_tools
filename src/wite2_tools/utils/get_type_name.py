@@ -66,7 +66,7 @@ def _build_ob_lookup(ob_file_path: str) -> dict[int, OBName]:
             if ob_id.isdigit() and int(ob_id) != 0:
                 ob_name = row.get('name', '').strip()
                 ob_suffix = row.get('suffix', '').strip()
-                ob_full_name = f"{ob_name} {ob_suffix}".strip()
+                ob_full_name = f"{ob_name} {ob_suffix}"
 
                 lookup[int(ob_id)] = OBName(
                     full_name=ob_full_name,
@@ -121,10 +121,10 @@ def _build_ground_elem_lookup(ground_file_path: str) -> dict[int, str]:
         return lookup
 
     try:
-        data_gen = read_csv_list_generator(ground_file_path)
-        next(data_gen) # Skip Header
+        ground_gen = read_csv_list_generator(ground_file_path)
+        next(ground_gen) # Skip Header
 
-        for _, row in data_gen:
+        for _, row in ground_gen:
             try:
                 g_id = int(row[GND_COL.ID]) # 'id' column
                 if g_id != 0:

@@ -16,7 +16,6 @@ from typing import cast
 from functools import cache
 
 # Internal package imports
-from wite2_tools.paths import CONF_UNIT_FULL_PATH
 from wite2_tools.generator import read_csv_dict_generator
 from wite2_tools.utils.logger import get_logger
 
@@ -71,8 +70,3 @@ def group_units_by_ob(unit_file_path: str) -> dict[int, list[str]]:
         log.exception("Grouping failed: %s", e)
 
     return ob_ids_to_units
-
-
-if __name__ == "__main__":
-    # Uses currently configured path value(s)
-    group_units_by_ob(CONF_UNIT_FULL_PATH)

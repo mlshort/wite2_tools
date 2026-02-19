@@ -72,7 +72,7 @@ def remove_ground_weapon_gaps(ground_file_path: str) -> int:
         if original_wpn_ids != new_wpn_ids:
             was_modified = True
             log.debug("Row %d (ID %s): Shifted weapons. Old Layout: %s -> New Layout: %s",
-                      row_idx, row.get("id", "Unknown"), original_wpn_ids, new_wpn_ids)
+                      row_idx, row.get("id", "0"), original_wpn_ids, new_wpn_ids)
 
         return row, was_modified
 

@@ -1,5 +1,6 @@
 import pytest
 import csv
+from wite2_tools.constants import MAX_SQUAD_SLOTS
 from wite2_tools.core.count_global_unit_inventory import count_global_unit_inventory
 
 # ==========================================
@@ -23,13 +24,13 @@ def mock_unit_csv(tmp_path) -> str:
     fieldnames = ["id", "name", "type", "nat", "x", "y", "aNeed", "sNeed"]
 
     # 2. Add the 32 slots using the dot notation found in your file
-    for i in range(32):
+    for i in range(MAX_SQUAD_SLOTS):
         fieldnames.append(f"sqd.u{i}")
         fieldnames.append(f"sqd.num{i}")
 
     def create_row(uid, name, utype, nat, slots):
         row = {"id": uid, "name": name, "type": utype, "nat": nat, "x": "50", "y": "50", "aNeed": "0", "sNeed": "0"}
-        for i in range(32):
+        for i in range(MAX_SQUAD_SLOTS):
             row[f"sqd.u{i}"] = "0"
             row[f"sqd.num{i}"] = "0"
         row.update(slots)

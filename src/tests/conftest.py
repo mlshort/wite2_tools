@@ -2,6 +2,8 @@ import pytest
 import csv
 from typing import Dict
 
+from wite2_tools.constants import MAX_SQUAD_SLOTS
+
 # ==========================================
 # UNIT FILE FIXTURES (_unit.csv)
 # ==========================================
@@ -10,15 +12,15 @@ from typing import Dict
 def mock_unit_csv(tmp_path) -> str:
     """
     Generates a mock _unit.csv using DOT notation (sqd.u0, sqd.num0).
-    Initializes all 8 unit attributes across all 32 slots.
+    Initializes all 8 unit attributes across all MAX_SQUAD_SLOTS slots.
     """
     file_path = tmp_path / "mock_unit.csv"
     prefixes = ["sqd.u", "sqd.num", "sqd.dis", "sqd.dam", "sqd.fat", "sqd.fired", "sqd.exp", "sqd.expAccum"]
 
-    # 1. Headers: ID, Name, Type, Nat, plus 256 squad columns (8 prefixes * 32)
+    # 1. Headers: ID, Name, Type, Nat, plus 256 squad columns (8 prefixes * MAX_SQUAD_SLOTS)
     fieldnames = ["id", "name", "type", "nat", "aNeed", "sNeed"]
     for p in prefixes:
-        for i in range(32):
+        for i in range(MAX_SQUAD_SLOTS):
             fieldnames.append(f"{p}{i}")
 
     # 2. Mock Row Generator
@@ -75,7 +77,7 @@ def mock_ob_csv(tmp_path) -> str:
     file_path = tmp_path / "mock_ob.csv"
 
     fieldnames = ["id", "name", "suffix", "type", "nat", "upgrade"]
-    for i in range(32):
+    for i in range(MAX_SQUAD_SLOTS):
         fieldnames.append(f"sqd {i}")
         fieldnames.append(f"sqdNum {i}")
 

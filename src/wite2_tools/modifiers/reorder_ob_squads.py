@@ -24,12 +24,12 @@ Example:
     and moves it to the very first slot (index 0), shifting other elements down.
 """
 
-import argparse
-from wite2_tools.paths import CONF_OB_FULL_PATH
+# Internal package imports
 from wite2_tools.constants import MAX_SQUAD_SLOTS
 from wite2_tools.utils.logger import get_logger
 from wite2_tools.modifiers.base import process_csv_in_place
 
+# Initialize the log for this specific module
 log = get_logger(__name__)
 
 def reorder_ob_elems(row: dict, squad_col: str, squad_num_col: str, move_from: int, move_to: int) -> dict:
@@ -101,16 +101,3 @@ def reorder_ob_squads(ob_file_path: str, target_ob_id: int, ge_id: int, move_to:
     # Execute via the shared wrapper
     return process_csv_in_place(ob_file_path, process_row)
 
-
-# --- MAIN EXECUTION ---
-if __name__ == "__main__":
-
-    parser = argparse.ArgumentParser(description="Reorders the OB elements by performing a move and shift-down of the squad elements")
-    parser.add_argument("ob_id", type=int, help="WiTE2 OB ID")
-    parser.add_argument("ge_id", type=int, help="The WID of the Ground Element to be moved")
-    parser.add_argument("move_to", type=int, help="Destination Location (0-31) of where to move the target element")
-
-    args = parser.parse_args()
-
-# the following uses the currently configured path values.
-    reorder_ob_squads(CONF_OB_FULL_PATH, args.ob_id, args.ge_id, args.move_to)

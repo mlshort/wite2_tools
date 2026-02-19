@@ -1,5 +1,7 @@
 import pytest
 import csv
+
+from wite2_tools.constants import MAX_SQUAD_SLOTS
 from wite2_tools.core.find_unreferenced_ob_ids import find_unreferenced_ob_ids
 
 # ==========================================
@@ -32,7 +34,7 @@ def mock_unit_csv(tmp_path):
 
     # 1. Generate full width of _unit.csv headers
     headers = ["id", "name", "type", "nat"]
-    for i in range(32):
+    for i in range(MAX_SQUAD_SLOTS):
         headers.append(f"sqd.u{i}")
         headers.append(f"sqd.num{i}")
 

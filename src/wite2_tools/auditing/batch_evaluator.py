@@ -1,7 +1,6 @@
 import os
 
 # Internal package imports
-from wite2_tools.paths import GAME_DATA_PATH, LOCAL_DATA_PATH
 from wite2_tools.auditing.validator import (
     evaluate_unit_consistency,
     evaluate_ob_consistency
@@ -109,13 +108,3 @@ def scan_and_evaluate_ob_files(target_folder: str):
     print(f"\nScan complete. {files_processed} ob files checked. {total_issues} issues found.")
     print("Check the latest log in your /logs folder for specific row details.")
 
-
-
-if __name__ == "__main__":
-    # Point this to your specific data folder
-
-    DATA_PATH = LOCAL_DATA_PATH
-    ACTIVE_UNITS_ONLY = False
-    FIX_GHOSTS = False
-    scan_and_evaluate_unit_files(DATA_PATH, ACTIVE_UNITS_ONLY, FIX_GHOSTS)
-    scan_and_evaluate_ob_files(DATA_PATH)

@@ -27,11 +27,10 @@ Example:
     This will scan for units with ob_id 42, look for ge_id 105, and if its
     current squad count is exactly 10, update it to 12.
 """
-import argparse
+
 import os
 
 # Internal package imports
-from wite2_tools.paths import CONF_UNIT_FULL_PATH
 from wite2_tools.constants import MAX_SQUAD_SLOTS
 from wite2_tools.modifiers.base import process_csv_in_place
 from wite2_tools.utils.logger import get_logger
@@ -92,26 +91,6 @@ def update_unit_num_squads(unit_file_path: str, target_ob_id: int, ge_id: int, o
     print(f"Success! {total_updates} row(s) updated.")
     return total_updates
 
-# --- MAIN EXECUTION ---
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Updates all units of a particular OB number of squads")
-    parser.add_argument("ob_id", type=int,
-                        help="Target unit's OB ID")
-    parser.add_argument("ge_id", type=int,
-                        help="Unit's Elem ID containing squads to change")
-    parser.add_argument("old_num_squads", type=int,
-                        help="Number of existing squads")
-    parser.add_argument("new_num_squads", type=int,
-                        help="Number of new squads to set")
 
-    args = parser.parse_args()
-
-    update_unit_num_squads(
-        CONF_UNIT_FULL_PATH,
-        args.ob_id,
-        args.ge_id,
-        args.old_num_squads,
-        args.new_num_squads
-    )
 
 

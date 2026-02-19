@@ -35,10 +35,8 @@ Functions
     on the row dictionary.
 """
 import os
-import argparse
 
 # Internal package imports
-from wite2_tools.paths import CONF_UNIT_FULL_PATH
 from wite2_tools.constants import (
     MAX_SQUAD_SLOTS,
     MIN_SQUAD_SLOTS,
@@ -115,13 +113,4 @@ def reorder_unit_squads(unit_file_path: str, target_unit_id: int, ge_id: int, mo
 
     return process_csv_in_place(unit_file_path, process_row)
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Modifies a WiTE2 UNIT by moving internal squad elements")
-    parser.add_argument("unit_id", type=int, help="WiTE2 UNIT ID")
-    parser.add_argument("ge_id", type=int, help="WID of the Ground Element")
-    parser.add_argument("move_to", type=int, help="Destination Slot Location (0-31)")
-    args = parser.parse_args()
-
-    # Note: Passed args.unit_id here instead of args.ob_num which was a bug in the original script
-    reorder_unit_squads(CONF_UNIT_FULL_PATH, args.unit_id, args.ge_id, args.move_to)
 

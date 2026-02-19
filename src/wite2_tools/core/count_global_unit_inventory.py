@@ -25,7 +25,6 @@ from collections import defaultdict
 from typing import Optional, Union, Iterable, cast
 
 # Internal package imports
-from wite2_tools.paths import CONF_UNIT_FULL_PATH, CONF_GROUND_FULL_PATH
 from wite2_tools.constants import MAX_SQUAD_SLOTS
 from wite2_tools.constants import NatCode
 from wite2_tools.generator import read_csv_dict_generator
@@ -113,10 +112,3 @@ def count_global_unit_inventory(
 
     return inventory
 
-if __name__ == "__main__":
-    # Point this to your specific _unit and _ground CSV files
-    UNIT_DATA = CONF_UNIT_FULL_PATH
-    GROUND_DATA = CONF_GROUND_FULL_PATH
-
-    nat_codes = { NatCode.GER, NatCode.ITA }
-    count_global_unit_inventory(UNIT_DATA, GROUND_DATA, nat_codes)

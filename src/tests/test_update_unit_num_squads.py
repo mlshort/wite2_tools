@@ -1,5 +1,7 @@
 import csv
 import pytest
+
+from wite2_tools.constants import MAX_SQUAD_SLOTS
 from wite2_tools.modifiers.update_unit_num_squads import update_unit_num_squads
 
 @pytest.fixture
@@ -8,7 +10,7 @@ def mock_update_unit_csv(tmp_path):
     file_path = tmp_path / "mock_update_unit.csv"
 
     headers = ["id", "name", "type", "nat"]
-    for i in range(32):
+    for i in range(MAX_SQUAD_SLOTS):
         headers.append(f"sqd.u{i}")
         headers.append(f"sqd.num{i}")
 

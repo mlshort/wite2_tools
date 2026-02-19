@@ -24,11 +24,9 @@ Example:
     This will scan the unit file and replace every instance of Ground Element 105
     with Ground Element 110 across all squad slots.
 """
-import argparse
 import os
 
 # Internal package imports
-from wite2_tools.paths import CONF_UNIT_FULL_PATH
 from wite2_tools.constants import MAX_SQUAD_SLOTS
 from wite2_tools.modifiers.base import process_csv_in_place
 from wite2_tools.utils.logger import get_logger
@@ -67,18 +65,3 @@ def replace_unit_ground_element(unit_file_path: str, old_ge_id: int, new_ge_id: 
     total_updates = process_csv_in_place(unit_file_path, process_row)
     log.info("Task Complete: Modified %d rows containing Elem ID %d.", total_updates, old_ge_id)
     return total_updates
-
-# --- Example Usage ---
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Replaces ground elements matching ID with those of another.")
-    parser.add_argument("old_ge_id", type=int, help="Unit's existing Elem ID")
-    parser.add_argument("new_ge_id", type=int, help="Unit's new Elem ID to be used")
-
-    args = parser.parse_args()
-
-    # following uses currently configured path value(s)
-    replace_unit_ground_element(
-        CONF_UNIT_FULL_PATH,
-        args.old_ge_id,
-        args.new_ge_id
-    )

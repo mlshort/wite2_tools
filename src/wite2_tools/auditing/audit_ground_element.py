@@ -1,7 +1,6 @@
 import os
 
 # Internal package imports
-from wite2_tools.paths import CONF_GROUND_FULL_PATH
 from wite2_tools.constants import MAX_GROUND_MEN, GND_COL
 from wite2_tools.utils.logger import get_logger
 from wite2_tools.utils.lookups import get_ground_elem_class_name
@@ -105,8 +104,3 @@ def audit_ground_element_csv(ground_file_path: str) -> int:
         return -1
 
 
-
-if __name__ == "__main__":
-
-    # following uses currently configured path value(s)
-    audit_ground_element_csv(CONF_GROUND_FULL_PATH)

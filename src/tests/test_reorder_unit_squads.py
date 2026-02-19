@@ -1,5 +1,7 @@
 import pytest
 from typing import Tuple
+
+from wite2_tools.constants import MAX_SQUAD_SLOTS
 from wite2_tools.modifiers.reorder_unit_squads import (
     reorder_unit_elems,
     reorder_unit_squads
@@ -11,7 +13,7 @@ def test_reorder_unit_elems_logic():
     prefixes = ["sqd.u", "sqd.num", "sqd.dis", "sqd.dam", "sqd.fat", "sqd.fired", "sqd.exp", "sqd.expAccum"]
     row = {}
     for p in prefixes:
-        for i in range(32):
+        for i in range(MAX_SQUAD_SLOTS):
             row[f"{p}{i}"] = "0"
 
     # Setup: ID 99 at slot 1

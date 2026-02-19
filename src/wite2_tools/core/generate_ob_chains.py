@@ -30,9 +30,7 @@ import os
 from typing import Optional, Union, Iterable, cast, List
 
 # Internal package imports
-from wite2_tools.constants import NatCode
 from wite2_tools.config import ENCODING_TYPE
-from wite2_tools.paths import LOCAL_EXPORTS_PATH, CONF_OB_FULL_PATH
 from wite2_tools.generator import read_csv_dict_generator
 from wite2_tools.utils.logger import get_logger
 
@@ -95,7 +93,7 @@ def generate_ob_chains(
             # Combine ob_name and ob_suffix
             ob_name = row.get('name', '').strip()
             ob_suffix = row.get('suffix', '').strip()
-            ob_full_name = f"{ob_name} {ob_suffix}".strip()
+            ob_full_name = f"{ob_name} {ob_suffix}"
 
             ob_id_to_name_map[ob_id] = ob_full_name
             all_ob_ids.add(ob_id)
@@ -163,12 +161,3 @@ def generate_ob_chains(
         log.debug("Filtered by nat_code: %s", nat_filter)
 
     return len(chains_list)
-
-# --- Example Call ---
-if __name__ == "__main__":
-    CSV_OUT_FULL_PATH = os.path.join(LOCAL_EXPORTS_PATH, "ob_upgrade_chains.csv")
-    TXT_OUT_FULL_PATH = os.path.join(LOCAL_EXPORTS_PATH, "ob_upgrade_chains.txt")
-    nat_codes = { NatCode.GER, NatCode.ITA }
-
-    # following uses currently configured path value(s)
-    generate_ob_chains(CONF_OB_FULL_PATH, CSV_OUT_FULL_PATH, TXT_OUT_FULL_PATH, nat_codes)

@@ -24,12 +24,10 @@ Example:
     Scans the unit file and prints a table of all units where `fuel` > 5 * `fNeed`.
 """
 import os
-import argparse
 from typing import cast
 
 # Internal package imports
 from wite2_tools.constants import EXCESS_RESOURCE_MULTIPLIER
-from wite2_tools.paths import CONF_UNIT_FULL_PATH
 from wite2_tools.generator import read_csv_dict_generator
 from wite2_tools.utils.lookups import get_nat_abbr
 from wite2_tools.utils.logger import get_logger
@@ -123,23 +121,3 @@ def scan_units_for_excess_fuel(unit_file_path: str) -> int:
 
 def scan_units_for_excess_vehicles(unit_file_path: str) -> int:
     return _scan_excess_resource(unit_file_path, 'truck', 'vNeed', 'Vehicles')
-
-
-# --- MAIN EXECUTION ---
-if __name__ == "__main__":
-
-    parser = argparse.ArgumentParser(description="Scans units for excess items and displays listing")
-    parser.add_argument("--operation", choices=["ammo", "supplies", "fuel", "vehicles"], default="ammo",
-                        help="The operation to perform (default: ammo)")
-
-    args = parser.parse_args()
-
-    # following uses currently configured path value(s)
-    if args.operation == "ammo":
-        scan_units_for_excess_ammo(CONF_UNIT_FULL_PATH)
-    elif args.operation == "supplies":
-        scan_units_for_excess_supplies(CONF_UNIT_FULL_PATH)
-    elif args.operation == "fuel":
-        scan_units_for_excess_fuel(CONF_UNIT_FULL_PATH)
-    elif args.operation == "vehicles":
-        scan_units_for_excess_vehicles(CONF_UNIT_FULL_PATH)

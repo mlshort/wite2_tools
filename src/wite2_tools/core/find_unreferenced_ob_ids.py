@@ -32,18 +32,12 @@ from typing import Set
 
 # Internal package imports
 from wite2_tools.constants import NatCode
-from wite2_tools.paths import (
-    CONF_OB_FULL_PATH,
-    CONF_UNIT_FULL_PATH
-)
 from wite2_tools.generator import read_csv_dict_generator
 from wite2_tools.utils.logger import get_logger
 from wite2_tools.utils.get_type_name import get_ob_full_name
 
 # Initialize the logger for this specific module
 log = get_logger(__name__)
-
-
 
 def find_unreferenced_ob_ids(ob_file_path: str, unit_file_path: str, nat_code=None) -> Set[int]:
     """
@@ -265,11 +259,3 @@ def is_ob_orphaned(ob_file_path: str, unit_file_path: str, ob_id_to_check: int, 
     # 3. Perform O(1) lookup
     return ob_id_to_check in orphan_set
 
-
-if __name__ == "__main__":
-    # Update these paths to point to your data
-    nat_codes = { NatCode.GER, NatCode.ITA }
-
-    # Run the standard scan
-    # following uses currently configured path value(s)
-    find_unreferenced_ob_ids(CONF_OB_FULL_PATH, CONF_UNIT_FULL_PATH, nat_codes)

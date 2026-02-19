@@ -21,11 +21,9 @@ Example:
     Ground Element 42, showing the exact slot it occupies and the quantity assigned.
 """
 import os
-import argparse
 from typing import cast
 
 # Internal package imports
-from wite2_tools.paths import CONF_OB_FULL_PATH
 from wite2_tools.constants import MAX_SQUAD_SLOTS
 from wite2_tools.generator import read_csv_dict_generator
 from wite2_tools.utils.lookups import get_ob_type_code_name
@@ -104,13 +102,3 @@ def scan_ob_for_ground_elem(ob_file_path: str, ground_elem_id: int) -> int:
         log.exception("An error occurred during OB scanning: %s", e)
 
     return matches_found
-
-
-# --- MAIN EXECUTION ---
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Scans OBs for Ground Elements and displays listing")
-    parser.add_argument("ge_id", type=int, help="target Ground Element ID")
-    args = parser.parse_args()
-
-    # following uses currently configured path value(s)
-    scan_ob_for_ground_elem(CONF_OB_FULL_PATH, args.ge_id)
