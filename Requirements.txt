@@ -1,0 +1,7 @@
+# wite2_tools Dependencies
+
+# Core utilities for character encoding detection
+chardet>=5.2.0
+
+# Testing framework (Development/Testing only)
+pytest>=8.0.0

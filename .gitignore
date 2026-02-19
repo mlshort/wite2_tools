@@ -1,0 +1,45 @@
+# =========================
+# Python & Caches
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+
+# =========================
+# Virtual Environments
+# =========================
+venv/
+.venv/
+env/
+
+#==========================
+# IDE Specifics
+#==========================
+.vscode/
+.idea/
+.project
+.settings/
+# =========================
+# Local Configuration
+# =========================
+.env
+.env.local
+
+# =========================
+# WiTE2 Tool Outputs & Data
+# =========================
+# Ignore all game data to prevent copyright issues
+data/
+
+# Ignore script outputs
+exports/
+logs/
+
+# =========================
+# Local Utility Scripts
+# =========================
+# Ignore project bundling tools and text dumps
+bundle_project.py
+project_dump.txt

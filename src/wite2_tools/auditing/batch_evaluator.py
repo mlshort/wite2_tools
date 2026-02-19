@@ -1,0 +1,121 @@
+import os
+
+# Internal package imports
+from wite2_tools.paths import GAME_DATA_PATH, LOCAL_DATA_PATH
+from wite2_tools.auditing.validator import (
+    evaluate_unit_consistency,
+    evaluate_ob_consistency
+)
+from wite2_tools.utils.logger import get_logger
+
+# Initialize the logger for this specific module
+log = get_logger(__name__)
+
+
+def scan_and_evaluate_unit_files(target_folder: str, only_active_units: bool, fix_ghosts: bool):
+    """
+    Scans a folder for CSV files containing '_unit','_ground' and runs consistency checks.
+    """
+    if not os.path.exists(target_folder) or not os.path.isdir(target_folder):
+        log.error("Scan failed: The directory '%s' does not exist.", target_folder)
+        return
+
+    log.info("--- Starting Batch Unit Evaluation in: '%s' ---", target_folder)
+
+    # Get all CSV files in the directory
+    all_files = os.listdir(target_folder)
+    csv_files = [f for f in all_files if f.lower().endswith('.csv')]
+
+    # Filter by name and build absolute paths
+    unit_files = [os.path.join(target_folder, f) for f in csv_files if "_unit" in f.lower()]
+    ground_files = [os.path.join(target_folder, f) for f in csv_files if "_ground" in f.lower()]
+
+    if not unit_files:
+        log.warning("No files found containing the '_unit' substring.")
+        return
+
+    if not ground_files:
+        log.warning("No files found containing the '_ground' substring.")
+        return
+
+    total_issues = 0
+    files_processed = 0
+
+    for unit_file, ground_file in zip(unit_files, ground_files):
+        unit_file_name = os.path.basename(unit_file)
+        log.info("Processing: '%s'", unit_file_name)
+
+        issues = evaluate_unit_consistency(unit_file, ground_file, only_active_units, fix_ghosts)
+
+        if issues >= 0:
+            files_processed += 1
+            total_issues += issues
+        else:
+            log.error("Failed to process '%s' due to an internal error.", unit_file_name)
+
+    log.info("--- Batch Complete ---")
+    log.info("Files Processed: %d", files_processed)
+    log.info("Total Logical/Structural Issues Found: %d", total_issues)
+
+    print(f"\nScan complete. {files_processed} unit files checked. {total_issues} issues found.")
+    print("Check the latest log in your /logs folder for specific row details.")
+
+
+def scan_and_evaluate_ob_files(target_folder: str):
+    """
+    Scans a folder for CSV files containing '_ob','_ground' and runs consistency checks.
+    """
+    if not os.path.exists(target_folder) or not os.path.isdir(target_folder):
+        log.error("Scan failed: The directory '%s' does not exist.", target_folder)
+        return
+
+    log.info("--- Starting Batch OB Evaluation in: '%s' ---", target_folder)
+
+    # Get all CSV files in the directory
+    all_files = os.listdir(target_folder)
+    csv_files = [f for f in all_files if f.lower().endswith('.csv')]
+
+    # Filter by name and build absolute paths
+    ob_files = [os.path.join(target_folder, f) for f in csv_files if "_ob" in f.lower()]
+    ground_files = [os.path.join(target_folder, f) for f in csv_files if "_ground" in f.lower()]
+
+    if not ob_files:
+        log.warning("No files found containing the '_ob' substring.")
+        return
+
+    if not ground_files:
+        log.warning("No files found containing the '_ground' substring.")
+        return
+
+    total_issues = 0
+    files_processed = 0
+
+    for ob_file, ground_file in zip(ob_files, ground_files):
+        ob_file_name = os.path.basename(ob_file)
+        log.info("Processing: '%s'", ob_file_name)
+
+        issues = evaluate_ob_consistency(ob_file, ground_file)
+        files_processed += 1
+
+        if issues >= 0:
+            total_issues += issues
+        else:
+            log.error("Failed to process '%s' due to an internal error.", ob_file_name)
+
+    log.info("--- Batch Complete ---")
+    log.info("Files Processed: %d", files_processed)
+    log.info("Total Logical/Structural Issues Found: %d", total_issues)
+
+    print(f"\nScan complete. {files_processed} ob files checked. {total_issues} issues found.")
+    print("Check the latest log in your /logs folder for specific row details.")
+
+
+
+if __name__ == "__main__":
+    # Point this to your specific data folder
+
+    DATA_PATH = LOCAL_DATA_PATH
+    ACTIVE_UNITS_ONLY = False
+    FIX_GHOSTS = False
+    scan_and_evaluate_unit_files(DATA_PATH, ACTIVE_UNITS_ONLY, FIX_GHOSTS)
+    scan_and_evaluate_ob_files(DATA_PATH)
