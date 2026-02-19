@@ -4,7 +4,7 @@ import os
 from wite2_tools.paths import CONF_GROUND_FULL_PATH
 from wite2_tools.constants import MAX_GROUND_MEN, GND_COL
 from wite2_tools.utils.logger import get_logger
-from wite2_tools.utils.lookups import get_ground_element_class_name
+from wite2_tools.utils.lookups import get_ground_elem_class_name
 from wite2_tools.generator import read_csv_list_generator
 
 # Initialize the log for this specific module
@@ -59,7 +59,7 @@ def audit_ground_element_csv(ground_file_path: str) -> int:
                 ground_type_int = int(raw_type)
                 if ground_type_int == 0:
                     continue
-                element_class_name = get_ground_element_class_name(ground_type_int)
+                element_class_name = get_ground_elem_class_name(ground_type_int)
                 # Updated to match the "Unk " fallback in lookups.py
                 if "Unk" in element_class_name:
                     log.warning("ID %d (%s): uses undefined Type %d",
