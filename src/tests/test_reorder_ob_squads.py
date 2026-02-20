@@ -26,5 +26,5 @@ def test_reorder_ob_elems_logic():
 def test_reorder_ob_squads_integration(mock_ob_csv):
     """Tests the full file-write process with real space-notation headers."""
     # Target ID 500 is at slot 2 in the conftest fixture
-    updates = reorder_ob_squads(mock_ob_csv, target_ob_id=10, ge_id=500, move_to=0)
+    updates = reorder_ob_squads(mock_ob_csv, target_ob_id=10, wid=500, target_slot=0)
     assert updates == 1

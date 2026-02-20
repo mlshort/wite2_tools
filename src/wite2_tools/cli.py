@@ -101,7 +101,7 @@ def main():
 
     num_parser = subparsers.add_parser('update-num', help='Update number of squads in _unit.csv')
     num_parser.add_argument("ob_id", type=int, help="Target unit's TOE(OB) ID")
-    num_parser.add_argument("ge_id", type=int, help="Unit's WID containing squads to change")
+    num_parser.add_argument("wid", type=int, help="Unit's WID containing squads to change")
     num_parser.add_argument("old_num_squads", type=int, help="Number of existing squads")
     num_parser.add_argument("new_num_squads", type=int, help="Number of new squads to set")
     num_parser.add_argument('--unit-file', default=CONF_UNIT_FULL_PATH)
@@ -109,18 +109,18 @@ def main():
     unit_reorder_parser = subparsers.add_parser('reorder-unit',
                                                 help='Reorder squad slots in _unit.csv')
     unit_reorder_parser.add_argument("unit_id", type=int, help="WiTE2 UNIT ID")
-    unit_reorder_parser.add_argument("ge_id", type=int,
+    unit_reorder_parser.add_argument("wid", type=int,
                                      help="The WID of the Ground Element to be moved")
-    unit_reorder_parser.add_argument("move_to", type=int,
+    unit_reorder_parser.add_argument("target_slot", type=int,
                                      help="Destination Slot Location (0-31)")
     unit_reorder_parser.add_argument('--unit-file', default=CONF_UNIT_FULL_PATH)
 
     ob_reorder_parser = subparsers.add_parser('reorder-ob',
                                               help='Reorder squad slots in _ob.csv')
     ob_reorder_parser.add_argument("ob_num", type=int, help="Target TOE(OB) ID")
-    ob_reorder_parser.add_argument("ge_id", type=int,
+    ob_reorder_parser.add_argument("wid", type=int,
                                    help="The WID specifying the Ground Element to be moved")
-    ob_reorder_parser.add_argument("move_to", type=int, help="Destination Slot Location (0-31)")
+    ob_reorder_parser.add_argument("target_slot", type=int, help="Destination Slot Location (0-31)")
     ob_reorder_parser.add_argument('--ob-file', default=CONF_OB_FULL_PATH)
 
     compact_parser = subparsers.add_parser('compact-weapons',
@@ -201,13 +201,13 @@ def main():
     # ==========================================
     scan_ob_parser = subparsers.add_parser('scan-ob-elem',
                                            help='Locates a specific Ground Element within all TOE(OB)s')
-    scan_ob_parser.add_argument('ge_id', type=int, help='Ground Element''s WID to search for')
+    scan_ob_parser.add_argument('wid', type=int, help='Ground Element''s WID to search for')
     scan_ob_parser.add_argument('--ob-file', default=CONF_OB_FULL_PATH,
                                 help="Optional: (default: %(default)s)")
 
     scan_unit_parser = subparsers.add_parser('scan-unit-elem',
                                              help='Locates a specific Ground Element within Units')
-    scan_unit_parser.add_argument('ge_id', type=int, help='Ground Element''s WID to search for')
+    scan_unit_parser.add_argument('wid', type=int, help='Ground Element''s WID to search for')
     scan_unit_parser.add_argument('num_squads', type=int, nargs='?', default=-1,
                                   help='Filter by exact quantity')
     scan_unit_parser.add_argument('--unit-file', default=CONF_UNIT_FULL_PATH)
@@ -239,12 +239,12 @@ def main():
         if args.command == 'replace-elem':
             replace_unit_ground_element(args.unit_file, args.old_ge_id, args.new_ge_id)
         elif args.command == 'update-num':
-            update_unit_num_squads(args.unit_file, args.ob_id, args.ge_id,
+            update_unit_num_squads(args.unit_file, args.ob_id, args.wid,
                                    args.old_num_squads, args.new_num_squads)
         elif args.command == 'reorder-unit':
-            reorder_unit_squads(args.unit_file, args.unit_id, args.ge_id, args.move_to)
+            reorder_unit_squads(args.unit_file, args.unit_id, args.wid, args.target_slot)
         elif args.command == 'reorder-ob':
-            reorder_ob_squads(args.ob_file, args.ob_num, args.ge_id, args.move_to)
+            reorder_ob_squads(args.ob_file, args.ob_num, args.wid, args.target_slot)
         elif args.command == 'compact-weapons':
             remove_ground_weapon_gaps(args.ground_file)
 
@@ -275,9 +275,9 @@ def main():
 
         # Scanning
         elif args.command == 'scan-ob-elem':
-            scan_ob_for_ground_elem(args.ob_file, args.ge_id)
+            scan_ob_for_ground_elem(args.ob_file, args.wid)
         elif args.command == 'scan-unit-elem':
-            scan_unit_for_ground_elem(args.unit_file, args.ground_file, args.ob_file, args.ge_id, args.num_squads)
+            scan_unit_for_ground_elem(args.unit_file, args.ground_file, args.ob_file, args.wid, args.num_squads)
         elif args.command == 'scan-excess':
             if args.operation == 'ammo':
                 scan_units_for_excess_ammo(args.unit_file)

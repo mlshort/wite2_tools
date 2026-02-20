@@ -1,4 +1,11 @@
 """
+Ground Element Audit Utility
+============================
+
+This module provides functionality to audit War in the East 2 (WiTE2) `_ground.csv` files.
+It scans the ground elements database to ensure structural and logical consistency, identifying
+issues such as duplicate WIDs, missing or invalid element types, and malformed size or manpower data.
+
 Command Line Usage:
     python -m wite2_tools.cli audit-ground [--ground-file FILE]
 
@@ -6,10 +13,11 @@ Example:
     $ python -m wite2_tools.cli audit-ground
     Scans the default _ground CSV file to ensure all type IDs are valid and logs any logical errors.
 """
+
 import os
 
 # Internal package imports
-from wite2_tools.constants import MAX_GROUND_MEN, GND_COL
+from wite2_tools.constants import MAX_GROUND_MEN, GroundColumn
 from wite2_tools.utils.logger import get_logger
 from wite2_tools.utils.lookups import get_ground_elem_class_name
 from wite2_tools.generator import read_csv_list_generator
@@ -44,8 +52,8 @@ def audit_ground_element_csv(ground_file_path: str) -> int:
         # The generator automatically unpacks row_idx and row dictionary
         for _, row in ground_gen:
             row_len : int = len(row)
-            ground_id = int(row[GND_COL.ID] or '0') # 1st 'id' column
-            ground_name = row[GND_COL.NAME] # 'name' column
+            ground_id = int(row[GroundColumn.ID] or '0') # 1st 'id' column
+            ground_name = row[GroundColumn.NAME] # 'name' column
 
             # 1. Uniqueness Check
             if ground_id != 0 and ground_id in seen_ground_ids:
@@ -56,39 +64,39 @@ def audit_ground_element_csv(ground_file_path: str) -> int:
                 seen_ground_ids.add(ground_id)
 
             # 2. Type Validation
-            raw_type = row[GND_COL.TYPE] # 'type' column
+            raw_type = row[GroundColumn.TYPE] # 'type' column
             if raw_type is None:
                 log.error("WID %d (%s): Missing 'type' column value.", ground_id, ground_name)
                 issues_found += 1
                 continue
 
             try:
-                ground_type_int = int(raw_type)
-                if ground_type_int == 0:
+                ground_type = int(raw_type)
+                if ground_type == 0:
                     continue
-                element_class_name = get_ground_elem_class_name(ground_type_int)
+                element_class_name = get_ground_elem_class_name(ground_type)
                 # Updated to match the "Unk " fallback in lookups.py
                 if "Unk" in element_class_name:
                     log.warning("WID %d (%s): uses undefined Type %d",
-                                ground_id, ground_name, ground_type_int)
+                                ground_id, ground_name, ground_type)
                     issues_found += 1
                 elif element_class_name == "Blank":
                     log.debug("WID %d (%s): Assigned to reserved/blank Type %d",
-                              ground_id, ground_name, ground_type_int)
+                              ground_id, ground_name, ground_type)
                 else:
                     log.debug("WID %d (%s): Validated as %s",
                               ground_id, ground_name, element_class_name)
 
                 # following is to account for tests using weird-sized rows
-                if GND_COL.SIZE > row_len:
+                if GroundColumn.SIZE > row_len:
                     continue
-                ground_size = int(row[GND_COL.SIZE] or '0') # 'size' column
+                ground_size = int(row[GroundColumn.SIZE] or '0') # 'size' column
                 if ground_size == 0:
                     log.warning("WID %d (%s): %s has ZERO size",
                                 ground_id, ground_name, element_class_name)
                     issues_found += 1
 
-                ground_men = int(row[GND_COL.MEN] or '0') # 'men' column
+                ground_men = int(row[GroundColumn.MEN] or '0') # 'men' column
                 if ground_men == 0:
                     log.warning("WID %d (%s): %s has no men assigned",
                                 ground_id, ground_name, element_class_name)

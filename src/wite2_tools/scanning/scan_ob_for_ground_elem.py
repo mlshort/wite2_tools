@@ -10,10 +10,10 @@ displays the TOE(OB)'s ID, Name, Type (resolved via a lookup), the exact squad c
 element was found, and the assigned quantity from the `sqdNum` column.
 
 Command Line Usage:
-    python -m wite2_tools.cli scan-ob-elem [-h] ge_id
+    python -m wite2_tools.cli scan-ob-elem [-h] wid
 
 Arguments:
-    ge_id (int): The WID of the Ground Element to search for across all OBs.
+    wid (int): The WID of the Ground Element to search for across all OBs.
 
 Example:
     $ python -m wite2_tools.cli scan-ob-elem 42
@@ -50,9 +50,9 @@ def scan_ob_for_ground_elem(ob_file_path: str, ground_elem_id: int) -> int:
         next(ob_gen) # Skip DictReader object
 
         # Convert inputs to strings to ensure they match CSV text format
-        ground_elem_id_str = str(ground_elem_id)
+        ground_element_id_str = str(ground_elem_id)
 
-        print(f"\nScanning '{file}' for any instances of WID='{ground_elem_id_str}'")
+        print(f"\nScanning '{file}' for any instances of WID='{ground_element_id_str}'")
         # Print Header for the Console Output
         print(f"\n{'ID':^6} | {'Name':<20} | {'Type':^9} | {'Squad':<6} | {'Value':<10}")
         print("-" * 80)
@@ -82,7 +82,7 @@ def scan_ob_for_ground_elem(ob_file_path: str, ground_elem_id: int) -> int:
                 sqd_num_col = f"sqdNum {i}".strip()
 
                 # Check if column exists and matches the target ID
-                if sqd_id_col in row and row[sqd_id_col] == ground_elem_id_str:
+                if sqd_id_col in row and row[sqd_id_col] == ground_element_id_str:
                     ob_name = row.get("name", "").strip()
                     ob_suffix = row.get("suffix", "").strip()
                     ob_full_name = f"{ob_name} {ob_suffix}"

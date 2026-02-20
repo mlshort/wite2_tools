@@ -83,7 +83,7 @@ def test_inventory_total_aggregation(mock_unit_csv, mock_ground_csv):
 def test_inventory_nationality_filtering(mock_unit_csv, mock_ground_csv):
     """Verifies that the nationality filter isolates counts to specific factions."""
     # Filter for only Nat 2 (Finnish)
-    inventory = count_global_unit_inventory(mock_unit_csv, mock_ground_csv, nat_code=2)
+    inventory = count_global_unit_inventory(mock_unit_csv, mock_ground_csv, nation_id=2)
 
     # Should only see the 20x 102s from the Finnish unit
     assert inventory[102] == 20
@@ -92,7 +92,7 @@ def test_inventory_nationality_filtering(mock_unit_csv, mock_ground_csv):
 def test_inventory_multiple_nat_filtering(mock_unit_csv, mock_ground_csv):
     """Verifies that passing a list/set of nat codes works."""
     # Filter for both Germans (1) and Finns (2)
-    inventory = count_global_unit_inventory(mock_unit_csv, mock_ground_csv, nat_code=[1, 2])
+    inventory = count_global_unit_inventory(mock_unit_csv, mock_ground_csv, nation_id=[1, 2])
 
     # Total should be the same as the no-filter test in this setup
     assert inventory[101] == 10

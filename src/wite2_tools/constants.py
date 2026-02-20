@@ -13,7 +13,7 @@ Core Contents:
   `MAX_SQUAD_SLOTS = 32`) to replace magic numbers in iterative loops
   and validation checks.
 * Column Enumerations: Provides strongly typed `IntEnum` classes
-  (`UnitColumn`, `OB_COL`, `GND_COL`) that map game CSV column headers
+  (`UnitColumn`, `OBColumn`, `GroundColumn`) that map game CSV column headers
   to their exact zero-based integer indices, enabling safe, readable,
   and highly performant row parsing.
 """
@@ -39,7 +39,7 @@ UNIT_SQUAD_PREFIXES : list[str] = ["sqd.u", "sqd.num", "sqd.dis", "sqd.dam",
                                    "sqd.fat", "sqd.fired", "sqd.exp", "sqd.expAccum"]
 
 
-class GND_COL(IntEnum):
+class GroundColumn(IntEnum):
     """
     Column indexes for WiTE2's _ground.csv files
     """
@@ -136,7 +136,7 @@ class GND_COL(IntEnum):
     WPN_FACE_8 = 90
     WPN_FACE_9 = 91
 
-class OB_COL(IntEnum):
+class OBColumn(IntEnum):
     """
     Column indexes for WiTE2's _ob.csv files
     """
@@ -220,7 +220,7 @@ class OB_COL(IntEnum):
     SQD_NUM_30 = 77
     SQD_NUM_31 = 78
 
-class UNIT_COL(IntEnum):
+class UnitColumn(IntEnum):
     """
     Column indexes for WiTE2's _unit.csv files
     """

@@ -14,7 +14,7 @@ Core Features:
 * Full Chain Tracing: Generates easy-to-read strings mapping the entire evolution of
   a unit structure (e.g., `[41] 1941 Inf Div -> [42] 1942 Inf Div -> [43] 1943 Inf Div`).
 * Nationality Filtering: Can restrict the chain generation to specific nations (e.g., Germany)
-  using the `nat_code` parameter.
+  using the `nation_id` parameter.
 * Loop Protection: Implements a visited-set safety check to prevent infinite loops in the
   event of circular upgrade references in the game data.
 * Dual Export: Outputs the results simultaneously to both a structured CSV file and a
@@ -49,7 +49,7 @@ def generate_ob_chains(
     ob_file_path: str,
     csv_output_path: str,
     txt_output_path: str,
-    nat_code: Optional[Union[int, str, Iterable[Union[int, str]]]] = None
+    nation_id: Optional[Union[int, str, Iterable[Union[int, str]]]] = None
 ) -> int:
     """
     Generates TOE(OB) upgrade chains, optionally filtered by a specific nationality code.
@@ -57,7 +57,7 @@ def generate_ob_chains(
     :param ob_file_path: Path to the source _ob.csv
     :param csv_output_path: Path to save the CSV results
     :param txt_output_path: Path to save the text results
-    :param nat_code: Integer or list of integers representing the 'nat' column value to filter by.
+    :param nation_id: Integer or list of integers representing the 'nat' column value to filter by.
     :return: The total number of chains generated.
     """
     ob_id_to_name_map: dict[int, str] = {}
@@ -65,12 +65,12 @@ def generate_ob_chains(
     all_ob_ids: set[int] = set()
     ob_upgrade_ids: set[int] = set()
 
-    # Standardize nat_code to a set for efficient lookup
-    if nat_code is not None:
-        if isinstance(nat_code, (int, str)):
-            nat_filter = {int(nat_code)}
+    # Standardize nation_id to a set for efficient lookup
+    if nation_id is not None:
+        if isinstance(nation_id, (int, str)):
+            nat_filter = {int(nation_id)}
         else:
-            nat_filter = {int(n) for n in nat_code}
+            nat_filter = {int(n) for n in nation_id}
     else:
         nat_filter = None
 
@@ -86,8 +86,8 @@ def generate_ob_chains(
 
         try:
             # Early Exit: Filter by nationality
-            ob_nat = int(row.get('nat','0'))
-            if nat_filter is not None and ob_nat not in nat_filter:
+            ob_nation_id = int(row.get('nat','0'))
+            if nat_filter is not None and ob_nation_id not in nat_filter:
                 continue
 
             ob_type = int(row.get('type','0'))
@@ -164,7 +164,7 @@ def generate_ob_chains(
             f.write(str(chain_info['chain_str']) + "\n")
 
     log.info("Successfully generated %d upgrade chains.", len(chains_list))
-    if nat_code:
-        log.debug("Filtered by nat_code: %s", nat_filter)
+    if nation_id:
+        log.debug("Filtered by nation_id: %s", nat_filter)
 
     return len(chains_list)

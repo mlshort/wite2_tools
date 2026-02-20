@@ -87,13 +87,13 @@ def test_find_unreferenced_ob_ids_with_nat_filter(mock_ob_csv, mock_unit_csv):
     to a specific faction.
     """
     # Execute: Filter ONLY for Nationality 1 (Germany)
-    orphans_ger = find_unreferenced_ob_ids(mock_ob_csv, mock_unit_csv, nat_code={1})
+    orphans_ger = find_unreferenced_ob_ids(mock_ob_csv, mock_unit_csv, nation_id={1})
 
     # TOE(OB) 70 is Nat 3, so it shouldn't even be evaluated. Only TOE(OB) 30 should remain.
     assert orphans_ger == {30}
 
     # Execute: Filter ONLY for Nationality 3 (Italy)
-    orphans_ita = find_unreferenced_ob_ids(mock_ob_csv, mock_unit_csv, nat_code={3})
+    orphans_ita = find_unreferenced_ob_ids(mock_ob_csv, mock_unit_csv, nation_id={3})
 
     # TOE(OB) 70 is never referenced by any Nat 3 units, so it is an orphan.
     assert orphans_ita == {70}

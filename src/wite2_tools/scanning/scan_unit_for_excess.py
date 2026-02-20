@@ -83,8 +83,8 @@ def _scan_excess_resource(unit_file_path: str, resource_col: str, need_col: str,
                 # 4. Extract ID, Name, and NAT
                 unit_id = int(row.get('id', '0'))
                 unit_name = row.get('name', 'Unk')
-                unit_nat = row.get('nat', '0')
-                unit_country_str = get_nat_abbr(int(unit_nat))
+                unit_nation_id = row.get('nat', '0')
+                unit_country_str = get_nat_abbr(int(unit_nation_id))
 
                 try:
                     ratio = resource_val / need_val

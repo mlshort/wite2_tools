@@ -56,22 +56,22 @@ def group_units_by_ob(unit_file_path: str) -> dict[int, list[str]]:
             # Cast the yielded item to satisfy static type checkers
             _, row = cast(tuple[int, dict], item)
 
-            unit_type_int = int(row.get('type', '0'))
-            if unit_type_int == 0:
+            unit_type = int(row.get('type', '0'))
+            if unit_type == 0:
                 continue
 
             unit_name = row.get('name', 'Unk').strip()
 
             # defaultdict creates the list automatically if it's missing
-            ob_ids_to_units[unit_type_int].append(unit_name)
+            ob_ids_to_units[unit_type].append(unit_name)
 
         # Log the summary instead of printing every single row
         log.info("Successfully grouped units into %d unique OBs.", len(ob_ids_to_units))
 
         # Relegate the granular details to the DEBUG level to prevent console spam
-        for unit_type_int, units in sorted(ob_ids_to_units.items()):
+        for unit_type, units in sorted(ob_ids_to_units.items()):
             log.debug("TOE(OB) ID %d is used by %d units: %s...",
-                        unit_type_int, len(units), ', '.join(units[:3]))
+                        unit_type, len(units), ', '.join(units[:3]))
 
     except (OSError, IOError, ValueError, KeyError) as e:
         log.exception("Grouping failed: %s", e)

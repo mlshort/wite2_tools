@@ -10,10 +10,10 @@ displaying the Unit's ID, Name, Type (resolved via a lookup), the exact squad
 column where the element was found, and the assigned quantity (`sqd.num`).
 
 Command Line Usage:
-    python -m wite2_tools.cli scan-unit-elem [-h] ge_id [num_squads]
+    python -m wite2_tools.cli scan-unit-elem [-h] wid [num_squads]
 
 Arguments:
-    ge_id (int): The WID of the Ground Element to search for across all units.
+    wid (int): The WID of the Ground Element to search for across all units.
     num_squads (int, optional): Filter by exact number of assigned squads.
 
 Example:
@@ -40,24 +40,24 @@ log = get_logger(__name__)
 def _check_squad_match(
     row: dict,
     ob_full_path: str,
-    ge_id: int,
+    wid: int,
     num_squads_filter: int,
     matches_found: int
 ) -> int:
     """Helper function to check squad matches and print results."""
-    ground_elem_id_str = str(ge_id)
+    ground_element_id_str = str(wid)
 
     for i in range(MAX_SQUAD_SLOTS):
         sqd_id_col = f"sqd.u{i}"
         sqd_num_col = f"sqd.num{i}"
 
         # Check if column exists and matches the target ID
-        if sqd_id_col in row and row[sqd_id_col] == ground_elem_id_str:
+        if sqd_id_col in row and row[sqd_id_col] == ground_element_id_str:
 
-            # Search the row for the new column name and print sqd_num_val
+            # Search the row for the new column name and print squad_quantity
             if sqd_num_col in row:
                 unit_name = row.get("name", "Unk")
-                sqd_num_val = row.get(sqd_num_col, "0")
+                squad_quantity = row.get(sqd_num_col, "0")
                 unit_id_val = row.get("id", "0")
                 unit_type = int(row.get("type", "0")) # unit 'type' maps to its TOE(OB) ID
                 unit_type_name = get_unit_type_name(ob_full_path, unit_type)
@@ -65,14 +65,14 @@ def _check_squad_match(
                 # Filter by exact quantity if a specific number was provided (-1 means ANY)
                 if num_squads_filter != -1:
                     try:
-                        if int(sqd_num_val) == num_squads_filter:
-                            print(f"{unit_id_val:>6} | {unit_name:<15.15s} | {unit_type_name:<25.25s} | {sqd_id_col:<6} | '{sqd_num_col}': {sqd_num_val}")
+                        if int(squad_quantity) == num_squads_filter:
+                            print(f"{unit_id_val:>6} | {unit_name:<15.15s} | {unit_type_name:<25.25s} | {sqd_id_col:<6} | '{sqd_num_col}': {squad_quantity}")
                             matches_found += 1
                     except ValueError:
                         continue
                 else:
                     # Print all matches regardless of quantity
-                    print(f"{unit_id_val:>6} | {unit_name:<15.15s} | {unit_type_name:<25.25s} | {sqd_id_col:<6} | '{sqd_num_col}': {sqd_num_val}")
+                    print(f"{unit_id_val:>6} | {unit_name:<15.15s} | {unit_type_name:<25.25s} | {sqd_id_col:<6} | '{sqd_num_col}': {squad_quantity}")
                     matches_found += 1
 
     return matches_found
@@ -82,7 +82,7 @@ def scan_unit_for_ground_elem(
     unit_file_path: str,
     ground_file_path: str,
     ob_full_path: str,
-    ge_id: int,
+    wid: int,
     old_num_squads: int = -1
 ) -> int:
     """
@@ -102,9 +102,9 @@ def scan_unit_for_ground_elem(
         next(unit_gen) # Skip DictReader object
 
         scan_str = "ANY" if old_num_squads == -1 else str(old_num_squads)
-        ground_elem_name = get_ground_elem_type_name(ground_file_path, ge_id)
+        ground_elem_name = get_ground_elem_type_name(ground_file_path, wid)
 
-        print(f"\nScanning '{os.path.basename(unit_file_path)}' for '{ground_elem_name}' (WID '{ge_id}') where quantity == '{scan_str}'")
+        print(f"\nScanning '{os.path.basename(unit_file_path)}' for '{ground_elem_name}' (WID '{wid}') where quantity == '{scan_str}'")
 
         # Print Header for the Console Output
         print(f"\n{'ID':^6} | {'Name':<15} | {'Type':<25} | {'Squad':<6} | {'Value':<10}")
@@ -125,7 +125,7 @@ def scan_unit_for_ground_elem(
                 continue
 
             # 2. Search columns 'sqd.u0' through 'sqd.u31' for the target ID
-            matches_found = _check_squad_match(row, ob_full_path, ge_id, old_num_squads, matches_found)
+            matches_found = _check_squad_match(row, ob_full_path, wid, old_num_squads, matches_found)
 
         if matches_found == 0:
             print("No matches found.")

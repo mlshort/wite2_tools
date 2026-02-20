@@ -63,7 +63,7 @@ def test_count_global_unit_inventory_no_filter(mock_unit_csv, mock_ground_csv):
 def test_count_global_unit_inventory_with_nat_filter(mock_unit_csv, mock_ground_csv):
     """Verifies that the nationality filter strictly isolates specific factions."""
     # Run the count only for Nationality 1
-    inventory = count_global_unit_inventory(mock_unit_csv, mock_ground_csv, nat_code={1})
+    inventory = count_global_unit_inventory(mock_unit_csv, mock_ground_csv, nation_id={1})
 
     # ID 105 total for Nat 1: 10 + 5 = 15
     assert inventory[105] == 15

@@ -46,7 +46,7 @@ from wite2_tools.utils.get_type_name import get_ob_full_name
 # Initialize the logger for this specific module
 log = get_logger(__name__)
 
-def find_unreferenced_ob_ids(ob_file_path: str, unit_file_path: str, nat_code=None) -> Set[int]:
+def find_unreferenced_ob_ids(ob_file_path: str, unit_file_path: str, nation_id=None) -> Set[int]:
     """
     Identifies IDs in the _ob CSV file that are never referenced by the 'type' or 'upgrade'
     columns in the _unit CSV file, further filtered by the nat_codes provided.
@@ -66,12 +66,12 @@ def find_unreferenced_ob_ids(ob_file_path: str, unit_file_path: str, nat_code=No
     ref_by_unit_ob_ids: Set[int] = set()
     ob_ids_to_unit_names: dict[int, list[str]] = {}
 
-    # Standardize nat_code to a set for efficient lookup
-    if nat_code is not None:
-        if isinstance(nat_code, (int, str)):
-            nat_filter = {int(nat_code)}
+    # Standardize nation_id to a set for efficient lookup
+    if nation_id is not None:
+        if isinstance(nation_id, (int, str)):
+            nat_filter = {int(nation_id)}
         else:
-            nat_filter = {int(n) for n in nat_code}
+            nat_filter = {int(n) for n in nation_id}
     else:
         nat_filter = None
 
@@ -93,11 +93,11 @@ def find_unreferenced_ob_ids(ob_file_path: str, unit_file_path: str, nat_code=No
 
         for _, row in ob_gen:
             try:
-                ob_nat = int(row.get('nat') or '0')
+                ob_nation_id = int(row.get('nat') or '0')
             except ValueError:
-                ob_nat = 0
+                ob_nation_id = 0
 
-            if nat_filter is not None and ob_nat not in nat_filter:
+            if nat_filter is not None and ob_nation_id not in nat_filter:
                 continue
 
             ob_id = int(row.get('id') or '0')
@@ -121,11 +121,11 @@ def find_unreferenced_ob_ids(ob_file_path: str, unit_file_path: str, nat_code=No
 
         for _, row in unit_gen:
             try:
-                unit_nat = int(row.get('nat','0'))
+                unit_nation_id = int(row.get('nat','0'))
             except ValueError:
-                unit_nat = 0
+                unit_nation_id = 0
 
-            if nat_filter is not None and unit_nat not in nat_filter:
+            if nat_filter is not None and unit_nation_id not in nat_filter:
                 continue
 
             unit_id = int(row.get('id') or '0')
@@ -245,7 +245,7 @@ def _get_cached_orphans(ob_file_path: str, unit_file_path: str, nat_code_tuple: 
     log.info("Building Orphan TOE(OB) cache for nat_codes %s...", nat_code_tuple)
     return find_unreferenced_ob_ids(ob_file_path, unit_file_path, nat_code_tuple)
 
-def is_ob_orphaned(ob_file_path: str, unit_file_path: str, ob_id_to_check: int, nat_code=None) -> bool:
+def is_ob_orphaned(ob_file_path: str, unit_file_path: str, ob_id_to_check: int, nation_id=None) -> bool:
     """
     Public function: Converts arguments to hashables and queries the cached set.
     """
@@ -253,12 +253,12 @@ def is_ob_orphaned(ob_file_path: str, unit_file_path: str, ob_id_to_check: int, 
     # 1. Convert the unhashable list/set into a hashable tuple
     nat_tuple: tuple[int, ...]
 
-    if nat_code is None:
+    if nation_id is None:
         nat_tuple = ()
-    elif isinstance(nat_code, (int, str)):
-        nat_tuple = (int(nat_code),)
+    elif isinstance(nation_id, (int, str)):
+        nat_tuple = (int(nation_id),)
     else:
-        nat_tuple = tuple(sorted(int(n) for n in nat_code))
+        nat_tuple = tuple(sorted(int(n) for n in nation_id))
 
     # 2. Retrieve the cached set (only calculates once per unique file/nat combination)
     orphan_set = _get_cached_orphans(ob_file_path, unit_file_path, nat_tuple)

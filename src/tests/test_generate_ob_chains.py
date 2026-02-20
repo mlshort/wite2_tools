@@ -59,8 +59,8 @@ def test_generate_ob_chains_nat_filter(mock_workspace):
     """Verifies that the nationality filter correctly isolates chains."""
     ob_file, csv_out, txt_out = mock_workspace
 
-    # Execute with nat_code={2}
-    num_chains = generate_ob_chains(ob_file, csv_out, txt_out, nat_code={2})
+    # Execute with nation_id={2}
+    num_chains = generate_ob_chains(ob_file, csv_out, txt_out, nation_id={2})
 
     # We expect only 1 root to be found (ID 40)
     assert num_chains == 1

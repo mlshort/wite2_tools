@@ -120,7 +120,7 @@ def evaluate_ob_consistency(ob_file_path: str, ground_file_path: str) -> int:
                 sqd_num_col = f"sqd.num{i}"
 
                 sqd_id_val = row.get(sqd_id_col, "0")
-                sqd_num_val = row.get(sqd_num_col, "0")
+                squad_quantity = row.get(sqd_num_col, "0")
 
                 if sqd_id_val != "0" and int(sqd_id_val) not in valid_elem_ids:
                     log.error("TOE(OB) (ID %d): Slot %d has Elem ID %s but Elem ID is not found in _ground.csv.",
@@ -128,9 +128,9 @@ def evaluate_ob_consistency(ob_file_path: str, ground_file_path: str) -> int:
                     issues_found += 1
 
                 # Inverse: If num > 0, sqd_id_val cannot be '0'
-                if sqd_num_val != "0" and sqd_id_val == "0":
+                if squad_quantity != "0" and sqd_id_val == "0":
                     log.warning("OB (ID %d): Ghost Squad! %s has quantity '%s' but %s is '0'",
-                                ob_id, sqd_num_col, sqd_num_val, sqd_id_col)
+                                ob_id, sqd_num_col, squad_quantity, sqd_id_col)
                     issues_found += 1
 
         if issues_found == 0:
@@ -230,7 +230,7 @@ def evaluate_unit_consistency(unit_file_path: str, ground_file_path: str,
                 sqd_num_col = f"sqd.num{i}"
 
                 sqd_id_val = row.get(sqd_id_col, "0")
-                sqd_num_val = row.get(sqd_num_col, "0")
+                squad_quantity = row.get(sqd_num_col, "0")
 
                 # Check for Invalid Elem IDs
                 if sqd_id_val != "0" and int(sqd_id_val) not in valid_elem_ids:
@@ -239,9 +239,9 @@ def evaluate_unit_consistency(unit_file_path: str, ground_file_path: str,
                     issues_found += 1
 
                 # Check for Ghost Squads (Quantity > 0 but ID == 0)
-                if sqd_num_val != "0" and sqd_id_val == "0":
+                if squad_quantity != "0" and sqd_id_val == "0":
                     log.error("ID %s (%s): Ghost Squad detected in Slot %d (Qty: %s).",
-                              unit_id, unit_name, i, sqd_num_val)
+                              unit_id, unit_name, i, squad_quantity)
                     issues_found += 1
 
                     if fix_ghosts:

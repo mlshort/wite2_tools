@@ -30,7 +30,7 @@ from functools import cache
 from dataclasses import dataclass
 
 # Internal package imports
-from wite2_tools.constants import GND_COL
+from wite2_tools.constants import GroundColumn
 from wite2_tools.generator import read_csv_dict_generator, read_csv_list_generator
 from wite2_tools.utils.logger import get_logger
 
@@ -130,9 +130,9 @@ def _build_ground_elem_lookup(ground_file_path: str) -> dict[int, str]:
 
         for _, row in ground_gen:
             try:
-                g_id = int(row[GND_COL.ID]) # 'id' column
+                g_id = int(row[GroundColumn.ID]) # 'id' column
                 if g_id != 0:
-                    lookup[g_id] = row[GND_COL.NAME].strip() # 'name' column
+                    lookup[g_id] = row[GroundColumn.NAME].strip() # 'name' column
             except (ValueError, IndexError):
                 continue
 

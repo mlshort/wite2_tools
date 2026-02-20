@@ -31,9 +31,9 @@ from functools import cache
 
 # Internal package imports
 from wite2_tools.constants import (
-    GND_COL,
-    OB_COL,
-    UNIT_COL
+    GroundColumn,
+    OBColumn,
+    UnitColumn
 )
 from wite2_tools.generator import read_csv_list_generator
 from wite2_tools.utils.logger import get_logger
@@ -59,8 +59,8 @@ def get_valid_ob_ids(ob_file_path: str) -> Set[int]:
 
         for _, row in data_gen:
             try:
-                ob_id = int(row[OB_COL.ID]) # 'id' column
-                ob_type = int(row[OB_COL.TYPE]) # 'type' column
+                ob_id = int(row[OBColumn.ID]) # 'id' column
+                ob_type = int(row[OBColumn.TYPE]) # 'type' column
                 if ob_id != 0 and ob_type != 0:
                     valid_ob_ids.add(ob_id)
             except (ValueError, IndexError):
@@ -89,11 +89,11 @@ def get_valid_ob_upgrade_ids(ob_file_path: str) -> Set[int]:
 
         for _, row in data_gen:
             try:
-                ob_id = int(row[OB_COL.ID]) # 'id' column
+                ob_id = int(row[OBColumn.ID]) # 'id' column
                 if ob_id == 0:
                     continue
-                ob_type = int(row[OB_COL.TYPE])   # 'type' column
-                ob_upgrade = int(row[OB_COL.UPGRADE]) # 'upgrade' column
+                ob_type = int(row[OBColumn.TYPE])   # 'type' column
+                ob_upgrade = int(row[OBColumn.UPGRADE]) # 'upgrade' column
 
                 if ob_type != 0 and ob_upgrade != 0:
                     valid_ob_upgrade_ids.add(ob_upgrade)
@@ -128,10 +128,10 @@ def get_valid_ground_elem_ids(ground_file_path: str) -> Set[int]:
         for _, row in ground_gen:
             try:
                 # Access by index to avoid duplicate header issues
-                ground_elem_id = int(row[GND_COL.ID])   # 1st 'id' column
+                ground_elem_id = int(row[GroundColumn.ID])   # 1st 'id' column
                 if ground_elem_id == 0:
                     continue
-                ground_type = int(row[GND_COL.TYPE])   # 'type' column
+                ground_type = int(row[GroundColumn.TYPE])   # 'type' column
                 if ground_type != 0:
                     valid_elem_ids.add(ground_elem_id)
             except (ValueError, IndexError):
@@ -163,8 +163,8 @@ def get_valid_unit_ids(unit_file_path: str) -> Set[int]:
         for _, row in unit_gen:
             try:
                 # Access by index to avoid duplicate header issues
-                unit_id = int(row[UNIT_COL.ID])   #  'id' column
-                unit_type = int(row[UNIT_COL.TYPE])   # 'type' column
+                unit_id = int(row[UnitColumn.ID])   #  'id' column
+                unit_type = int(row[UnitColumn.TYPE])   # 'type' column
                 if (unit_id == 0):
                     continue
 

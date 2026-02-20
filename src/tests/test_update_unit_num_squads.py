@@ -56,7 +56,7 @@ def test_update_unit_num_squads_success_and_filters(mock_update_unit_csv):
     updates = update_unit_num_squads(
         mock_update_unit_csv,
         target_ob_id=50,
-        ge_id=105,
+        wid=105,
         old_num_squads=10,
         new_num_squads=99
     )

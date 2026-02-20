@@ -30,5 +30,5 @@ def test_reorder_unit_elems_logic():
 def test_reorder_unit_squads_integration(mock_unit_csv):
     """Tests the full file-write process with real dot-notation headers."""
     # Target ID 42 is at slot 5 in the conftest fixture
-    updates = reorder_unit_squads(mock_unit_csv, target_unit_id=100, ge_id=42, move_to=0)
+    updates = reorder_unit_squads(mock_unit_csv, target_unit_id=100, wid=42, target_slot=0)
     assert updates == 1
