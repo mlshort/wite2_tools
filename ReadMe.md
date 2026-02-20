@@ -1,5 +1,7 @@
 # wite2_tools
 
+[![Build Status](https://github.com/mlshort/wite2_tools/actions/workflows/<YOUR_WORKFLOW_FILE.yml>/badge.svg)](https://github.com/mlshort/wite2_tools/actions)
+
 **Version:** 0.1.1
 **Author:** Mark L. Short
 
