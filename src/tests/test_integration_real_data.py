@@ -11,6 +11,7 @@ from wite2_tools.core.count_global_unit_inventory import count_global_unit_inven
 # Tell pytest this is a slow integration test
 pytestmark = pytest.mark.integration
 
+
 def test_real_data_paths_exist():
     """Sanity check: Ensure the real data files actually exist where expected."""
     assert os.path.exists(CONF_UNIT_FULL_PATH), f"Missing: {CONF_UNIT_FULL_PATH}"
