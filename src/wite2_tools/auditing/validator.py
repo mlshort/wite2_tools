@@ -127,14 +127,14 @@ def evaluate_ob_consistency(ob_file_path: str, ground_file_path: str) -> int:
 
 
 def evaluate_unit_consistency(unit_file_path: str, ground_file_path: str,
-                              only_active_units: bool = True, fix_ghosts: bool = False) -> int:
+                              active_only: bool = True, fix_ghosts: bool = False) -> int:
     """
     Validates a WiTE2 _unit CSV file for structural integrity and game-logic errors.
 
     Args:
         unit_file_path: Path to the unit CSV.
         ground_file_path: Path to the ground element CSV (for ID validation).
-        only_active_units: If True, skips units with id="0" or type="0".
+        active_only: If True, skips units with id="0" or type="0".
         fix_ghosts: If True, automatically zeroes out squad quantities where the ID is 0.
     """
     issues_found = 0
@@ -160,13 +160,14 @@ def evaluate_unit_consistency(unit_file_path: str, ground_file_path: str,
             writer = csv.DictWriter(temp_file, fieldnames=reader.fieldnames)  # type: ignore
             writer.writeheader()
         unit_file_base_name = os.path.basename(unit_file_path)
-        log.info("Evaluating Unit file consistency: '%s' (Fix Mode: %s)", unit_file_base_name, fix_ghosts)
+        log.info("Evaluating Unit file consistency:'%s' (Active Only:%s)(Fix Mode:%s)",
+                 unit_file_base_name, active_only, fix_ghosts)
 
         for _, row in unit_gen:
             unit_id = row.get("id", "0")
             unit_type = row.get("type", "0")
 
-            if only_active_units and (unit_id == "0" or unit_type == "0"):
+            if active_only and (unit_id == "0" or unit_type == "0"):
                 if fix_ghosts and writer:
                     writer.writerow(row)
                 continue
@@ -219,9 +220,10 @@ def evaluate_unit_consistency(unit_file_path: str, ground_file_path: str,
 
             # 4. Attachment/HQ Check
             if row.get('hhq', '0') == unit_id:
-                if row.get('hq', '0') != '1': # highest level HQ
-                    log.warning("ID %s (%s): Unit is reporting itself as its own HQ.",
-                                unit_id, unit_name)
+                unit_hq = int(row.get('hq') or '0')
+                if unit_hq != 0 and unit_hq != 1 :
+                    log.warning("ID %s (%s): Unit with HQ Type(%d), is reporting itself as its own HQ.",
+                                unit_id, unit_name, unit_hq)
                     issues_found += 1
 
             # Write the row (modified or original) to temp file
@@ -240,7 +242,7 @@ def evaluate_unit_consistency(unit_file_path: str, ground_file_path: str,
                 os.remove(temp_file.name)
 
         if issues_found == 0:
-            log.info("Unit Consistency Check Passed.")
+            log.info("%d Units Checked - Unit Consistency Check Passed.", len(seen_unit_ids))
         else:
             log.error("Unit Consistency Check Failed with %d issues.", issues_found)
 

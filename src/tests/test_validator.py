@@ -38,7 +38,7 @@ def test_evaluate_unit_consistency_detects_all_errors(mock_corrupted_unit_csv, m
     issues_found = evaluate_unit_consistency(
         mock_corrupted_unit_csv,
         mock_ground_csv,
-        only_active_units=True,
+        active_only=True,
         fix_ghosts=False
     )
 
@@ -53,7 +53,7 @@ def test_evaluate_unit_consistency_fixes_ghosts(mock_corrupted_unit_csv, mock_gr
     evaluate_unit_consistency(
         mock_corrupted_unit_csv,
         mock_ground_csv,
-        only_active_units=True,
+        active_only=True,
         fix_ghosts=True
     )
 
