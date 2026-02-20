@@ -11,7 +11,7 @@ To maintain data integrity, both the squad ID (`sqd X`) and the corresponding sq
 ensure memory efficiency and safe atomic file replacement.
 
 Command Line Usage:
-    python reorder_ob_squads.py [-h] target_ob_id wid target_slot
+    python -m wite2_tools.cli reorder-ob [-h] target_ob_id wid target_slot
 
 Arguments:
     target_ob_id (int): The target Order of Battle TOE(OB) ID.

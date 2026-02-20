@@ -22,6 +22,7 @@ Available Commands:
 [Core Analytics]
 * count-inventory : Counts global unit inventory (with optional nat filters).
 * find-orphans    : Identifies unreferenced TOE(OB) IDs.
+* check-orphan    : Checks if a specific TOE(OB) ID is orphaned.
 * gen-chains      : Generates TOE(OB) upgrade chains to CSV/TXT outputs.
 * group-units     : Groups active units by their assigned TOE(OB) ID.
 
@@ -29,6 +30,10 @@ Available Commands:
 * scan-ob-elem    : Scans OBs for a specific Ground Element WID.
 * scan-unit-elem  : Scans Units for a specific Ground Element WID.
 * scan-excess     : Scans units for excess supplies (ammo, fuel, etc.).
+
+[Utilities]
+* detect-encoding : Detects the character encoding of a specific file.
+* lookup          : Quick identity lookup for an OB, Ground, or Unit ID.
 
 Note: Target file paths are resolved automatically via the `paths.py` module
       unless explicitly overridden using the optional arguments.
@@ -46,6 +51,11 @@ from wite2_tools.paths import (
 )
 
 from wite2_tools.utils.det_encoding import detect_encoding
+from wite2_tools.utils.get_type_name import (
+    get_ob_full_name,
+    get_ground_elem_type_name,
+    get_unit_type_name
+)
 from wite2_tools.auditing.validator import evaluate_unit_consistency, evaluate_ob_consistency
 
 from wite2_tools.modifiers import (
@@ -65,6 +75,7 @@ from wite2_tools.auditing import (
 from wite2_tools.core import (
     count_global_unit_inventory,
     find_unreferenced_ob_ids,
+    is_ob_orphaned,
     generate_ob_chains,
     group_units_by_ob
 )
@@ -137,6 +148,8 @@ def main():
 
     batch_eval_parser = subparsers.add_parser('batch-eval',
                                               help='Batch runs consistency checks on CSV files')
+    batch_eval_parser.add_argument('--target', choices=['all', 'unit', 'ob'], default='all',
+                                   help="Optional: Which files to evaluate (default: %(default)s)")
     batch_eval_parser.add_argument('--data-path', default=LOCAL_DATA_PATH,
                                    help="Optional: (default: %(default)s)")
     batch_eval_parser.add_argument('active_only', type=str2bool, nargs='?', default=False,
@@ -150,7 +163,7 @@ def main():
                                    help="Optional: (default: %(default)s)")
     audit_unit_parser.add_argument('--ground-file', default=CONF_GROUND_FULL_PATH,
                                    help="Optional: (default: %(default)s)")
-    audit_unit_parser.add_argument('active_only', type=str2bool, nargs='?', default=False,
+    audit_unit_parser.add_argument('active_only', type=str2bool, nargs='?', default=True,
                                    help="Optional: Only evaluate active units (default: %(default)s)")
     audit_unit_parser.add_argument('fix_ghosts', type=str2bool, nargs='?', default=False,
                                    help="Optional: Fix ghost squads automatically (default: %(default)s)")
@@ -182,6 +195,12 @@ def main():
                                help="Optional: (default: %(default)s)")
     orphan_parser.add_argument('--nat-codes', type=int, nargs='+',
                                help='Optional: Filter by nationality codes (e.g., 1, 3)')
+
+    check_orphan_parser = subparsers.add_parser('check-orphan', help='Checks if a specific TOE(OB) ID is orphaned')
+    check_orphan_parser.add_argument('ob_id', type=int, help='The TOE(OB) ID to check')
+    check_orphan_parser.add_argument('--ob-file', default=CONF_OB_FULL_PATH, help="Optional: (default: %(default)s)")
+    check_orphan_parser.add_argument('--unit-file', default=CONF_UNIT_FULL_PATH, help="Optional: (default: %(default)s)")
+    check_orphan_parser.add_argument('--nat-codes', type=int, nargs='+', help='Optional: Filter by nationality codes (e.g., 1, 3)')
 
     chains_parser = subparsers.add_parser('gen-chains',
                                           help='Generates chronological TOE(OB) upgrade chains')
@@ -222,6 +241,12 @@ def main():
     # ==========================================
     # UTILITIES
     # ==========================================
+    lookup_parser = subparsers.add_parser('lookup', help='Quick identity lookup for game IDs')
+    lookup_parser.add_argument('--type', choices=['ob', 'ground'], required=True, help='The category of the ID')
+    lookup_parser.add_argument('--id', type=int, required=True, help='The ID to look up')
+    lookup_parser.add_argument('--ob-file', default=CONF_OB_FULL_PATH, help="Optional: (default: %(default)s)")
+    lookup_parser.add_argument('--ground-file', default=CONF_GROUND_FULL_PATH, help="Optional: (default: %(default)s)")
+
     enc_parser = subparsers.add_parser('detect-encoding',
                                        help='Detects the character encoding of a specific file')
     enc_parser.add_argument('file_path', type=str, help='Path to the file to check')
@@ -252,8 +277,10 @@ def main():
         elif args.command == 'audit-ground':
             audit_ground_element_csv(args.ground_file)
         elif args.command == 'batch-eval':
-            scan_and_evaluate_unit_files(args.data_path, args.active_only, args.fix_ghosts)
-            scan_and_evaluate_ob_files(args.data_path)
+            if args.target in ['all', 'unit']:
+                scan_and_evaluate_unit_files(args.data_path, args.active_only, args.fix_ghosts)
+            if args.target in ['all', 'ob']:
+                scan_and_evaluate_ob_files(args.data_path)
 
         # Single-file Auditing
         elif args.command == 'audit-unit':
@@ -268,6 +295,10 @@ def main():
             count_global_unit_inventory(args.unit_file, args.ground_file, args.nat_codes)
         elif args.command == 'find-orphans':
             find_unreferenced_ob_ids(args.ob_file, args.unit_file, args.nat_codes)
+        elif args.command == 'check-orphan':
+            is_orphan = is_ob_orphaned(args.ob_file, args.unit_file, args.ob_id, args.nat_codes)
+            status = "an ORPHAN (unused)" if is_orphan else "VALID (referenced)"
+            print(f"TOE(OB) ID {args.ob_id} is {status}.")
         elif args.command == 'gen-chains':
             generate_ob_chains(args.ob_file, args.csv_out, args.txt_out, args.nat_codes)
         elif args.command == 'group-units':
@@ -287,10 +318,21 @@ def main():
                 scan_units_for_excess_fuel(args.unit_file)
             elif args.operation == 'vehicles':
                 scan_units_for_excess_vehicles(args.unit_file)
+
         # Utilities
         elif args.command == 'detect-encoding':
             encoding = detect_encoding(args.file_path)
             print(f"Detected Encoding for {os.path.basename(args.file_path)}: {encoding}")
+
+        elif args.command == 'lookup':
+            name = "Unknown"  # Fallback to prevent UnboundLocalError
+
+            if args.type == 'ob':
+                name = get_ob_full_name(args.ob_file, args.id)
+            elif args.type == 'ground':
+                name = get_ground_elem_type_name(args.ground_file, args.id)
+
+            print(f"[{args.type.upper()}] ID {args.id}: {name}")
 
 
     except (FileNotFoundError, ValueError, KeyError, OSError) as e:

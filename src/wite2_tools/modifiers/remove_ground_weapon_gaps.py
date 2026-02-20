@@ -14,6 +14,13 @@ It synchronizes all 6 weapon attributes during the shift:
 - wpnRof (Rate of Fire)
 - wpnAcc (Accuracy)
 - wpnFace (Facing)
+
+Command Line Usage:
+    python -m wite2_tools.cli compact-weapons [--ground-file FILE]
+
+Example:
+    $ python -m wite2_tools.cli compact-weapons
+    Scans the default _ground.csv file and shifts weapons left/up to compact any empty slots.
 """
 from typing import Tuple
 import os
