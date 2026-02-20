@@ -1,12 +1,12 @@
 import csv
-import pytest
 
+import pytest
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.constants import MAX_SQUAD_SLOTS
 from wite2_tools.modifiers.replace_unit_ground_element import replace_unit_ground_element
 
-@pytest.fixture
+@pytest.fixture(name="mock_replace_unit_csv")
 def mock_replace_unit_csv(tmp_path):
     """Generates a mock _unit.csv to test global Ground Element replacements."""
     file_path = tmp_path / "mock_replace_unit.csv"

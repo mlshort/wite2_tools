@@ -26,12 +26,14 @@ Functions
   HQ attachment logic and map positioning.
 
 Command Line Usage:
-    python -m wite2_tools.cli audit-unit [--unit-file FILE] [--ground-file FILE] [active_only] [fix_ghosts]
+    python -m wite2_tools.cli audit-unit [--unit-file FILE] [--ground-file FILE]
+            [active_only] [fix_ghosts]
     python -m wite2_tools.cli audit-ob [--ob-file FILE] [--ground-file FILE]
 
 Example:
     $ python -m wite2_tools.cli audit-unit True True
-    Scans the default unit file, evaluating only active units, and automatically fixes any ghost squads found.
+    Scans the default unit file, evaluating only active units, and automatically
+    fixes any ghost squads found.
 
     $ python -m wite2_tools.cli audit-ob
     Scans the default TOE(OB) file for structural and logical errors.
@@ -123,7 +125,7 @@ def evaluate_ob_consistency(ob_file_path: str, ground_file_path: str) -> int:
                 squad_quantity = row.get(sqd_num_col, "0")
 
                 if sqd_id_val != "0" and int(sqd_id_val) not in valid_elem_ids:
-                    log.error("TOE(OB) (ID %d): Slot %d has Elem ID %s but Elem ID is not found in _ground.csv.",
+                    log.error("TOE(OB) (ID %d): Slot %d has WID %s but WID is not found in _ground.csv.",
                               ob_id, i, sqd_id_val)
                     issues_found += 1
 
@@ -176,7 +178,8 @@ def evaluate_unit_consistency(unit_file_path: str, ground_file_path: str,
 
         # Initialize temp file if fix mode is enabled
         if fix_ghosts:
-            temp_file = NamedTemporaryFile(mode='w', delete=False, dir=os.path.dirname(unit_file_path),
+            temp_file = NamedTemporaryFile(mode='w', delete=False,
+                                           dir=os.path.dirname(unit_file_path),
                                            newline='', encoding=ENCODING_TYPE)
             writer = csv.DictWriter(temp_file, fieldnames=reader.fieldnames)  # type: ignore
             writer.writeheader()
@@ -206,19 +209,23 @@ def evaluate_unit_consistency(unit_file_path: str, ground_file_path: str,
             try:
                 x, y = int(row.get('x', -1)), int(row.get('y', -1))
                 if not (MIN_X <= x <= MAX_X and MIN_Y <= y <= MAX_Y):
-                    log.warning("ID %s (%s): Invalid (x,y) coordinates (%d, %d)", unit_id, unit_name, x, y)
+                    log.warning("ID %s (%s): Invalid (x,y) coordinates (%d, %d)",
+                                unit_id, unit_name, x, y)
                     issues_found += 1
                 x, y = int(row.get('tx', -1)), int(row.get('ty', -1))
                 if not (MIN_X <= x <= MAX_X and MIN_Y <= y <= MAX_Y):
-                    log.warning("ID %s (%s): Invalid (tx,ty) coordinates (%d, %d)", unit_id, unit_name, x, y)
+                    log.warning("ID %s (%s): Invalid (tx,ty) coordinates (%d, %d)",
+                                unit_id, unit_name, x, y)
                     issues_found += 1
                 x, y = int(row.get('ax', -1)), int(row.get('ay', -1))
                 if not (MIN_X <= x <= MAX_X and MIN_Y <= y <= MAX_Y):
-                    log.warning("ID %s (%s): Invalid (ax,ay) coordinates (%d, %d)", unit_id, unit_name, x, y)
+                    log.warning("ID %s (%s): Invalid (ax,ay) coordinates (%d, %d)",
+                                unit_id, unit_name, x, y)
                     issues_found += 1
                 x, y = int(row.get('ptx', -1)), int(row.get('pty', -1))
                 if not (MIN_X <= x <= MAX_X and MIN_Y <= y <= MAX_Y):
-                    log.warning("ID %s (%s): Invalid (ptx,pty) coordinates (%d, %d)", unit_id, unit_name, x, y)
+                    log.warning("ID %s (%s): Invalid (ptx,pty) coordinates (%d, %d)",
+                                unit_id, unit_name, x, y)
                     issues_found += 1
             except (ValueError, TypeError):
                 log.error("ID %s (%s): Non-numeric coordinates detected.", unit_id, unit_name)
@@ -268,9 +275,9 @@ def evaluate_unit_consistency(unit_file_path: str, ground_file_path: str,
             # 5. Excess Delay Check
             unit_delay = int (row.get("delay") or "0")
             if unit_delay > MAX_GAME_TURNS:
-                    log.warning("ID %s (%s): Unit has a delay of %d, will never appear in game.",
+                log.warning("ID %s (%s): Unit has a delay of %d, will never appear in game.",
                                 unit_id, unit_name, unit_delay)
-                    issues_found += 1
+                issues_found += 1
 
             # Write the row (modified or original) to temp file
             if fix_ghosts and writer:

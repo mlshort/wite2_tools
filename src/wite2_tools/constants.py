@@ -693,4 +693,3 @@ class NatCode(IntEnum):
     FRA = 27
     DEN = 32
     SWE = 41
-

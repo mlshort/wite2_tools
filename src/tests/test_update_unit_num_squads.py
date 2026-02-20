@@ -6,7 +6,7 @@ from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.constants import MAX_SQUAD_SLOTS
 from wite2_tools.modifiers.update_unit_num_squads import update_unit_num_squads
 
-@pytest.fixture
+@pytest.fixture(name="mock_update_unit_csv")
 def mock_update_unit_csv(tmp_path):
     """Generates a 4-row truth table to test all conditional updating paths."""
     file_path = tmp_path / "mock_update_unit.csv"

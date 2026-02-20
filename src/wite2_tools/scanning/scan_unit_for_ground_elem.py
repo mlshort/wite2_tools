@@ -122,7 +122,9 @@ def scan_unit_for_ground_elem(
                 continue
 
             # 2. Search columns 'sqd.u0' through 'sqd.u31' for the target ID
-            matches_found = _check_squad_match(row, ob_full_path, wid, old_num_squads, matches_found)
+            matches_found = _check_squad_match(row, ob_full_path, wid,
+                                               old_num_squads,
+                                               matches_found)
 
         if matches_found == 0:
             print("No matches found.")

@@ -112,5 +112,3 @@ def reorder_unit_squads(unit_file_path: str, target_unit_id: int, wid: int, targ
         return row, False
 
     return process_csv_in_place(unit_file_path, process_row)
-
-

@@ -1,11 +1,11 @@
-import pytest
 import csv
+import pytest
 
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.modifiers.remove_ground_weapon_gaps import remove_ground_weapon_gaps
 
-@pytest.fixture
+@pytest.fixture(name="mock_ground_csv")
 def mock_ground_csv(tmp_path) -> str:
     """Generates a mock _ground.csv with intentional gaps in the weapon slots."""
     file_path = tmp_path / "mock_ground_weapons.csv"

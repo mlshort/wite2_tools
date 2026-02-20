@@ -8,7 +8,7 @@ from wite2_tools.core.group_units_by_ob import group_units_by_ob
 # FIXTURES (Setup)
 # ==========================================
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=True, name="clear_caches")
 def clear_caches():
     """
     Automatically runs before every test to clear the @cache decorator.
@@ -16,7 +16,7 @@ def clear_caches():
     """
     group_units_by_ob.cache_clear()
 
-@pytest.fixture
+@pytest.fixture(name="mock_unit_csv")
 def mock_unit_csv(tmp_path) -> str:
     """Creates a mock _unit.csv file for testing the grouping logic."""
     content = (
@@ -31,7 +31,7 @@ def mock_unit_csv(tmp_path) -> str:
     file_path.write_text(content, encoding=ENCODING_TYPE)
     return str(file_path)
 
-@pytest.fixture
+@pytest.fixture(name="mock_corrupted_unit_csv")
 def mock_corrupted_unit_csv(tmp_path) -> str:
     """Creates a mock _unit.csv with a ValueError trap."""
     content = (

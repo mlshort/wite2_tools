@@ -37,10 +37,12 @@ from wite2_tools.utils.parsing import parse_int
 log = get_logger(__name__)
 
 
-def _scan_excess_resource(unit_file_path: str, resource_col: str, need_col: str, display_name: str) -> int:
+def _scan_excess_resource(unit_file_path: str, resource_col: str,
+                          need_col: str, display_name: str) -> int:
     """
     Generic helper to scan for excess logistical stores.
-    Logic: If resource > (EXCESS_RESOURCE_MULTIPLIER * need), print row, id, name, nat, resource, and need.
+    Logic: If resource > (EXCESS_RESOURCE_MULTIPLIER * need),
+           print row, id, name, nat, resource, and need.
     """
     if not os.path.exists(unit_file_path):
         log.error("Error: The file '%s' was not found.", unit_file_path)
@@ -98,7 +100,8 @@ def _scan_excess_resource(unit_file_path: str, resource_col: str, need_col: str,
         if matches_found == 0:
             print(f"\nNo rows met the condition ({display_name} > 5 * {need_col}).")
         else:
-            print(f"\nScan complete. Found {matches_found} unit(s) with excess {display_name.lower()}.")
+            print(f"\nScan complete. Found {matches_found} "
+                  "unit(s) with excess {display_name.lower()}.")
 
     except (OSError, ValueError, KeyError) as e:
         log.exception("An error occurred during scanning: %s", e)

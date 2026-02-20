@@ -1,5 +1,5 @@
-import pytest
 
+import pytest
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.core.group_units_by_ob import group_units_by_ob
@@ -9,12 +9,12 @@ from wite2_tools.core.count_global_unit_inventory import count_global_unit_inven
 # FIXTURES (Setup)
 # ==========================================
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=True, name="clear_caches")
 def clear_caches():
     """Clear the group_units_by_ob cache between tests."""
     group_units_by_ob.cache_clear()
 
-@pytest.fixture
+@pytest.fixture(name="mock_unit_csv")
 def mock_unit_csv(tmp_path) -> str:
     content = (
         "id,name,type,nat,sqd.u0,sqd.num0,sqd.u1,sqd.num1\n"
@@ -27,7 +27,7 @@ def mock_unit_csv(tmp_path) -> str:
     file_path.write_text(content, encoding=ENCODING_TYPE)
     return str(file_path)
 
-@pytest.fixture
+@pytest.fixture(name="mock_ground_csv")
 def mock_ground_csv(tmp_path) -> str:
     content = "id,name,other,type\n105,Panzer IV,x,1\n106,Tiger I,x,1\n"
     file_path = tmp_path / "mock_ground.csv"

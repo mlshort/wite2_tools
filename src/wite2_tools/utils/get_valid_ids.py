@@ -165,7 +165,7 @@ def get_valid_unit_ids(unit_file_path: str) -> Set[int]:
                 # Access by index to avoid duplicate header issues
                 unit_id = int(row[UnitColumn.ID])   #  'id' column
                 unit_type = int(row[UnitColumn.TYPE])   # 'type' column
-                if (unit_id == 0):
+                if unit_id == 0:
                     continue
 
                 if unit_type != 0:
@@ -180,4 +180,3 @@ def get_valid_unit_ids(unit_file_path: str) -> Set[int]:
     except FileNotFoundError:
         logger.error("Unit file not found: %s", unit_file_path)
         return set()
-

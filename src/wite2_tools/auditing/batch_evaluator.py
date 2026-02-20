@@ -2,10 +2,10 @@
 Batch Evaluation Utility
 ========================
 
-This module provides batch evaluation capabilities for War in the East 2 (WiTE2) scenario directories.
-It scans a target folder for `_unit`, `_ob`, and `_ground` CSV files, automatically running
-comprehensive structural and logical consistency checks across the entire dataset to identify
-errors, fix ghost squads, and prevent runtime game crashes.
+This module provides batch evaluation capabilities for War in the East 2 (WiTE2) scenario
+directories. It scans a target folder for `_unit`, `_ob`, and `_ground` CSV files,
+automatically running comprehensive structural and logical consistency checks across the
+entire dataset to identify errors, fix ghost squads, and prevent runtime game crashes.
 
 Command Line Usage:
     python -m wite2_tools.cli batch-eval [--data-path PATH] [active_only] [fix_ghosts]
@@ -16,7 +16,8 @@ Arguments:
 
 Example:
     $ python -m wite2_tools.cli batch-eval --data-path "C:\\My Mods" True False
-    Scans all _unit and _ob CSV files in the specified folder for consistency, checking only active units.
+    Scans all _unit and _ob CSV files in the specified folder for consistency,
+    checking only active units.
 """
 
 import os
@@ -128,4 +129,3 @@ def scan_and_evaluate_ob_files(target_folder: str):
 
     print(f"\nScan complete. {files_processed} ob files checked. {total_issues} issues found.")
     print("Check the latest log in your /logs folder for specific row details.")
-

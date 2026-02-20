@@ -13,7 +13,7 @@ from wite2_tools.utils.get_valid_ids import (
 # FIXTURES (Setup)
 # ==========================================
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=True, name="clear_caches")
 def clear_caches():
     """
     Automatically runs before every test to clear the @cache decorators.
@@ -24,7 +24,7 @@ def clear_caches():
     get_valid_ground_elem_ids.cache_clear()
     get_valid_unit_ids.cache_clear()
 
-@pytest.fixture
+@pytest.fixture(name="mock_ob_csv")
 def mock_ob_csv(tmp_path) -> str:
     """
     Creates a temporary _ob.csv.
@@ -44,7 +44,7 @@ def mock_ob_csv(tmp_path) -> str:
     file_path.write_text(content, encoding=ENCODING_TYPE)
     return str(file_path)
 
-@pytest.fixture
+@pytest.fixture(name="mock_ground_csv")
 def mock_ground_csv(tmp_path) -> str:
     """
     Creates a temporary _ground.csv.
@@ -63,7 +63,7 @@ def mock_ground_csv(tmp_path) -> str:
     file_path.write_text(content, encoding=ENCODING_TYPE)
     return str(file_path)
 
-@pytest.fixture
+@pytest.fixture(name="mock_unit_csv")
 def mock_unit_csv(tmp_path) -> str:
     """
     Creates a temporary _unit.csv.

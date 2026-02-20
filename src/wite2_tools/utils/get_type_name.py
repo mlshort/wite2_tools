@@ -91,7 +91,7 @@ def get_ob_full_name(ob_file_path: str, ob_id_to_find: int) -> str:
     # 2. Perform instant O(1) lookup
     result = cached_dict.get(ob_id_to_find)
 
-    if result:
+    if result is not None:
         return result.full_name
     else:
         return f"Unk ({ob_id_to_find})"

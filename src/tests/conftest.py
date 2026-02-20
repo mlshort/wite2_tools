@@ -1,16 +1,17 @@
-import pytest
 import csv
 from typing import Dict
 
+import pytest
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.constants import MAX_SQUAD_SLOTS
+
 
 # ==========================================
 # UNIT FILE FIXTURES (_unit.csv)
 # ==========================================
 
-@pytest.fixture
+@pytest.fixture(name="mock_unit_csv")
 def mock_unit_csv(tmp_path) -> str:
     """
     Generates a mock _unit.csv using DOT notation (sqd.u0, sqd.num0).
@@ -70,7 +71,7 @@ def mock_unit_csv(tmp_path) -> str:
 # TOE(OB) FILE FIXTURES (_ob.csv)
 # ==========================================
 
-@pytest.fixture
+@pytest.fixture(name="mock_ob_csv")
 def mock_ob_csv(tmp_path) -> str:
     """
     Generates a mock _ob.csv using SPACE notation (sqd 0, sqdNum 0).
@@ -107,7 +108,7 @@ def mock_ob_csv(tmp_path) -> str:
 # GROUND ELEMENT FIXTURES (_ground.csv)
 # ==========================================
 
-@pytest.fixture
+@pytest.fixture(name="mock_ground_csv")
 def mock_ground_csv(tmp_path) -> str:
     """Creates a minimal _ground.csv for lookup validation."""
     file_path = tmp_path / "mock_ground.csv"

@@ -68,4 +68,3 @@ def read_csv_dict_generator(
 
         for index, row in enumerate(reader, start=enum_start):
             yield index, row
-

@@ -55,7 +55,7 @@ def update_unit_num_squads(unit_file_path: str, target_ob_id: int, wid: int, old
              os.path.basename(unit_file_path), target_ob_id, wid)
 
     # Define the specific logic for processing a Unit row
-    def process_row(row: dict, row_idx: int) -> tuple[dict, bool]:
+    def process_row(row: dict, _: int) -> tuple[dict, bool]:
         was_modified = False
         unit_id = int(row.get('id') or '0')
         unit_type = int(row.get('type') or '0') # unit 'type' maps to TOE(OB) ID
@@ -89,7 +89,3 @@ def update_unit_num_squads(unit_file_path: str, target_ob_id: int, wid: int, old
     log.info("Finished. Total rows modified: %d", total_updates)
     print(f"Success! {total_updates} row(s) updated.")
     return total_updates
-
-
-
-

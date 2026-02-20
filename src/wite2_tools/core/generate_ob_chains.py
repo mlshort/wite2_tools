@@ -26,15 +26,17 @@ Main Functions:
                        and writes the exports to the specified file paths.
 
 Command Line Usage:
-    python -m wite2_tools.cli gen-chains [--ob-file FILE] [--csv-out FILE] [--txt-out FILE] [--nat-codes NAT_CODES [NAT_CODES ...]]
+    python -m wite2_tools.cli gen-chains [--ob-file FILE] [--csv-out FILE]
+        [--txt-out FILE] [--nat-codes NAT_CODES [NAT_CODES ...]]
 
 Example:
     $ python -m wite2_tools.cli gen-chains --nat-codes 1
-    Generates and exports chronological TOE(OB) upgrade chains strictly for the German (Nat 1) faction.
+    Generates and exports chronological TOE(OB) upgrade chains strictly for the
+    German (Nat 1) faction.
 """
 import csv
 import os
-from typing import Optional, Union, Iterable, cast, List
+from typing import Optional, Union, Iterable, cast
 
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE

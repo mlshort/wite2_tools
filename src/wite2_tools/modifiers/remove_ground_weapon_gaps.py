@@ -39,7 +39,8 @@ def remove_ground_weapon_gaps(ground_file_path: str) -> int:
     and shifts valid weapons left/up to fill those gaps.
     """
 
-    log.info("Task Start: Compacting empty weapon slots in '%s'", os.path.basename(ground_file_path))
+    log.info("Task Start: Compacting empty weapon slots in '%s'",
+             os.path.basename(ground_file_path))
 
     def process_row(row: dict, row_idx: int) -> Tuple[dict, bool]:
         valid_weapons = []

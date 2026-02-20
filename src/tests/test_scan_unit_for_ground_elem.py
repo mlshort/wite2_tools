@@ -4,7 +4,7 @@ import pytest
 from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.scanning.scan_unit_for_ground_elem import scan_unit_for_ground_elem
 
-@pytest.fixture
+@pytest.fixture(name="mock_ground_csv")
 def mock_ground_csv(tmp_path) -> str:
     """Minimal ground file required for the scanner's name lookups."""
     content = "id,name,other,type\n42,Tiger I,x,1\n"

@@ -1,6 +1,7 @@
-import pytest
 from typing import Tuple
+import pytest
 
+# Internal package imports
 from wite2_tools.constants import MAX_SQUAD_SLOTS
 from wite2_tools.modifiers.reorder_unit_squads import (
     reorder_unit_elems,
@@ -10,7 +11,8 @@ from wite2_tools.modifiers.reorder_unit_squads import (
 def test_reorder_unit_elems_logic():
     """Verifies all 8 unit attributes shift in sync."""
     # We must provide all prefixes the function loops over
-    prefixes = ["sqd.u", "sqd.num", "sqd.dis", "sqd.dam", "sqd.fat", "sqd.fired", "sqd.exp", "sqd.expAccum"]
+    prefixes = ["sqd.u", "sqd.num", "sqd.dis", "sqd.dam", "sqd.fat",
+                "sqd.fired", "sqd.exp", "sqd.expAccum"]
     row = {}
     for p in prefixes:
         for i in range(MAX_SQUAD_SLOTS):

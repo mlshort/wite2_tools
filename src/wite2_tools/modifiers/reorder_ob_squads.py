@@ -85,7 +85,7 @@ def reorder_ob_squads(ob_file_path: str, target_ob_id: int, wid: int, target_slo
              ob_file_path, target_ob_id, ge_id_str, target_slot)
 
     # Define the specific logic for processing an TOE(OB) row
-    def process_row(row: dict, row_idx: int) -> tuple[dict, bool]:
+    def process_row(row: dict, _: int) -> tuple[dict, bool]:
         ob_id = int(row.get("id") or "0")
         if target_ob_id == ob_id:
             for i in range(MAX_SQUAD_SLOTS):
@@ -100,4 +100,3 @@ def reorder_ob_squads(ob_file_path: str, target_ob_id: int, wid: int, target_slo
 
     # Execute via the shared wrapper
     return process_csv_in_place(ob_file_path, process_row)
-

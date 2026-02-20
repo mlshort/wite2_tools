@@ -1,6 +1,6 @@
 import csv
-import pytest
 
+import pytest
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.auditing.audit_ground_element import audit_ground_element_csv
@@ -9,7 +9,7 @@ from wite2_tools.auditing.audit_ground_element import audit_ground_element_csv
 # FIXTURES (Setup)
 # ==========================================
 
-@pytest.fixture
+@pytest.fixture(name="mock_ground_csv")
 def mock_ground_csv(tmp_path) -> str:
     """Generates a mock _ground.csv with various logical edge cases."""
     file_path = tmp_path / "mock_ground_audit.csv"

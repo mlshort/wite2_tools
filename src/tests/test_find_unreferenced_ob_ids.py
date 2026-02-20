@@ -1,6 +1,6 @@
-import pytest
 import csv
 
+import pytest
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.constants import MAX_SQUAD_SLOTS
@@ -10,7 +10,7 @@ from wite2_tools.core.find_unreferenced_ob_ids import find_unreferenced_ob_ids
 # FIXTURES (Setup)
 # ==========================================
 
-@pytest.fixture
+@pytest.fixture(name="mock_ob_csv")
 def mock_ob_csv(tmp_path) -> str:
     """
     Creates a mock _ob.csv with various upgrade chains and edge cases.
@@ -30,7 +30,7 @@ def mock_ob_csv(tmp_path) -> str:
     file_path.write_text(content, encoding=ENCODING_TYPE)
     return str(file_path)
 
-@pytest.fixture
+@pytest.fixture(name="mock_unit_csv")
 def mock_unit_csv(tmp_path):
     file_path = tmp_path / "mock_unit.csv"
 

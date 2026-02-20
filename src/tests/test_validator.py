@@ -1,6 +1,6 @@
 import csv
-import pytest
 
+import pytest
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.auditing.validator import evaluate_unit_consistency
@@ -9,14 +9,14 @@ from wite2_tools.auditing.validator import evaluate_unit_consistency
 # FIXTURES (Setup)
 # ==========================================
 
-@pytest.fixture
+@pytest.fixture(name="mock_ground_csv")
 def mock_ground_csv(tmp_path) -> str:
     content = "id,name,other,type\n105,Panzer IV,x,1\n"
     file_path = tmp_path / "mock_ground.csv"
     file_path.write_text(content, encoding=ENCODING_TYPE)
     return str(file_path)
 
-@pytest.fixture
+@pytest.fixture(name="mock_corrupted_unit_csv")
 def mock_corrupted_unit_csv(tmp_path) -> str:
     """Creates a unit file with multiple deliberate errors for the validator to catch."""
     content = (

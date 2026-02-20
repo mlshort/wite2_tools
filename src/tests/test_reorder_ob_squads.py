@@ -1,7 +1,6 @@
 import pytest
 
 # Internal package imports
-from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.constants import MAX_SQUAD_SLOTS
 from wite2_tools.modifiers.reorder_ob_squads import (
     reorder_ob_elems,

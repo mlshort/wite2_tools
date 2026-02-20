@@ -38,7 +38,6 @@ from functools import cache
 from typing import Set
 
 # Internal package imports
-from wite2_tools.constants import NatCode
 from wite2_tools.generator import read_csv_dict_generator
 from wite2_tools.utils.logger import get_logger
 from wite2_tools.utils.get_type_name import get_ob_full_name
@@ -240,7 +239,8 @@ def _get_cached_orphans(ob_file_path: str, unit_file_path: str, nat_code_tuple: 
     log.info("Building Orphan TOE(OB) cache for nat_codes %s...", nat_code_tuple)
     return find_unreferenced_ob_ids(ob_file_path, unit_file_path, nat_code_tuple)
 
-def is_ob_orphaned(ob_file_path: str, unit_file_path: str, ob_id_to_check: int, nation_id=None) -> bool:
+def is_ob_orphaned(ob_file_path: str, unit_file_path: str, ob_id_to_check: int,
+                   nation_id=None) -> bool:
     """
     Public function: Converts arguments to hashables and queries the cached set.
     """
@@ -260,4 +260,3 @@ def is_ob_orphaned(ob_file_path: str, unit_file_path: str, ob_id_to_check: int, 
 
     # 3. Perform O(1) lookup
     return ob_id_to_check in orphan_set
-

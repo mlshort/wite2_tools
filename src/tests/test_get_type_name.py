@@ -13,7 +13,7 @@ from wite2_tools.utils.get_type_name import (
 # FIXTURES (Setup)
 # ==========================================
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=True, name="clear_caches")
 def clear_caches():
     """
     Automatically runs before every test to clear the @cache decorators.
@@ -22,7 +22,7 @@ def clear_caches():
     _build_ob_lookup.cache_clear()
     _build_ground_elem_lookup.cache_clear()
 
-@pytest.fixture
+@pytest.fixture(name="mock_ob_csv")
 def mock_ob_csv(tmp_path) -> str:
     """Creates a temporary, miniaturized _ob.csv file for testing."""
     content = (
@@ -37,7 +37,7 @@ def mock_ob_csv(tmp_path) -> str:
     file_path.write_text(content, encoding=ENCODING_TYPE)
     return str(file_path)
 
-@pytest.fixture
+@pytest.fixture(name="mock_ground_csv")
 def mock_ground_csv(tmp_path) -> str:
     """Creates a temporary, miniaturized _ground.csv file for testing."""
     content = (

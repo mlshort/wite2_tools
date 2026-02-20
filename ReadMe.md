@@ -1,6 +1,6 @@
 # wite2_tools
 
-**Version:** 0.1.0
+**Version:** 0.1.1
 **Author:** Mark L. Short
 
 A specialized, Python-based toolkit for managing, modifying, and analyzing

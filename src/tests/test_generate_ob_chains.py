@@ -1,4 +1,3 @@
-import os
 import csv
 import pytest
 
@@ -10,7 +9,7 @@ from wite2_tools.core.generate_ob_chains import generate_ob_chains
 # FIXTURES (Setup)
 # ==========================================
 
-@pytest.fixture
+@pytest.fixture(name="mock_workspace")
 def mock_workspace(tmp_path) -> tuple[str, str, str]:
     """
     Creates a temporary workspace containing a mock _ob.csv file

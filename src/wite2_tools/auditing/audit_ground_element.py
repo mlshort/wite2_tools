@@ -4,7 +4,8 @@ Ground Element Audit Utility
 
 This module provides functionality to audit War in the East 2 (WiTE2) `_ground.csv` files.
 It scans the ground elements database to ensure structural and logical consistency, identifying
-issues such as duplicate WIDs, missing or invalid element types, and malformed size or manpower data.
+issues such as duplicate WIDs, missing or invalid element types, and malformed size or
+manpower data.
 
 Command Line Usage:
     python -m wite2_tools.cli audit-ground [--ground-file FILE]
@@ -104,7 +105,8 @@ def audit_ground_element_csv(ground_file_path: str) -> int:
 
                 elif ground_men > MAX_GROUND_MEN:
                     log.warning("WID %d (%s): %s has %d > %d men assigned",
-                                ground_id, ground_name, element_class_name, ground_men, MAX_GROUND_MEN)
+                                ground_id, ground_name, element_class_name,
+                                ground_men, MAX_GROUND_MEN)
                     issues_found += 1
 
             except ValueError:
@@ -118,5 +120,3 @@ def audit_ground_element_csv(ground_file_path: str) -> int:
     except (OSError, IOError, ValueError, KeyError, IndexError) as e:
         log.exception("An unexpected error occurred during the audit: %s", e)
         return -1
-
-

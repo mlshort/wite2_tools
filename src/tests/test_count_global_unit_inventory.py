@@ -1,6 +1,7 @@
-import pytest
 import csv
+from pathlib import Path
 
+import pytest
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.constants import MAX_SQUAD_SLOTS
@@ -10,16 +11,16 @@ from wite2_tools.core.count_global_unit_inventory import count_global_unit_inven
 # FIXTURES (Setup)
 # ==========================================
 
-@pytest.fixture
-def mock_ground_csv(tmp_path) -> str:
+@pytest.fixture(name="mock_ground_csv")
+def mock_ground_csv(tmp_path: Path) -> str:
     """Creates a minimal _ground.csv for lookup name resolution."""
     content = "id,name,other,type\n101,Panzer III,x,1\n102,Infantry Sqd,x,1\n"
     file_path = tmp_path / "mock_ground.csv"
     file_path.write_text(content, encoding=ENCODING_TYPE)
     return str(file_path)
 
-@pytest.fixture
-def mock_unit_csv(tmp_path) -> str:
+@pytest.fixture(name="mock_unit_csv")
+def mock_unit_csv(tmp_path: Path) -> str:
     """Generates a mock file using the exact 32-slot dot notation from _unit.csv."""
     file_path = tmp_path / "mock_unit_inventory.csv"
 

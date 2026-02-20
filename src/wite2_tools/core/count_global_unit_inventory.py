@@ -21,7 +21,8 @@ Main Functions:
                                 Ground Element WIDs to their total quantities.
 
 Command Line Usage:
-    python -m wite2_tools.cli count-inventory [--unit-file FILE] [--ground-file FILE] [--nat-codes NAT_CODES [NAT_CODES ...]]
+    python -m wite2_tools.cli count-inventory [--unit-file FILE] [--ground-file FILE]
+        [--nat-codes NAT_CODES [NAT_CODES ...]]
 
 Arguments:
     --nat-codes: Optional filter by nationality codes (e.g., 1 for Germany, 3 for Italy).
@@ -112,8 +113,10 @@ def count_global_unit_inventory(
 
         for ground_element_id, total in sorted_inventory:
             if total > 0:
-                ground_elem_name_str = get_ground_elem_type_name(ground_file_path, ground_element_id)
-                log.info("%s(%d): Total Count = %d", ground_elem_name_str, ground_element_id, total)
+                ground_elem_name_str = get_ground_elem_type_name(ground_file_path,
+                                                                 ground_element_id)
+                log.info("%s(%d): Total Count = %d", ground_elem_name_str,
+                         ground_element_id, total)
 
     except StopIteration:
         log.error("The _unit file appears to be empty.")
@@ -121,4 +124,3 @@ def count_global_unit_inventory(
         log.error("An error occurred reading the file: %s", e)
 
     return inventory
-

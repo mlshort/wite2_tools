@@ -1,7 +1,6 @@
 import pytest
 
 # Internal package imports
-from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.scanning.scan_ob_for_ground_elem import scan_ob_for_ground_elem
 
 def test_scan_ob_for_ground_elem_success(mock_ob_csv, capsys):

@@ -1,12 +1,12 @@
-import pytest
 import csv
 from typing import cast
+import pytest
 
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.generator import read_csv_list_generator, read_csv_dict_generator
 
-@pytest.fixture
+@pytest.fixture(name="mock_basic_csv")
 def mock_basic_csv(tmp_path) -> str:
     content = "col1,col2,col3\nval1,val2,val3\nval4,val5,val6\n"
     file_path = tmp_path / "mock_basic.csv"
