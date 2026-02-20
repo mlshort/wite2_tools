@@ -33,6 +33,7 @@ from wite2_tools.constants import MAX_SQUAD_SLOTS
 from wite2_tools.generator import read_csv_dict_generator
 from wite2_tools.utils.get_type_name import get_unit_type_name, get_ground_elem_type_name
 from wite2_tools.utils.logger import get_logger
+from wite2_tools.utils.parsing import parse_int
 
 log = get_logger(__name__)
 
@@ -116,11 +117,7 @@ def scan_unit_for_ground_elem(
             raw_unit_type = row.get('type', '0')
 
             # Convert to numbers for math comparison
-            try:
-                unit_type = int(raw_unit_type)
-            except ValueError:
-                continue
-
+            unit_type = parse_int(raw_unit_type)
             if unit_type == 0:
                 continue
 

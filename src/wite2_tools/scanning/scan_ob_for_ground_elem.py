@@ -28,6 +28,7 @@ from wite2_tools.constants import MAX_SQUAD_SLOTS
 from wite2_tools.generator import read_csv_dict_generator
 from wite2_tools.utils.lookups import get_ob_type_code_name
 from wite2_tools.utils.logger import get_logger
+from wite2_tools.utils.parsing import parse_int
 
 log = get_logger(__name__)
 
@@ -65,12 +66,8 @@ def scan_ob_for_ground_elem(ob_file_path: str, ground_elem_id: int) -> int:
             raw_ob_id = row.get("id", "0")
 
             # Convert to numbers for math comparison
-            try:
-                ob_type = int(raw_ob_type)
-                ob_id = int(raw_ob_id)
-            except ValueError:
-                # Skip rows where data isn't a number
-                continue
+            ob_type = parse_int(raw_ob_type)
+            ob_id = parse_int(raw_ob_id)
 
             if ob_id == 0 or ob_type == 0:
                 # Skip rows where type or id == 0

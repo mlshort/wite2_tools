@@ -25,6 +25,7 @@ __date__ = "2026-02-19"
 
 # Expose common configuration so other modules can access it easily
 from .logger import get_logger
+from .parsing import parse_int
 from .lookups import (
     get_nat_abbr,
     get_ob_type_code_name,
@@ -50,6 +51,7 @@ from .get_valid_ids import (
 
 __all__ = [
     "get_logger",
+    "parse_int",
     "get_nat_abbr",
     "get_ob_type_code_name",
     "get_device_type_name",

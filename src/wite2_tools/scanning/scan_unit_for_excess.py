@@ -31,6 +31,7 @@ from wite2_tools.constants import EXCESS_RESOURCE_MULTIPLIER
 from wite2_tools.generator import read_csv_dict_generator
 from wite2_tools.utils.lookups import get_nat_abbr
 from wite2_tools.utils.logger import get_logger
+from wite2_tools.utils.parsing import parse_int
 
 # Initialize the log for this specific module
 log = get_logger(__name__)
@@ -66,12 +67,11 @@ def _scan_excess_resource(unit_file_path: str, resource_col: str, need_col: str,
             raw_unit_type = row.get('type', '0')
 
             # 2. Convert to numbers (int) for math comparison
-            try:
-                resource_val = int(raw_resource)
-                need_val = int(raw_need)
-                unit_type_val = int(raw_unit_type)
-            except ValueError:
-                # Skip rows where data isn't a number
+            resource_val = parse_int(raw_resource)
+            need_val = parse_int(raw_need)
+            unit_type_val = parse_int(raw_unit_type)
+
+            if unit_type_val == 0:
                 continue
 
             if unit_type_val == 0:

@@ -42,6 +42,7 @@ from wite2_tools.constants import NatCode
 from wite2_tools.generator import read_csv_dict_generator
 from wite2_tools.utils.logger import get_logger
 from wite2_tools.utils.get_type_name import get_ob_full_name
+from wite2_tools.utils.parsing import parse_int
 
 # Initialize the logger for this specific module
 log = get_logger(__name__)
@@ -92,10 +93,7 @@ def find_unreferenced_ob_ids(ob_file_path: str, unit_file_path: str, nation_id=N
         next(ob_gen) # Skip DictReader header yield
 
         for _, row in ob_gen:
-            try:
-                ob_nation_id = int(row.get('nat') or '0')
-            except ValueError:
-                ob_nation_id = 0
+            ob_nation_id = parse_int(row.get('nat'))
 
             if nat_filter is not None and ob_nation_id not in nat_filter:
                 continue
@@ -120,10 +118,7 @@ def find_unreferenced_ob_ids(ob_file_path: str, unit_file_path: str, nation_id=N
         ref_upgraded_id_count = 0
 
         for _, row in unit_gen:
-            try:
-                unit_nation_id = int(row.get('nat','0'))
-            except ValueError:
-                unit_nation_id = 0
+            unit_nation_id = parse_int(row.get('nat'))
 
             if nat_filter is not None and unit_nation_id not in nat_filter:
                 continue
