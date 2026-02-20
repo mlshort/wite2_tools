@@ -1,9 +1,9 @@
 """
-Order of Battle (OB) Upgrade Chain Generator
+Order of Battle TOE(OB) Upgrade Chain Generator
 ===========================================
 
 This module parses the War in the East 2 (WiTE2) `_ob.csv` file to map and generate
-complete chronological upgrade paths (chains) for OB templates.
+complete chronological upgrade paths (chains) for TOE(OB) templates.
 
 It works by identifying "Root" OBs—templates that are never the destination of an
 upgrade—and recursively tracing their 'upgrade' column references until the end of
@@ -24,6 +24,13 @@ Main Functions:
 ---------------
 * generate_ob_chains : The primary function that parses the data, traces the chains,
                        and writes the exports to the specified file paths.
+
+Command Line Usage:
+    python -m wite2_tools.cli gen-chains [--ob-file FILE] [--csv-out FILE] [--txt-out FILE] [--nat-codes NAT_CODES [NAT_CODES ...]]
+
+Example:
+    $ python -m wite2_tools.cli gen-chains --nat-codes 1
+    Generates and exports chronological TOE(OB) upgrade chains strictly for the German (Nat 1) faction.
 """
 import csv
 import os
@@ -45,7 +52,7 @@ def generate_ob_chains(
     nat_code: Optional[Union[int, str, Iterable[Union[int, str]]]] = None
 ) -> int:
     """
-    Generates OB upgrade chains, optionally filtered by a specific nationality code.
+    Generates TOE(OB) upgrade chains, optionally filtered by a specific nationality code.
 
     :param ob_file_path: Path to the source _ob.csv
     :param csv_output_path: Path to save the CSV results
@@ -67,7 +74,7 @@ def generate_ob_chains(
     else:
         nat_filter = None
 
-    log.info("Starting OB Upgrade Chain Generation from '%s'", os.path.basename(ob_file_path))
+    log.info("Starting TOE(OB) Upgrade Chain Generation from '%s'", os.path.basename(ob_file_path))
 
     # 1. Read the input _ob CSV and build mappings
     data_gen = read_csv_dict_generator(ob_file_path)
@@ -124,7 +131,7 @@ def generate_ob_chains(
         while curr != 0 and curr in ob_id_to_name_map:
             if curr in visited:
                 chain.append(f"{curr} (LOOP)")
-                log.warning("Infinite loop detected in upgrade chain at OB ID %d", curr)
+                log.warning("Infinite loop detected in upgrade chain at TOE(OB) ID %d", curr)
                 break
 
             chain.append(curr)

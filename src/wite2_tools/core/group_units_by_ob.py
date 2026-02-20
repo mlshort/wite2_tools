@@ -1,13 +1,20 @@
 """
-Unit to OB Grouping Utility
+Unit to TOE(OB) Grouping Utility
 ===========================
 
 This module parses a War in the East 2 (WiTE2) `_unit.csv` file and
-groups all active units by their assigned Order of Battle (OB) ID.
+groups all active units by their assigned Order of Battle TOE(OB) ID.
 
 It utilizes a cache to ensure that the grouping operation only
 needs to read the massive CSV file once per runtime, returning the
 cached dictionary on subsequent calls.
+
+Command Line Usage:
+    python -m wite2_tools.cli group-units [--unit-file FILE]
+
+Example:
+    $ python -m wite2_tools.cli group-units
+    Groups all active units by their assigned TOE(OB) ID and caches the mapping.
 """
 
 import os
@@ -26,12 +33,12 @@ log = get_logger(__name__)
 @cache
 def group_units_by_ob(unit_file_path: str) -> dict[int, list[str]]:
     """
-    Groups all active units by their OB type ID. Returns a dictionary mapping
-    the OB ID to a list of unit names.
+    Groups all active units by their TOE(OB) type ID. Returns a dictionary mapping
+    the TOE(OB) ID to a list of unit names.
     """
     # Declare a defaultdict where every new key automatically starts with
     # an empty list []
-    # Key: OB ID (int), Value: List of Unit Names (list[str])
+    # Key: TOE(OB) ID (int), Value: List of Unit Names (list[str])
     ob_ids_to_units: dict[int, list[str]] = defaultdict(list)
 
     # Check if file exists
@@ -40,7 +47,7 @@ def group_units_by_ob(unit_file_path: str) -> dict[int, list[str]]:
         return ob_ids_to_units
 
     try:
-        log.info("Building Unit to OB grouping cache from: '%s'",
+        log.info("Building Unit to TOE(OB) grouping cache from: '%s'",
                     os.path.basename(unit_file_path))
         unit_gen = read_csv_dict_generator(unit_file_path)
         next(unit_gen) # Skip the DictReader object
@@ -63,7 +70,7 @@ def group_units_by_ob(unit_file_path: str) -> dict[int, list[str]]:
 
         # Relegate the granular details to the DEBUG level to prevent console spam
         for unit_type_int, units in sorted(ob_ids_to_units.items()):
-            log.debug("OB ID %d is used by %d units: %s...",
+            log.debug("TOE(OB) ID %d is used by %d units: %s...",
                         unit_type_int, len(units), ', '.join(units[:3]))
 
     except (OSError, IOError, ValueError, KeyError) as e:

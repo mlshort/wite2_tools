@@ -18,7 +18,17 @@ Core Features:
 Main Functions:
 ---------------
 * count_global_unit_inventory : Executes the scan and returns a dictionary mapping
-                                Ground Element IDs to their total quantities.
+                                Ground Element WIDs to their total quantities.
+
+Command Line Usage:
+    python -m wite2_tools.cli count-inventory [--unit-file FILE] [--ground-file FILE] [--nat-codes NAT_CODES [NAT_CODES ...]]
+
+Arguments:
+    --nat-codes: Optional filter by nationality codes (e.g., 1 for Germany, 3 for Italy).
+
+Example:
+    $ python -m wite2_tools.cli count-inventory --nat-codes 1
+    Calculates the total equipment inventory for all active German (Nat 1) units on the map.
 """
 import os
 from collections import defaultdict
@@ -43,7 +53,7 @@ def count_global_unit_inventory(
     Scans _unit.csv using a generator to count the total number of every
     Ground Element active in the scenario.
     """
-    # Key: Ground Element ID (int), Value: Total Count (int)
+    # Key: Ground Element WID (int), Value: Total Count (int)
     inventory: dict[int, int] = defaultdict(int)
 
     # Standardize nat_code to a set for efficient lookup

@@ -1,5 +1,8 @@
 import csv
 import pytest
+
+# Internal package imports
+from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.auditing.audit_ground_element import audit_ground_element_csv
 
 # ==========================================
@@ -14,7 +17,7 @@ def mock_ground_csv(tmp_path) -> str:
     # Based on the script: ID is row[0], name is row[1], and type is row[3]
     headers = ["id", "name", "unknown2", "type", "unknown4"]
 
-    with open(file_path, 'w', newline='', encoding="ISO-8859-1") as f:
+    with open(file_path, 'w', newline='', encoding=ENCODING_TYPE) as f:
         # Note: audit_ground_element_csv uses a list generator, not DictReader,
         # so we write standard lists instead of dictionaries.
         writer = csv.writer(f)

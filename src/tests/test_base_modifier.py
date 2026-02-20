@@ -1,6 +1,8 @@
 import os
 import pytest
 from typing import Tuple
+
+from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.modifiers.base import process_csv_in_place
 
 # ==========================================
@@ -18,7 +20,7 @@ def mock_unit_csv(tmp_path) -> str:
         "3,3rd Infantry,200,1,15,10\n"
     )
     file_path = tmp_path / "mock_unit.csv"
-    file_path.write_text(headers + content, encoding="ISO-8859-1")
+    file_path.write_text(headers + content, encoding=ENCODING_TYPE)
     return str(file_path)
 
 # ==========================================
@@ -42,7 +44,7 @@ def test_process_csv_successful_modification(mock_unit_csv):
     assert updates == 2
     #id,name,type,nat,sqd.u0,sqd.num0\n"
     # 4. Read the file back and assert the data was actually saved
-    with open(mock_unit_csv, 'r', encoding="ISO-8859-1") as f:
+    with open(mock_unit_csv, 'r', encoding=ENCODING_TYPE) as f:
         content = f.read()
         assert "1,1st Panzer,100,1,105,99" in content
         assert "2,2nd Panzer,100,1,105,99" in content
@@ -86,7 +88,7 @@ def test_process_csv_atomic_rollback_on_error(mock_unit_csv):
     process_csv_in_place(mock_unit_csv, mock_row_processor)
 
     # Verification
-    with open(mock_unit_csv, 'r', encoding="ISO-8859-1") as f:
+    with open(mock_unit_csv, 'r', encoding=ENCODING_TYPE) as f:
         content = f.read()
         # The first row change ('99') should NOT be present because the
         # temporary file was discarded upon the crash.

@@ -1,6 +1,8 @@
 import csv
 import pytest
 
+# Internal package imports
+from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.constants import MAX_SQUAD_SLOTS
 from wite2_tools.modifiers.update_unit_num_squads import update_unit_num_squads
 
@@ -17,7 +19,8 @@ def mock_update_unit_csv(tmp_path):
     def create_row(uid, utype, elem_id, qty):
         # Initialize all columns to "0"
         row = {h: "0" for h in headers}
-        # 'type' is the OB ID in unit files
+        # 'type' is the referenced TOE(OB) ID in _unit files
+        # that maps to the 'id' column of the _ob file
         row.update({
             "id": uid,
             "name": "Test Unit",
@@ -28,14 +31,14 @@ def mock_update_unit_csv(tmp_path):
         })
         return row
 
-    with open(file_path, 'w', newline='', encoding="ISO-8859-1") as f:
+    with open(file_path, 'w', newline='', encoding=ENCODING_TYPE) as f:
         writer = csv.DictWriter(f, fieldnames=headers)
         writer.writeheader()
 
-        # Row 1 (Index 0): SUCCESS (Matches OB=50, Elem=105, Qty=10)
+        # Row 1 (Index 0): SUCCESS (Matches TOE(OB)=50, Elem=105, Qty=10)
         writer.writerow(create_row("1", "50", "105", "10"))
 
-        # Row 2 (Index 1): FAILS (Wrong OB ID - 99 instead of 50)
+        # Row 2 (Index 1): FAILS (Wrong TOE(OB) ID - 99 instead of 50)
         writer.writerow(create_row("2", "99", "105", "10"))
 
         # Row 3 (Index 2): FAILS (Wrong Element ID - 999 instead of 105)
@@ -49,7 +52,7 @@ def mock_update_unit_csv(tmp_path):
 def test_update_unit_num_squads_success_and_filters(mock_update_unit_csv):
     """Verifies that the strict multi-level conditions are applied correctly."""
 
-    # Execute: In OB 50, if Elem 105 has qty 10, change it to 99
+    # Execute: In TOE(OB) 50, if Elem 105 has qty 10, change it to 99
     updates = update_unit_num_squads(
         mock_update_unit_csv,
         target_ob_id=50,
@@ -61,11 +64,11 @@ def test_update_unit_num_squads_success_and_filters(mock_update_unit_csv):
     # Assert ONLY Row 1 was updated by the script
     assert updates == 1
 
-    with open(mock_update_unit_csv, 'r', encoding="ISO-8859-1") as f:
+    with open(mock_update_unit_csv, 'r', encoding=ENCODING_TYPE) as f:
         rows = list(csv.DictReader(f))
 
         # Assert data integrity using the 4-Row Truth Table
         assert rows[0]["sqd.num0"] == "99" # Successful change
-        assert rows[1]["sqd.num0"] == "10" # Blocked by OB check
+        assert rows[1]["sqd.num0"] == "10" # Blocked by TOE(OB) check
         assert rows[2]["sqd.num0"] == "10" # Blocked by Elem check
         assert rows[3]["sqd.num0"] == "15" # Blocked by Old Qty check

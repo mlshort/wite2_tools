@@ -79,10 +79,10 @@ unless explicitly overridden via optional arguments.
 instead of `python` in your Command Prompt or PowerShell).*
 
 ### 1. Modifiers
-* **`replace-elem`**: Swaps a Ground Element ID across the unit dataset.
-* **`update-num`**: Updates squad counts for a specific GE within an OB.
+* **`replace-elem`**: Replaces a Ground Element WID across the unit dataset.
+* **`update-num`**: Updates squad counts for a specific Ground Element WID within a TOE(OB).
 * **`reorder-unit`**: Moves a Ground Element to a new slot for a Unit.
-* **`reorder-ob`**: Moves a Ground Element to a new slot for an OB.
+* **`reorder-ob`**: Moves a Ground Element to a new slot for a TOE(OB).
 * **`compact-weapons`**: Removes empty weapon slots in `_ground.csv`.
 
 ### 2. Auditing
@@ -93,13 +93,13 @@ instead of `python` in your Command Prompt or PowerShell).*
 
 ### 3. Core Analytics
 * **`count-inventory`**: Counts global unit equipment inventory.
-* **`find-orphans`**: Identifies unreferenced OB templates.
-* **`gen-chains`**: Generates chronological OB upgrade chains.
-* **`group-units`**: Groups active units by their assigned OB ID.
+* **`find-orphans`**: Identifies unreferenced TOE(OB) templates.
+* **`gen-chains`**: Generates chronological TOE(OB) upgrade chains.
+* **`group-units`**: Groups active units by their assigned TOE(OB) ID.
 
 ### 4. Scanning & Utilities
-* **`scan-ob-elem`**: Locates a specific Ground Element within OBs.
-* **`scan-unit-elem`**: Locates a specific Ground Element within Units.
+* **`scan-ob-elem`**: Locates a specific Ground Element WID within OBs.
+* **`scan-unit-elem`**: Locates a specific Ground Element WID within Units.
 * **`scan-excess`**: Locates units with excessive logistical stores.
 * **`detect-encoding`**: Detects the character encoding of a specific file.
 
@@ -137,4 +137,4 @@ actual game files remain untouched during development.
 
 All operations automatically generate a timestamped log file
 (e.g., `wite2_20260217_1330.log`) in the local `\logs` directory.
-Analytical data (like OB chains) are saved to the `\exports` directory.
+Analytical data (like TOE(OB) chains) are saved to the `\exports` directory.

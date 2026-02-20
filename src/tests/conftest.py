@@ -2,6 +2,8 @@ import pytest
 import csv
 from typing import Dict
 
+# Internal package imports
+from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.constants import MAX_SQUAD_SLOTS
 
 # ==========================================
@@ -32,7 +34,7 @@ def mock_unit_csv(tmp_path) -> str:
         row.update(slots)
         return row
 
-    with open(file_path, 'w', newline='', encoding="ISO-8859-1") as f:
+    with open(file_path, 'w', newline='', encoding=ENCODING_TYPE) as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         # Row 1: Valid unit with target element 42 at slot 5
@@ -65,14 +67,14 @@ def mock_unit_csv(tmp_path) -> str:
 
 
 # ==========================================
-# OB FILE FIXTURES (_ob.csv)
+# TOE(OB) FILE FIXTURES (_ob.csv)
 # ==========================================
 
 @pytest.fixture
 def mock_ob_csv(tmp_path) -> str:
     """
     Generates a mock _ob.csv using SPACE notation (sqd 0, sqdNum 0).
-    Matches the 5-argument signature required by OB modifiers.
+    Matches the 5-argument signature required by TOE(OB) modifiers.
     """
     file_path = tmp_path / "mock_ob.csv"
 
@@ -89,7 +91,7 @@ def mock_ob_csv(tmp_path) -> str:
         row.update(slots)
         return row
 
-    with open(file_path, 'w', newline='', encoding="ISO-8859-1") as f:
+    with open(file_path, 'w', newline='', encoding=ENCODING_TYPE) as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         # Row 1: Chain (10 -> 20), Target 500 at slot 2
@@ -110,5 +112,5 @@ def mock_ground_csv(tmp_path) -> str:
     """Creates a minimal _ground.csv for lookup validation."""
     file_path = tmp_path / "mock_ground.csv"
     content = "id,name,other,type\n105,Panzer IV,x,1\n42,Tiger I,x,1\n500,88mm Flak,x,1\n"
-    file_path.write_text(content, encoding="ISO-8859-1")
+    file_path.write_text(content, encoding=ENCODING_TYPE)
     return str(file_path)

@@ -1,23 +1,23 @@
 """
-Module for locating specific Ground Elements within WiTE2 Order of Battle (OB) CSV files.
+Module for locating specific Ground Elements within WiTE2 Order of Battle TOE(OB) CSV files.
 
 This module scans a War in the East 2 (WiTE2) `_ob` CSV file to find all Orders of Battle that
-contain a specific Ground Element ID. It iterates through the squad slots (`sqd 0` to `sqd 31`)
+contain a specific Ground Element WID. It iterates through the squad slots (`sqd 0` to `sqd 31`)
 for active OBs, skipping rows where the `type` evaluates to 0 or is invalid.
 
 When a match is found, it outputs the result to the console in a formatted table. This table
-displays the OB's ID, Name, Type (resolved via a lookup), the exact squad column where the
+displays the TOE(OB)'s ID, Name, Type (resolved via a lookup), the exact squad column where the
 element was found, and the assigned quantity from the `sqdNum` column.
 
 Command Line Usage:
-    python scan_ob_for_ground_elem.py [-h] ge_id
+    python -m wite2_tools.cli scan-ob-elem [-h] ge_id
 
 Arguments:
-    ge_id (int): The ID of the Ground Element to search for across all OBs.
+    ge_id (int): The WID of the Ground Element to search for across all OBs.
 
 Example:
-    $ python scan_ob_for_ground_elem.py 42
-    Scans the OB file and outputs a formatted table of every OB that includes
+    $ python -m wite2_tools.cli scan-ob-elem 42
+    Scans the TOE(OB) file and outputs a formatted table of every TOE(OB) that includes
     Ground Element 42, showing the exact slot it occupies and the quantity assigned.
 """
 import os
@@ -34,7 +34,7 @@ log = get_logger(__name__)
 
 def scan_ob_for_ground_elem(ob_file_path: str, ground_elem_id: int) -> int:
     """
-    1. Scans 'sqd' columns for ground_elem_id.
+    1. Scans 'sqd' columns for ground_elem_id (WID).
     2. If found, finds the corresponding 'sqdNum' column.
     3. Prints the value of the column.
     """
@@ -52,7 +52,7 @@ def scan_ob_for_ground_elem(ob_file_path: str, ground_elem_id: int) -> int:
         # Convert inputs to strings to ensure they match CSV text format
         ground_elem_id_str = str(ground_elem_id)
 
-        print(f"\nScanning '{file}' for ge_id='{ground_elem_id_str}'")
+        print(f"\nScanning '{file}' for any instances of WID='{ground_elem_id_str}'")
         # Print Header for the Console Output
         print(f"\n{'ID':^6} | {'Name':<20} | {'Type':^9} | {'Squad':<6} | {'Value':<10}")
         print("-" * 80)
@@ -96,9 +96,9 @@ def scan_ob_for_ground_elem(ob_file_path: str, ground_elem_id: int) -> int:
         if matches_found == 0:
             print("No matches found.")
         else:
-            print(f"\nScan complete. Found {matches_found} match(es).")
+            print(f"\nScan complete. Found {matches_found} WID match(es).")
 
     except (FileNotFoundError, ValueError, IOError) as e:
-        log.exception("An error occurred during OB scanning: %s", e)
+        log.exception("An error occurred during scanning _ob for WIDs: %s", e)
 
     return matches_found

@@ -13,17 +13,16 @@ The module safely handles file updates by writing to a temporary file first
 before replacing the original file, and it includes logging for auditability.
 
 Command Line Usage:
-    python update_unit_num_squads.py [-h] ob_id ge_id old_num_squads new_num_squads
+    python -m wite2_tools.cli update-num [-h] ob_id ge_id old_num_squads new_num_squads
 
 Arguments:
-    ob_id (int): Target unit's OB ID (Order of Battle ID).
-    ge_id (int): Unit's Element ID containing the squads to change.
-    old_num_squads (int): The exact number of existing squads required to trigger
-    the update.
-    new_num_squads (int): The new number of squads to set.
+    ob_id (int): Target unit's TOE(OB) ID (Order of Battle ID).
+    ge_id (int): Unit's Element WID containing the squads to change.
+    old_num_squads (int): The exact number of existing squads required to trigger the update.
+    new_num_squads (int): Number of new squads to set.
 
 Example:
-    $ python update_unit_num_squads.py 42 105 10 12
+    $ python -m wite2_tools.cli update-num 42 105 10 12
     This will scan for units with ob_id 42, look for ge_id 105, and if its
     current squad count is exactly 10, update it to 12.
 """
@@ -40,10 +39,10 @@ log = get_logger(__name__)
 
 def update_unit_num_squads(unit_file_path: str, target_ob_id: int, ge_id: int, old_num_squads: int, new_num_squads: int) -> int:
     """
-    1. Scans for WiTE2 _unit CSV 'type' == target_ob_id.
-    2. Scans 'sqd.u' columns for ge_id.
+    1. Scans the _unit CSV file for rows where 'type' == target_ob_id (TOE(ID)).
+    2. Scans the row for 'sqd.u' == ge_id (WID).
     3. Finds the corresponding 'sqd.num' column.
-    4. CHECKS if the value in 'sqd.num' equals 'old_num_squads'.
+    4. CHECKS if the value in 'sqd.num' == 'old_num_squads'.
     5. If it matches, REPLACES it with 'new_num_squads'.
     """
 
@@ -52,14 +51,14 @@ def update_unit_num_squads(unit_file_path: str, target_ob_id: int, ge_id: int, o
     old_num_squad_str = str(old_num_squads)
     new_num_squad_str = str(new_num_squads)
 
-    log.info("Starting update on '%s' (Target ob_id: %d, Elem: %s)",
-             os.path.basename(unit_file_path), target_ob_id, ge_id_str)
+    log.info("Starting update on '%s' (Target TOE(ID): %d, WID: %d)",
+             os.path.basename(unit_file_path), target_ob_id, ge_id)
 
     # Define the specific logic for processing a Unit row
     def process_row(row: dict, row_idx: int) -> tuple[dict, bool]:
         was_modified = False
         unit_id = int(row.get('id') or '0')
-        unit_type = int(row.get('type', '0')) # unit 'type' maps to OB ID
+        unit_type = int(row.get('type') or '0') # unit 'type' maps to TOE(OB) ID
 
         # 1. Check ob_id
         if unit_type == target_ob_id:
@@ -77,10 +76,10 @@ def update_unit_num_squads(unit_file_path: str, target_ob_id: int, ge_id: int, o
                         # 5. UPDATE VALUE
                         row[sqd_num_col] = new_num_squad_str
                         was_modified = True
-                        log.info("ID %d: Updated %s from '%s' to '%s'",
+                        log.info("Unit ID %d: Updated WID %s from '%s' to '%s'",
                                  unit_id, sqd_num_col, old_num_squad_str, new_num_squad_str)
                     else:
-                        log.debug("ID %d: Elem ID match at %s, but %s was '%s' (Expected '%s')",
+                        log.debug("Unit ID %d: WID match at %s, but %s was '%s' (Expected '%s')",
                                   unit_id, sqd_id_col, sqd_num_col, num_squads_val, old_num_squad_str)
 
         return row, was_modified

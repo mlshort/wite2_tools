@@ -1,10 +1,10 @@
 """
-Module for reordering Ground Element squads within WiTE2 Order of Battle (OB) CSV files.
+Module for reordering Ground Element squads within WiTE2 Order of Battle TOE(OB) CSV files.
 
 This module provides functionality to parse a War in the East 2 (WiTE2) `_ob` CSV file,
-locate a specific OB ID, and modify the internal slot index (0-31) of a targeted
-Ground Element. When an element is moved to a new slot index, the remaining elements are automatically
-shifted to accommodate the change.
+locate a specific TOE(OB) ID, and modify the internal slot index (0-31) of a targeted
+Ground Element. When an element is moved to a new slot index, the remaining elements are
+automatically shifted to accommodate the change.
 
 To maintain data integrity, both the squad ID (`sqd X`) and the corresponding squad quantity
 (`sqdNum X`) are shifted in perfect synchronization. The script utilizes temporary files to
@@ -14,13 +14,13 @@ Command Line Usage:
     python reorder_ob_squads.py [-h] target_ob_id ge_id move_to
 
 Arguments:
-    target_ob_id (int): The target Order of Battle (OB) ID.
-    ge_id (int): The ID of the Ground Element to be moved.
+    target_ob_id (int): The target Order of Battle TOE(OB) ID.
+    ge_id (int): The WID of the Ground Element to be moved.
     move_to (int): The destination slot index (0-31) for the targeted element.
 
 Example:
-    $ python reorder_ob_squads.py 150 42 0
-    This scans for OB ID 150, finds Ground Element 42 within its squad slots,
+    $ python -m wite2_tools.cli reorder-ob 150 42 0
+    This scans for TOE(OB) ID 150, finds Ground Element 42 within its squad slots,
     and moves it to the very first slot (index 0), shifting other elements down.
 """
 
@@ -53,16 +53,16 @@ def reorder_ob_elems(row: dict, squad_col: str, squad_num_col: str, move_from: i
 
 def reorder_ob_squads(ob_file_path: str, target_ob_id: int, ge_id: int, move_to: int) -> int:
     """
-    Reorders specific Ground Element squads within a WiTE2 OB (Order of Battle) CSV file.
+    Reorders specific Ground Element squads within a WiTE2 TOE(OB) (Order of Battle) CSV file.
 
-    This function scans a large _ob CSV for a specific OB ID, searches its squad slots
-    (sqd 0 through sqd 31) for a target Ground Element ID, and moves that squad
+    This function scans a large _ob CSV for a specific TOE(OB) ID, searches its squad slots
+    (sqd 0 through sqd 31) for a target Ground Element WID, and moves that squad
     to a new slot index using a temporary file stream to maintain memory efficiency.
 
     Args:
-        ob_file_path (str): The absolute to the WiTE2 _ob CSV file.
-        target_ob_id (int): The unique identifier ('id' column) of the OB to be modified.
-        ge_id (int): The ID of the Ground Element to be moved.
+        ob_file_path (str): The absolute or relative path to the WiTE2 _ob CSV file.
+        target_ob_id (int): The unique identifier ('id' column) of the TOE(OB) to be modified.
+        ge_id (int): The WID of the Ground Element to be moved.
         move_to (int): The target slot index (0-31) where the element should be relocated.
 
     Returns:
@@ -77,23 +77,23 @@ def reorder_ob_squads(ob_file_path: str, target_ob_id: int, ge_id: int, move_to:
           may contain duplicate column headers.
     """
     if not (0 <= move_to <= 31):
-        log.error("Validation Error: move_to index %d is out of bounds (0-31).", move_to)
+        log.error("Validation Error: move_to slot index %d is out of bounds (0-31).", move_to)
         return 0
 
     ge_id_str = str(ge_id)
-    log.info("Reordering squads in '%s' | ob_id: %d | Target ID: %s | To Loc: %d",
+    log.info("Reordering squads in '%s' | TOE(ID): %d | Target WID: %s | To Slot Loc: %d",
              ob_file_path, target_ob_id, ge_id_str, move_to)
 
-    # Define the specific logic for processing an OB row
+    # Define the specific logic for processing an TOE(OB) row
     def process_row(row: dict, row_idx: int) -> tuple[dict, bool]:
-        ob_id = int(row.get("id", "0"))
+        ob_id = int(row.get("id") or "0")
         if target_ob_id == ob_id:
             for i in range(MAX_SQUAD_SLOTS):
                 current_sqd_col = f"sqd {i}"
                 if current_sqd_col in row and row[current_sqd_col] == ge_id_str:
                     if i != move_to:
                         row = reorder_ob_elems(row, "sqd ", "sqdNum ", i, move_to)
-                        log.debug("Row %d: Moved squad from index %d to %d", row_idx, i, move_to)
+                        log.debug("TOE(OB) ID %d: Moved squad from slot %d to %d", ob_id, i, move_to)
                         return row, True  # Row was modified
                     break
         return row, False # Row was untouched

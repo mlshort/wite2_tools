@@ -6,7 +6,7 @@ evolution chains, identifying unreferenced database IDs, and performing
 global inventory calculations across the unit database.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __date__ = "2026-02-19"
 
 from .generate_ob_chains import generate_ob_chains

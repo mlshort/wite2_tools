@@ -1,4 +1,7 @@
 import pytest
+
+# Internal package imports
+from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.scanning.scan_unit_for_ground_elem import scan_unit_for_ground_elem
 
 @pytest.fixture
@@ -6,7 +9,7 @@ def mock_ground_csv(tmp_path) -> str:
     """Minimal ground file required for the scanner's name lookups."""
     content = "id,name,other,type\n42,Tiger I,x,1\n"
     file_path = tmp_path / "mock_ground.csv"
-    file_path.write_text(content, encoding="ISO-8859-1")
+    file_path.write_text(content, encoding=ENCODING_TYPE)
     return str(file_path)
 
 def test_scan_unit_for_ground_elem_any_quantity(mock_unit_csv, mock_ground_csv, mock_ob_csv):

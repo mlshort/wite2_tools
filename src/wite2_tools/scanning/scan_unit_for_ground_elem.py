@@ -2,7 +2,7 @@
 Module for locating specific Ground Elements within WiTE2 _unit CSV files.
 
 This module scans a War in the East 2 (WiTE2) `_unit` CSV file to find all
-active units that contain a specific Ground Element ID. It iterates through
+active units that contain a specific Ground Element WID. It iterates through
 the squad slots (`sqd.u0` to `sqd.u31`) for active units.
 
 When a match is found, it outputs the result to the console in a formatted table,
@@ -10,18 +10,18 @@ displaying the Unit's ID, Name, Type (resolved via a lookup), the exact squad
 column where the element was found, and the assigned quantity (`sqd.num`).
 
 Command Line Usage:
-    python scan_unit_for_ground_elem.py [-h] ge_id [num_squads]
+    python -m wite2_tools.cli scan-unit-elem [-h] ge_id [num_squads]
 
 Arguments:
-    ge_id (int): The ID of the Ground Element to search for across all units.
+    ge_id (int): The WID of the Ground Element to search for across all units.
     num_squads (int, optional): Filter by exact number of assigned squads.
 
 Example:
-    $ python scan_unit_for_ground_elem.py 42
+    $ python -m wite2_tools.cli scan-unit-elem 42
     Scans the unit file and outputs a formatted table of every unit that includes
     Ground Element 42, showing the exact slot it occupies and the quantity assigned.
 
-    $ python scan_unit_for_ground_elem.py 42 10
+    $ python -m wite2_tools.cli scan-unit-elem 42 10
     Same as above, but only returns matches where exactly 10 of Ground Element
     42 are assigned.
 """
@@ -59,7 +59,7 @@ def _check_squad_match(
                 unit_name = row.get("name", "Unk")
                 sqd_num_val = row.get(sqd_num_col, "0")
                 unit_id_val = row.get("id", "0")
-                unit_type = int(row.get("type", "0")) # unit 'type' maps to its OB ID
+                unit_type = int(row.get("type", "0")) # unit 'type' maps to its TOE(OB) ID
                 unit_type_name = get_unit_type_name(ob_full_path, unit_type)
 
                 # Filter by exact quantity if a specific number was provided (-1 means ANY)
@@ -104,7 +104,7 @@ def scan_unit_for_ground_elem(
         scan_str = "ANY" if old_num_squads == -1 else str(old_num_squads)
         ground_elem_name = get_ground_elem_type_name(ground_file_path, ge_id)
 
-        print(f"\nScanning '{os.path.basename(unit_file_path)}' for '{ground_elem_name}' (ID '{ge_id}') where quantity == '{scan_str}'")
+        print(f"\nScanning '{os.path.basename(unit_file_path)}' for '{ground_elem_name}' (WID '{ge_id}') where quantity == '{scan_str}'")
 
         # Print Header for the Console Output
         print(f"\n{'ID':^6} | {'Name':<15} | {'Type':<25} | {'Squad':<6} | {'Value':<10}")

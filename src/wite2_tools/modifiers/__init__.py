@@ -3,10 +3,10 @@ Data manipulation and transformation scripts.
 
 WARNING: These modules perform write operations on the source CSV files.
 Includes tools for bulk-updating squad quantities and reordering TOE
-elements within the OB database.
+elements within the TOE(OB) database.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __date__ = "2026-02-19"
 
 from .replace_unit_ground_element import replace_unit_ground_element

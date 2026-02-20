@@ -1,13 +1,16 @@
 import pytest
 import csv
 from typing import cast
+
+# Internal package imports
+from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.generator import read_csv_list_generator, read_csv_dict_generator
 
 @pytest.fixture
 def mock_basic_csv(tmp_path) -> str:
     content = "col1,col2,col3\nval1,val2,val3\nval4,val5,val6\n"
     file_path = tmp_path / "mock_basic.csv"
-    file_path.write_text(content, encoding="ISO-8859-1")
+    file_path.write_text(content, encoding=ENCODING_TYPE)
     return str(file_path)
 
 def test_read_csv_list_generator(mock_basic_csv):

@@ -3,10 +3,10 @@ Verification and validation tools for CSV data integrity.
 
 This sub-package contains validators designed to catch structural
 errors, duplicate IDs, and logical inconsistencies within and between
-the OB, Unit, and Ground Element CSV files.
+the _ob, _unit, and _ground CSV files.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __date__ = "2026-02-19"
 
 from .validator import evaluate_ob_consistency, evaluate_unit_consistency

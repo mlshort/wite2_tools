@@ -23,6 +23,9 @@ MIN_SQUAD_SLOTS : int = 0
 MAX_SQUAD_SLOTS : int = 32
 MAX_GROUND_MEN : int = 30
 MAX_WPN_SLOTS : int = 10
+# GC41 is configured to run from 22 Jun 1941 till 2 Aug 1945
+# which is 216 turns
+MAX_GAME_TURNS : int = 225
 EXCESS_RESOURCE_MULTIPLIER : int = 5
 
 # Map Coordinate Limits
@@ -294,8 +297,8 @@ class UNIT_COL(IntEnum):
     DIV_LOST0 = 70
     DIV_LOST1 = 71
     DIV_LOST2 = 72
-    COMBAT_VALUE0 = 73
-    COMBAT_VALUE1 = 74
+    COMBAT_VALUE0 = 73 # Att CV
+    COMBAT_VALUE1 = 74 # Def CV
     RECON_VALUE0 = 75
     RECON_VALUE1 = 76
     AIR_HQ = 77
@@ -324,7 +327,7 @@ class UNIT_COL(IntEnum):
     PARA_PREP = 100
     JUMP = 101
     UNIT_ARRIVED = 102
-    HQ_COLOR = 103
+    HQ_COLOR = 103  # Can be very large
     RENAME_UNIT = 104
     RENAME_VALID = 105
     RENAME_CONDITION = 106

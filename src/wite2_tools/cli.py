@@ -9,10 +9,10 @@ for executing targeted modifications, generating analytics, and running audits.
 Available Commands:
 -------------------
 [Modifiers]
-* replace-elem    : Swaps a specific Ground Element ID across the unit dataset.
-* update-num      : Updates squad counts for a specific GE within a specific OB.
+* replace-elem    : Swaps a specific Ground Element WID across the unit dataset.
+* update-num      : Updates squad counts for a specific GE within a specific TOE(OB).
 * reorder-unit    : Moves a Ground Element to a new slot index for a Unit.
-* reorder-ob      : Moves a Ground Element to a new slot index for an OB.
+* reorder-ob      : Moves a Ground Element to a new slot index for an TOE(OB).
 * compact-weapons : Removes empty weapon slots and shifts remaining weapons up.
 
 [Auditing]
@@ -21,13 +21,13 @@ Available Commands:
 
 [Core Analytics]
 * count-inventory : Counts global unit inventory (with optional nat filters).
-* find-orphans    : Identifies unreferenced OB IDs.
-* gen-chains      : Generates OB upgrade chains to CSV/TXT outputs.
-* group-units     : Groups active units by their assigned OB ID.
+* find-orphans    : Identifies unreferenced TOE(OB) IDs.
+* gen-chains      : Generates TOE(OB) upgrade chains to CSV/TXT outputs.
+* group-units     : Groups active units by their assigned TOE(OB) ID.
 
 [Scanning]
-* scan-ob-elem    : Scans OBs for a specific Ground Element ID.
-* scan-unit-elem  : Scans Units for a specific Ground Element ID.
+* scan-ob-elem    : Scans OBs for a specific Ground Element WID.
+* scan-unit-elem  : Scans Units for a specific Ground Element WID.
 * scan-excess     : Scans units for excess supplies (ammo, fuel, etc.).
 
 Note: Target file paths are resolved automatically via the `paths.py` module
@@ -100,26 +100,31 @@ def main():
     replace_parser.add_argument('--unit-file', default=CONF_UNIT_FULL_PATH)
 
     num_parser = subparsers.add_parser('update-num', help='Update number of squads in _unit.csv')
-    num_parser.add_argument('new_num', type=int, help='The new number of squads to set')
     num_parser.add_argument("ob_id", type=int, help="Target unit's TOE(OB) ID")
     num_parser.add_argument("ge_id", type=int, help="Unit's WID containing squads to change")
     num_parser.add_argument("old_num_squads", type=int, help="Number of existing squads")
     num_parser.add_argument("new_num_squads", type=int, help="Number of new squads to set")
     num_parser.add_argument('--unit-file', default=CONF_UNIT_FULL_PATH)
 
-    unit_reorder_parser = subparsers.add_parser('reorder-unit', help='Reorder squad slots in _unit.csv')
+    unit_reorder_parser = subparsers.add_parser('reorder-unit',
+                                                help='Reorder squad slots in _unit.csv')
     unit_reorder_parser.add_argument("unit_id", type=int, help="WiTE2 UNIT ID")
-    unit_reorder_parser.add_argument("ge_id", type=int, help="The WID of the Ground Element to be moved")
-    unit_reorder_parser.add_argument("move_to", type=int, help="Destination Slot Location (0-31)")
+    unit_reorder_parser.add_argument("ge_id", type=int,
+                                     help="The WID of the Ground Element to be moved")
+    unit_reorder_parser.add_argument("move_to", type=int,
+                                     help="Destination Slot Location (0-31)")
     unit_reorder_parser.add_argument('--unit-file', default=CONF_UNIT_FULL_PATH)
 
-    ob_reorder_parser = subparsers.add_parser('reorder-ob', help='Reorder squad slots in _ob.csv')
+    ob_reorder_parser = subparsers.add_parser('reorder-ob',
+                                              help='Reorder squad slots in _ob.csv')
     ob_reorder_parser.add_argument("ob_num", type=int, help="Target TOE(OB) ID")
-    ob_reorder_parser.add_argument("ge_id", type=int, help="The WID specifying the Ground Element to be moved")
+    ob_reorder_parser.add_argument("ge_id", type=int,
+                                   help="The WID specifying the Ground Element to be moved")
     ob_reorder_parser.add_argument("move_to", type=int, help="Destination Slot Location (0-31)")
     ob_reorder_parser.add_argument('--ob-file', default=CONF_OB_FULL_PATH)
 
-    compact_parser = subparsers.add_parser('compact-weapons', help='Removes empty weapon slots in _ground.csv')
+    compact_parser = subparsers.add_parser('compact-weapons',
+                                           help='Removes empty weapon slots in _ground.csv')
     compact_parser.add_argument('--ground-file', default=CONF_GROUND_FULL_PATH)
 
     # ==========================================
@@ -139,7 +144,8 @@ def main():
     batch_eval_parser.add_argument('fix_ghosts', type=str2bool, nargs='?', default=False,
                                    help="Optional: Fix ghost squads automatically (default: %(default)s)")
 
-    audit_unit_parser = subparsers.add_parser('audit-unit', help='Runs consistency checks on a single _unit.csv file')
+    audit_unit_parser = subparsers.add_parser('audit-unit',
+                                              help='Runs consistency checks on a single _unit.csv file')
     audit_unit_parser.add_argument('--unit-file', default=CONF_UNIT_FULL_PATH,
                                    help="Optional: (default: %(default)s)")
     audit_unit_parser.add_argument('--ground-file', default=CONF_GROUND_FULL_PATH,
@@ -149,7 +155,8 @@ def main():
     audit_unit_parser.add_argument('fix_ghosts', type=str2bool, nargs='?', default=False,
                                    help="Optional: Fix ghost squads automatically (default: %(default)s)")
 
-    audit_ob_parser = subparsers.add_parser('audit-ob', help='Runs consistency checks on a single _ob.csv file')
+    audit_ob_parser = subparsers.add_parser('audit-ob',
+                                            help='Runs consistency checks on a single _ob.csv file')
     audit_ob_parser.add_argument('--ob-file', default=CONF_OB_FULL_PATH,
                                  help="Optional: (default: %(default)s)")
     audit_ob_parser.add_argument('--ground-file', default=CONF_GROUND_FULL_PATH,
@@ -167,7 +174,8 @@ def main():
     inv_parser.add_argument('--nat-codes', type=int, nargs='+',
                             help='Optional: Filter by nationality codes (e.g., 1, 3)')
 
-    orphan_parser = subparsers.add_parser('find-orphans', help='Identifies unreferenced TOE(OB) templates')
+    orphan_parser = subparsers.add_parser('find-orphans',
+                                          help='Identifies unreferenced TOE(OB) templates')
     orphan_parser.add_argument('--ob-file', default=CONF_OB_FULL_PATH,
                                help="Optional: (default: %(default)s)")
     orphan_parser.add_argument('--unit-file', default=CONF_UNIT_FULL_PATH,
@@ -175,12 +183,14 @@ def main():
     orphan_parser.add_argument('--nat-codes', type=int, nargs='+',
                                help='Optional: Filter by nationality codes (e.g., 1, 3)')
 
-    chains_parser = subparsers.add_parser('gen-chains', help='Generates chronological TOE(OB) upgrade chains')
+    chains_parser = subparsers.add_parser('gen-chains',
+                                          help='Generates chronological TOE(OB) upgrade chains')
     chains_parser.add_argument('--ob-file', default=CONF_OB_FULL_PATH,
                                help="Optional: (default: %(default)s)")
     chains_parser.add_argument('--csv-out', default=os.path.join(LOCAL_EXPORTS_PATH, "ob_upgrade_chains.csv"))
     chains_parser.add_argument('--txt-out', default=os.path.join(LOCAL_EXPORTS_PATH, "ob_upgrade_chains.txt"))
-    chains_parser.add_argument('--nat-codes', type=int, nargs='+', help='Optional: Filter by nationality codes (e.g., 1, 3)')
+    chains_parser.add_argument('--nat-codes', type=int, nargs='+',
+                               help='Optional: Filter by nationality codes (e.g., 1, 3)')
 
     group_parser = subparsers.add_parser('group-units', help='Groups active units by their assigned TOE(OB) ID')
     group_parser.add_argument('--unit-file', default=CONF_UNIT_FULL_PATH,
@@ -189,7 +199,8 @@ def main():
     # ==========================================
     # SCANNING
     # ==========================================
-    scan_ob_parser = subparsers.add_parser('scan-ob-elem', help='Locates a specific Ground Element within all TOE(OB)s')
+    scan_ob_parser = subparsers.add_parser('scan-ob-elem',
+                                           help='Locates a specific Ground Element within all TOE(OB)s')
     scan_ob_parser.add_argument('ge_id', type=int, help='Ground Element''s WID to search for')
     scan_ob_parser.add_argument('--ob-file', default=CONF_OB_FULL_PATH,
                                 help="Optional: (default: %(default)s)")
@@ -211,7 +222,8 @@ def main():
     # ==========================================
     # UTILITIES
     # ==========================================
-    enc_parser = subparsers.add_parser('detect-encoding', help='Detects the character encoding of a specific file')
+    enc_parser = subparsers.add_parser('detect-encoding',
+                                       help='Detects the character encoding of a specific file')
     enc_parser.add_argument('file_path', type=str, help='Path to the file to check')
 
     args = parser.parse_args()
@@ -249,7 +261,7 @@ def main():
             print(f"Unit audit complete. Found {issues} issues.")
         elif args.command == 'audit-ob':
             issues = evaluate_ob_consistency(args.ob_file, args.ground_file)
-            print(f"OB audit complete. Found {issues} issues.")
+            print(f"TOE(OB) audit complete. Found {issues} issues.")
 
         # Core
         elif args.command == 'count-inventory':

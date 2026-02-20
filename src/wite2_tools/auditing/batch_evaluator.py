@@ -1,3 +1,15 @@
+"""
+Command Line Usage:
+    python -m wite2_tools.cli batch-eval [--data-path PATH] [active_only] [fix_ghosts]
+
+Arguments:
+    active_only (bool): If True, only evaluates active units (defaults to False).
+    fix_ghosts (bool): If True, automatically zeroes out ghost squads (defaults to False).
+
+Example:
+    $ python -m wite2_tools.cli batch-eval --data-path "C:\\My Mods" True False
+    Scans all _unit and _ob CSV files in the specified folder for consistency, checking only active units.
+"""
 import os
 
 # Internal package imports
@@ -19,7 +31,7 @@ def scan_and_evaluate_unit_files(target_folder: str, only_active_units: bool, fi
         log.error("Scan failed: The directory '%s' does not exist.", target_folder)
         return
 
-    log.info("--- Starting Batch Unit Evaluation in: '%s' ---", target_folder)
+    log.info("--- Starting Batch Unit File Evaluation in: '%s' ---", target_folder)
 
     # Get all CSV files in the directory
     all_files = os.listdir(target_folder)
@@ -42,7 +54,7 @@ def scan_and_evaluate_unit_files(target_folder: str, only_active_units: bool, fi
 
     for unit_file, ground_file in zip(unit_files, ground_files):
         unit_file_name = os.path.basename(unit_file)
-        log.info("Processing: '%s'", unit_file_name)
+        log.info("Processing:'%s'", unit_file_name)
 
         issues = evaluate_unit_consistency(unit_file, ground_file, only_active_units, fix_ghosts)
 
@@ -68,7 +80,7 @@ def scan_and_evaluate_ob_files(target_folder: str):
         log.error("Scan failed: The directory '%s' does not exist.", target_folder)
         return
 
-    log.info("--- Starting Batch OB Evaluation in: '%s' ---", target_folder)
+    log.info("--- Starting Batch TOE(OB) Evaluation in:'%s' ---", target_folder)
 
     # Get all CSV files in the directory
     all_files = os.listdir(target_folder)
@@ -91,7 +103,7 @@ def scan_and_evaluate_ob_files(target_folder: str):
 
     for ob_file, ground_file in zip(ob_files, ground_files):
         ob_file_name = os.path.basename(ob_file)
-        log.info("Processing: '%s'", ob_file_name)
+        log.info("Processing:'%s'", ob_file_name)
 
         issues = evaluate_ob_consistency(ob_file, ground_file)
         files_processed += 1

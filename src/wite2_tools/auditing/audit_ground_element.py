@@ -1,3 +1,11 @@
+"""
+Command Line Usage:
+    python -m wite2_tools.cli audit-ground [--ground-file FILE]
+
+Example:
+    $ python -m wite2_tools.cli audit-ground
+    Scans the default _ground CSV file to ensure all type IDs are valid and logs any logical errors.
+"""
 import os
 
 # Internal package imports
@@ -12,8 +20,8 @@ log = get_logger(__name__)
 
 def audit_ground_element_csv(ground_file_path: str) -> int:
     """
-    Scans a _ground CSV file to ensure 'type' IDs are valid and
-    logical based on the ground_element_type_lookup.
+    Scans a _ground CSV file for consistency and
+    logically based on the ground_element_type_lookup.
     """
     if not os.path.exists(ground_file_path):
         log.error("Audit failed: File not found at %s", ground_file_path)
@@ -41,7 +49,7 @@ def audit_ground_element_csv(ground_file_path: str) -> int:
 
             # 1. Uniqueness Check
             if ground_id != 0 and ground_id in seen_ground_ids:
-                log.error("ID %d: Duplicate Ground Element ID (%s)",
+                log.error("WID %d: Duplicate IDs (%s)",
                           ground_id, ground_name)
                 issues_found += 1
             else:
@@ -50,7 +58,7 @@ def audit_ground_element_csv(ground_file_path: str) -> int:
             # 2. Type Validation
             raw_type = row[GND_COL.TYPE] # 'type' column
             if raw_type is None:
-                log.error("ID %d (%s): Missing 'type' column value.", ground_id, ground_name)
+                log.error("WID %d (%s): Missing 'type' column value.", ground_id, ground_name)
                 issues_found += 1
                 continue
 
@@ -61,14 +69,14 @@ def audit_ground_element_csv(ground_file_path: str) -> int:
                 element_class_name = get_ground_elem_class_name(ground_type_int)
                 # Updated to match the "Unk " fallback in lookups.py
                 if "Unk" in element_class_name:
-                    log.warning("ID %d (%s): uses undefined Type %d",
+                    log.warning("WID %d (%s): uses undefined Type %d",
                                 ground_id, ground_name, ground_type_int)
                     issues_found += 1
                 elif element_class_name == "Blank":
-                    log.debug("ID %d (%s): Assigned to reserved/blank Type %d",
+                    log.debug("WID %d (%s): Assigned to reserved/blank Type %d",
                               ground_id, ground_name, ground_type_int)
                 else:
-                    log.debug("ID %d (%s): Validated as %s",
+                    log.debug("WID %d (%s): Validated as %s",
                               ground_id, ground_name, element_class_name)
 
                 # following is to account for tests using weird-sized rows
@@ -76,23 +84,23 @@ def audit_ground_element_csv(ground_file_path: str) -> int:
                     continue
                 ground_size = int(row[GND_COL.SIZE] or '0') # 'size' column
                 if ground_size == 0:
-                    log.warning("ID %d (%s): %s has ZERO size",
+                    log.warning("WID %d (%s): %s has ZERO size",
                                 ground_id, ground_name, element_class_name)
                     issues_found += 1
 
                 ground_men = int(row[GND_COL.MEN] or '0') # 'men' column
                 if ground_men == 0:
-                    log.warning("ID %d (%s): %s has no men assigned",
+                    log.warning("WID %d (%s): %s has no men assigned",
                                 ground_id, ground_name, element_class_name)
                     issues_found += 1
 
                 elif ground_men > MAX_GROUND_MEN:
-                    log.warning("ID %d (%s): %s has %d > %d men assigned",
+                    log.warning("WID %d (%s): %s has %d > %d men assigned",
                                 ground_id, ground_name, element_class_name, ground_men, MAX_GROUND_MEN)
                     issues_found += 1
 
             except ValueError:
-                log.error("ID %d (%s): 'type' value '%s' is not a valid integer.",
+                log.error("WID %d (%s): 'type' value '%s' is not a valid integer.",
                           ground_id, ground_name, raw_type)
                 issues_found += 1
 

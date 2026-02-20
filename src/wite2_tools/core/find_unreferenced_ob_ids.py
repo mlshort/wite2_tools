@@ -3,28 +3,35 @@ Orphaned Order of Battle (OB) Identifier
 ========================================
 
 This module cross-references War in the East 2 (WiTE2) `_ob.csv` and `_unit.csv` files
-to identify unreferenced or "orphaned" OB templates.
+to identify unreferenced or "orphaned" TOE(OB) templates.
 
-An OB is considered an "orphan" if it exists in the OB database but is never actively
+An TOE(OB) is considered an "orphan" if it exists in the TOE(OB) database but is never actively
 assigned to a unit on the map, nor is it part of a valid upgrade chain for an active unit.
 Conversely, this script also identifies "invalid references," which occur when an active
 unit is assigned an OB ID that does not exist in the database.
 
 Core Features:
 --------------
-* Full Upgrade Chain Tracing: Recursively follows the 'upgrade' column in the OB data
+* Full Upgrade Chain Tracing: Recursively follows the 'upgrade' column in the TOE(OB) data
   to ensure future upgrade targets are not falsely flagged as orphans.
 * Nationality Filtering: Can isolate the audit to specific nations (e.g., Germany, Italy).
 * High-Performance Caching: Provides the `is_ob_orphaned` function, which caches the
-  calculated sets in memory. This allows other scripts to query thousands of OB IDs
+  calculated sets in memory. This allows other scripts to query thousands of TOE(OB) IDs
   instantly without re-parsing the large CSV files.
 
 Main Functions:
 ---------------
 * find_unreferenced_ob_ids : Executes the core parsing and Set Difference logic, returning
-                             a set of all orphaned OB IDs.
+                             a set of all orphaned TOE(OB) IDs.
 * is_ob_orphaned           : A globally cached, O(1) time-complexity verification function
-                             to check if a specific OB ID is currently an orphan.
+                             to check if a specific TOE(OB) ID is currently an orphan.
+
+Command Line Usage:
+    python -m wite2_tools.cli find-orphans [--ob-file FILE] [--unit-file FILE] [--nat-codes NAT_CODES [NAT_CODES ...]]
+
+Example:
+    $ python -m wite2_tools.cli find-orphans --nat-codes 1 3
+    Identifies all unreferenced (orphaned) TOE(OB) templates for German (1) and Italian (3) factions.
 """
 import os
 from functools import cache
@@ -50,12 +57,12 @@ def find_unreferenced_ob_ids(ob_file_path: str, unit_file_path: str, nat_code=No
         log.error("File error: One or both of the specified CSV files do not exist.")
         return set()
 
-    # complete set of OB IDs
+    # complete set of TOE(OB) IDs
     ob_ids: Set[int] = set()
     ob_id_to_name: dict[int, str] = {}
     ob_id_upgrade: dict[int, int] = {}
 
-    # set of OB IDs directly referenced by units
+    # set of TOE(OB) IDs directly referenced by units
     ref_by_unit_ob_ids: Set[int] = set()
     ob_ids_to_unit_names: dict[int, list[str]] = {}
 
@@ -74,13 +81,13 @@ def find_unreferenced_ob_ids(ob_file_path: str, unit_file_path: str, nat_code=No
         unit_file_base_name = os.path.basename(unit_file_path)
         log.info(
             "Scanning for orphan OBs.\n"
-            "  OB file: '%s'\n"
+            "  TOE(OB) file: '%s'\n"
             "  Unit file: '%s'",
             ob_file_base_name,
             unit_file_base_name
         )
 
-        # 1. Parse the OB file
+        # 1. Parse the TOE(OB) file
         ob_gen = read_csv_dict_generator(ob_file_path)
         next(ob_gen) # Skip DictReader header yield
 
@@ -122,7 +129,7 @@ def find_unreferenced_ob_ids(ob_file_path: str, unit_file_path: str, nat_code=No
                 continue
 
             unit_id = int(row.get('id') or '0')
-            unit_type = int(row.get('type') or '0') # 'type' maps to OB ID
+            unit_type = int(row.get('type') or '0') # 'type' maps to TOE(OB) ID
             unit_nameid = row.get('name', 'Unk') + f"({unit_id})"
 
             if unit_type != 0:
@@ -149,7 +156,7 @@ def find_unreferenced_ob_ids(ob_file_path: str, unit_file_path: str, nat_code=No
                     )
                     current_upgrade = next_upgrade
 
-        # 3. Find IDs in OB set that are NOT in the Referenced set
+        # 3. Find IDs in TOE(OB) set that are NOT in the Referenced set
         orphans = ob_ids - ref_by_unit_ob_ids
         invalids = ref_by_unit_ob_ids - ob_ids
 
@@ -165,7 +172,7 @@ def find_unreferenced_ob_ids(ob_file_path: str, unit_file_path: str, nat_code=No
                         orphan_id
                     )
                     log.warning(
-                        " OB (%d) '%s'",
+                        " TOE(OB) (%d) '%s'",
                         orphan_id,
                         ob_full_name
                     )
@@ -191,13 +198,13 @@ def find_unreferenced_ob_ids(ob_file_path: str, unit_file_path: str, nat_code=No
                     default_msg
                 )
                 log.error(
-                    "Invalid Reference: OB ID '%d' does not exist! "
+                    "Invalid Reference: TOE(OB) ID '%d' does not exist! "
                     "Used by units: %s",
                     inv_id,
                     affected_units
                 )
 
-            print(f"CRITICAL: {len(invalids)} units point to non-existent OB IDs. Check logs.")
+            print(f"CRITICAL: {len(invalids)} units point to non-existent TOE(OB) IDs. Check logs.")
 
         if not orphans and not invalids:
             log.info(
@@ -235,7 +242,7 @@ def _get_cached_orphans(ob_file_path: str, unit_file_path: str, nat_code_tuple: 
     Private helper: Runs the heavy orphan logic and caches the resulting set.
     """
 
-    log.info("Building Orphan OB cache for nat_codes %s...", nat_code_tuple)
+    log.info("Building Orphan TOE(OB) cache for nat_codes %s...", nat_code_tuple)
     return find_unreferenced_ob_ids(ob_file_path, unit_file_path, nat_code_tuple)
 
 def is_ob_orphaned(ob_file_path: str, unit_file_path: str, ob_id_to_check: int, nat_code=None) -> bool:

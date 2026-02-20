@@ -12,7 +12,7 @@ Core Capabilities:
   squad quantities, and reordering squad slots).
 * Analyzers: Generate scenario insights including global inventory
   counts, TOE upgrade chains, and identification of unreferenced
-  "orphan" OB templates.
+  "orphan" TOE(OB) templates.
 * Validators: Batch evaluate data files for structural integrity,
   logical consistency, and duplicate IDs to prevent game crashes.
 * Utilities: Features memory-efficient CSV streaming generators, robust
@@ -20,7 +20,7 @@ Core Capabilities:
   ID-to-string lookup caching.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __date__ = "2026-02-19"
 
 # Expose common configuration so other modules can access it easily

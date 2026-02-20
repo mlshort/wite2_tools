@@ -1,6 +1,9 @@
 import os
 import csv
 import pytest
+
+# Internal package imports
+from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.core.generate_ob_chains import generate_ob_chains
 
 # ==========================================
@@ -34,7 +37,7 @@ def mock_workspace(tmp_path) -> tuple[str, str, str]:
         "0,Skip Me,,0,0,0\n"          # Should be skipped (ID/Type 0)
     )
 
-    ob_file.write_text(content, encoding="ISO-8859-1")
+    ob_file.write_text(content, encoding=ENCODING_TYPE)
     return str(ob_file), str(csv_out), str(txt_out)
 
 
@@ -63,7 +66,7 @@ def test_generate_ob_chains_nat_filter(mock_workspace):
     assert num_chains == 1
 
     # Verify the text file only contains Chain 2
-    with open(txt_out, 'r', encoding="ISO-8859-1") as f:
+    with open(txt_out, 'r', encoding=ENCODING_TYPE) as f:
         content = f.read()
         assert "[40] Inf Div 41 -> [50] Inf Div 42" in content
         assert "Panzer" not in content  # Chain 1 should not exist
@@ -77,7 +80,7 @@ def test_generate_ob_chains_loop_protection(mock_workspace):
     generate_ob_chains(ob_file, csv_out, txt_out)
 
     # Read the text file output
-    with open(txt_out, 'r', encoding="ISO-8859-1") as f:
+    with open(txt_out, 'r', encoding=ENCODING_TYPE) as f:
         content = f.read()
 
         # Verify the loop was caught and appended to the chain string
@@ -90,7 +93,7 @@ def test_generate_ob_chains_csv_output(mock_workspace):
     generate_ob_chains(ob_file, csv_out, txt_out)
 
     # Read the generated CSV output
-    with open(csv_out, 'r', encoding="ISO-8859-1") as f:
+    with open(csv_out, 'r', encoding=ENCODING_TYPE) as f:
         reader = csv.DictReader(f)
         rows = list(reader)
 

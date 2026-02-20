@@ -20,9 +20,9 @@ Core Features:
 
 Main Functions:
 ---------------
-* get_valid_ob_ids          : Returns a set of all valid Order of Battle (OB) IDs.
-* get_valid_ob_upgrade_ids  : Returns a set of all valid OB upgrade target IDs.
-* get_valid_ground_elem_ids : Returns a set of all active Ground Element IDs.
+* get_valid_ob_ids          : Returns a set of all valid Order of Battle TOE(OB) IDs.
+* get_valid_ob_upgrade_ids  : Returns a set of all valid TOE(OB) upgrade target IDs.
+* get_valid_ground_elem_ids : Returns a set of all active Ground Element WIDs.
 * get_valid_unit_ids        : Returns a set of all active Unit IDs deployed in the scenario.
 """
 import os
@@ -45,12 +45,13 @@ logger = get_logger(__name__)
 @cache
 def get_valid_ob_ids(ob_file_path: str) -> Set[int]:
     """
-    Builds and returns a set of valid OB IDs from the _ob CSV.
-    The @cache decorator ensures this function only runs once per unique file path!
+    Builds and returns a set of valid TOE(OB) IDs from the _ob CSV.
+    The @cache decorator ensures this function only runs once per
+    unique file path!
     """
     valid_ob_ids: Set[int] = set()
     file_name = os.path.basename(ob_file_path)
-    logger.info("Building valid OB ID cache from '%s'...", file_name)
+    logger.info("Building valid TOE(OB) ID cache from '%s'...", file_name)
 
     try:
         data_gen = read_csv_list_generator(ob_file_path)
@@ -65,11 +66,11 @@ def get_valid_ob_ids(ob_file_path: str) -> Set[int]:
             except (ValueError, IndexError):
                 continue
 
-        logger.info("Cache built with %d valid OB IDs.", len(valid_ob_ids))
+        logger.info("Cache built with %d valid TOE(OB) IDs.", len(valid_ob_ids))
         return valid_ob_ids
 
     except FileNotFoundError:
-        logger.error("OB file not found: %s", ob_file_path)
+        logger.error("TOE(OB) file not found:'%s'", ob_file_path)
         return set()
 
 @cache
@@ -79,7 +80,7 @@ def get_valid_ob_upgrade_ids(ob_file_path: str) -> Set[int]:
     Caches the result to avoid repeated file I/O.
     """
     valid_ob_upgrade_ids: Set[int] = set()
-    logger.info("Building valid OB upgrade ID cache from '%s'...", ob_file_path)
+    logger.info("Building valid TOE(OB) upgrade ID cache from '%s'...", ob_file_path)
 
     try:
         data_gen = read_csv_list_generator(ob_file_path)
@@ -100,11 +101,11 @@ def get_valid_ob_upgrade_ids(ob_file_path: str) -> Set[int]:
                 # Skip malformed rows or empty lines
                 continue
 
-        logger.info("Cache built with %d valid OB upgrade IDs.", len(valid_ob_upgrade_ids))
+        logger.info("Cache built with %d valid TOE(OB) upgrade IDs.", len(valid_ob_upgrade_ids))
         return valid_ob_upgrade_ids
 
     except FileNotFoundError:
-        logger.error("OB file not found: %s", ob_file_path)
+        logger.error("TOE(OB) file not found: %s", ob_file_path)
         return set()
 
 
@@ -112,12 +113,12 @@ def get_valid_ob_upgrade_ids(ob_file_path: str) -> Set[int]:
 @cache
 def get_valid_ground_elem_ids(ground_file_path: str) -> Set[int]:
     """
-    Builds and returns a set of valid ground element IDs from the _ground CSV.
+    Builds and returns a set of valid ground element WIDs from the _ground CSV.
     Caches the result to avoid repeated file I/O.
     """
     valid_elem_ids: Set[int] = set()
     file_name = os.path.basename(ground_file_path)
-    logger.info("Building valid element ID cache from '%s'...", file_name)
+    logger.info("Building valid ground element ID cache from '%s'...", file_name)
 
     try:
         ground_gen = read_csv_list_generator(ground_file_path)
@@ -141,7 +142,7 @@ def get_valid_ground_elem_ids(ground_file_path: str) -> Set[int]:
         return valid_elem_ids
 
     except FileNotFoundError:
-        logger.error("Ground element file not found: %s", ground_file_path)
+        logger.error("Ground element file not found:'%s'", ground_file_path)
         return set()
 
 @cache

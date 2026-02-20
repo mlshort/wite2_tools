@@ -1,6 +1,8 @@
 import csv
 import pytest
 
+# Internal package imports
+from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.constants import MAX_SQUAD_SLOTS
 from wite2_tools.modifiers.replace_unit_ground_element import replace_unit_ground_element
 
@@ -29,7 +31,7 @@ def mock_replace_unit_csv(tmp_path):
         })
         return row
 
-    with open(file_path, 'w', newline='', encoding="ISO-8859-1") as f:
+    with open(file_path, 'w', newline='', encoding=ENCODING_TYPE) as f:
         writer = csv.DictWriter(f, fieldnames=headers)
         writer.writeheader()
 
@@ -63,7 +65,7 @@ def test_replace_unit_ground_element_success(mock_replace_unit_csv):
     # Assert exactly 3 rows were updated (Rows 1, 2, and 4)
     assert updates == 3
 
-    with open(mock_replace_unit_csv, 'r', encoding="ISO-8859-1") as f:
+    with open(mock_replace_unit_csv, 'r', encoding=ENCODING_TYPE) as f:
         rows = list(csv.DictReader(f))
 
         # Row 1: Slot 0 updated, quantity unchanged

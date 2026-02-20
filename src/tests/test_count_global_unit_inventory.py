@@ -1,5 +1,8 @@
 import pytest
 import csv
+
+# Internal package imports
+from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.constants import MAX_SQUAD_SLOTS
 from wite2_tools.core.count_global_unit_inventory import count_global_unit_inventory
 
@@ -12,7 +15,7 @@ def mock_ground_csv(tmp_path) -> str:
     """Creates a minimal _ground.csv for lookup name resolution."""
     content = "id,name,other,type\n101,Panzer III,x,1\n102,Infantry Sqd,x,1\n"
     file_path = tmp_path / "mock_ground.csv"
-    file_path.write_text(content, encoding="ISO-8859-1")
+    file_path.write_text(content, encoding=ENCODING_TYPE)
     return str(file_path)
 
 @pytest.fixture
@@ -36,7 +39,7 @@ def mock_unit_csv(tmp_path) -> str:
         row.update(slots)
         return row
 
-    with open(file_path, 'w', newline='', encoding="ISO-8859-1") as f:
+    with open(file_path, 'w', newline='', encoding=ENCODING_TYPE) as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
 
@@ -104,7 +107,7 @@ def test_inventory_robustness_to_malformed_data(mock_unit_csv, mock_ground_csv):
 def test_inventory_empty_file(tmp_path, mock_ground_csv):
     """Verifies that an empty or header-only file returns an empty dictionary."""
     empty_file = tmp_path / "empty.csv"
-    empty_file.write_text("id,name,type,nat\n", encoding="ISO-8859-1")
+    empty_file.write_text("id,name,type,nat\n", encoding=ENCODING_TYPE)
 
     inventory = count_global_unit_inventory(str(empty_file), mock_ground_csv)
     assert inventory == {}

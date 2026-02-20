@@ -1,19 +1,22 @@
 import pytest
+
+# Internal package imports
+from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.scanning.scan_ob_for_ground_elem import scan_ob_for_ground_elem
 
 def test_scan_ob_for_ground_elem_success(mock_ob_csv, capsys):
     """
-    Verifies the OB scanner finds target ground elements across the 32 slots.
+    Verifies the TOE(OB) scanner finds target ground elements across the 32 slots.
     Note: mock_ob_csv fixture is provided by conftest.py
     """
-    # In conftest.py, ID 500 is placed at "sqd 2" of OB ID 10
+    # In conftest.py, ID 500 is placed at "sqd 2" of TOE(OB) ID 10
     matches = scan_ob_for_ground_elem(mock_ob_csv, 500)
 
     assert matches == 1
 
     # Verify console output format using pytest's capsys
     captured = capsys.readouterr()
-    assert "Found 1 match(es)." in captured.out
+    assert "Found 1 WID match(es)." in captured.out
     assert "'sqd 2'" in captured.out
 
 def test_scan_ob_for_ground_elem_no_matches(mock_ob_csv, capsys):

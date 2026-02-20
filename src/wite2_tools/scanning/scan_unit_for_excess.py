@@ -13,14 +13,14 @@ in a formatted table, detailing their ID, Name, Nationality, current amount,
 needed amount, and the calculated overage ratio.
 
 Command Line Usage:
-    python scan_unit_for_excess.py [--operation {ammo,supplies,fuel,vehicles}]
+    python -m wite2_tools.cli scan-excess [--operation {ammo,supplies,fuel,vehicles}]
 
 Arguments:
     --operation: Specifies which resource to scan for.
                  Choices are 'ammo' (default), 'supplies', 'fuel', or 'vehicles'.
 
 Example:
-    $ python scan_unit_for_excess.py --operation fuel
+    $ python -m wite2_tools.cli scan-excess --operation fuel
     Scans the unit file and prints a table of all units where `fuel` > 5 * `fNeed`.
 """
 import os

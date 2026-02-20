@@ -1,4 +1,7 @@
 import pytest
+
+# Internal package imports
+from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.core.group_units_by_ob import group_units_by_ob
 from wite2_tools.core.count_global_unit_inventory import count_global_unit_inventory
 
@@ -21,14 +24,14 @@ def mock_unit_csv(tmp_path) -> str:
         "0,Empty Data,0,1,105,100,0,0\n"    # Skip: Type is 0
     )
     file_path = tmp_path / "mock_unit.csv"
-    file_path.write_text(content, encoding="ISO-8859-1")
+    file_path.write_text(content, encoding=ENCODING_TYPE)
     return str(file_path)
 
 @pytest.fixture
 def mock_ground_csv(tmp_path) -> str:
     content = "id,name,other,type\n105,Panzer IV,x,1\n106,Tiger I,x,1\n"
     file_path = tmp_path / "mock_ground.csv"
-    file_path.write_text(content, encoding="ISO-8859-1")
+    file_path.write_text(content, encoding=ENCODING_TYPE)
     return str(file_path)
 
 # ==========================================
@@ -36,12 +39,12 @@ def mock_ground_csv(tmp_path) -> str:
 # ==========================================
 
 def test_group_units_by_ob(mock_unit_csv):
-    """Verifies that units are correctly grouped by OB ID and placeholders are skipped."""
+    """Verifies that units are correctly grouped by TOE(OB) ID and placeholders are skipped."""
     result = group_units_by_ob(mock_unit_csv)
 
-    # OB 10 should have two units
+    # TOE(OB) 10 should have two units
     assert result[10] == ["1st Panzer", "2nd Panzer"]
-    # OB 20 should have one unit
+    # TOE(OB) 20 should have one unit
     assert result[20] == ["3rd Infantry"]
     # Type 0 should not be in the dictionary
     assert 0 not in result

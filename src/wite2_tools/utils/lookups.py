@@ -9,7 +9,7 @@ IDs found in the game's CSV files into human-readable string descriptions.
 
 Core Contents:
 --------------
-* Entity Translations: Contains hardcoded lookup tables for OB Types,
+* Entity Translations: Contains hardcoded lookup tables for TOE(OB) Types,
   Nationalities, Unit Statuses, Device Types, HQ Types, Ground Element
   Types, Device Sizes, and Device Face orientations.
 * Safe Retrieval: Each lookup dictionary is paired with a getter function
@@ -53,24 +53,24 @@ OB_TYPE_LOOKUP: dict[int,str] = {
        14: "SP Arty",
        15: "Eng",
        16: "Const",
-       17: "Mor",
-       18: "Rkt",
+       17: "Mortar",
+       18: "Rocket",
        19: "Sec",
        20: "Fort",
        21: "MG",
-       22: "AB",
+       22: "AirBase",
        23: "Partisan",
        24: "Air Land",
        25: "Naval"
     }
 
-def get_ob_type_code_name(ob_type_val:int) -> str:
+def get_ob_type_code_name(ob_type_code:int) -> str:
     """
     Not to be confused with 'get_ob_type_name', this one
-    retrieves the name for a specific OB Type code.
+    retrieves the name for a specific TOE(OB) Type code.
     Returns 'Unk ' if the code is not found.
     """
-    result = OB_TYPE_LOOKUP.get(ob_type_val,  f"Unk ({ob_type_val})")
+    result = OB_TYPE_LOOKUP.get(ob_type_code,  f"Unk ({ob_type_code})")
     return result
 
 NAT_LOOKUP : dict[int, str] = {
@@ -391,7 +391,7 @@ GROUND_ELEMENT_TYPE_LOOKUP: dict[int, str] = {
 
 def get_ground_elem_class_name(type_id: int) -> str:
     """
-    Returns the string description for a Ground Element Type ID.
+    Returns the string name for a Ground Element Type WID.
     Handles undefined ranges gracefully.
     """
     return GROUND_ELEMENT_TYPE_LOOKUP.get(type_id, f"Unk ({type_id})")

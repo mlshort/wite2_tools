@@ -1,5 +1,8 @@
 import pytest
 import csv
+
+# Internal package imports
+from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.modifiers.remove_ground_weapon_gaps import remove_ground_weapon_gaps
 
 @pytest.fixture
@@ -24,7 +27,7 @@ def mock_ground_csv(tmp_path) -> str:
             row[k] = v
         return row
 
-    with open(file_path, 'w', newline='', encoding="ISO-8859-1") as f:
+    with open(file_path, 'w', newline='', encoding=ENCODING_TYPE) as f:
         writer = csv.DictWriter(f, fieldnames=headers)
         writer.writeheader()
 
@@ -52,7 +55,7 @@ def test_remove_ground_weapon_gaps(mock_ground_csv):
     assert updates == 2
 
     # Verify the contents were actually shifted
-    with open(mock_ground_csv, 'r', encoding="ISO-8859-1") as f:
+    with open(mock_ground_csv, 'r', encoding=ENCODING_TYPE) as f:
         rows = list(csv.DictReader(f))
 
         # Row 1 Verification: Weapon 500 should now be at index 0

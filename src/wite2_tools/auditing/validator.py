@@ -10,7 +10,7 @@ integrity breaks before they cause runtime crashes in the game engine.
 
 Key Validation Logic
 --------------------
-* **Referential Integrity**: Verifies that all Ground Element IDs referenced in
+* **Referential Integrity**: Verifies that all Ground Element WIDs referenced in
   squad slots (0-31) actually exist in the master `_ground` file.
 * **Ghost/Orphan Detection**: Scans for "Ghost Squads" (slots with a quantity
   but no valid Element ID) which are a primary cause of game instability.
@@ -21,9 +21,20 @@ Key Validation Logic
 
 Functions
 ---------
-* `evaluate_ob_consistency`: detailed audit of Order of Battle (OB) files.
+* `evaluate_ob_consistency`: detailed audit of Order of Battle TOE(OB) files.
 * `evaluate_unit_consistency`: Detailed audit of Unit placement files, including
   HQ attachment logic and map positioning.
+
+Command Line Usage:
+    python -m wite2_tools.cli audit-unit [--unit-file FILE] [--ground-file FILE] [active_only] [fix_ghosts]
+    python -m wite2_tools.cli audit-ob [--ob-file FILE] [--ground-file FILE]
+
+Example:
+    $ python -m wite2_tools.cli audit-unit True True
+    Scans the default unit file, evaluating only active units, and automatically fixes any ghost squads found.
+
+    $ python -m wite2_tools.cli audit-ob
+    Scans the default TOE(OB) file for structural and logical errors.
 """
 
 import csv
@@ -31,20 +42,28 @@ import os
 from tempfile import NamedTemporaryFile
 
 # Internal package imports
-from wite2_tools.generator import read_csv_dict_generator
 from wite2_tools.config import ENCODING_TYPE
+from wite2_tools.generator import read_csv_dict_generator
 from wite2_tools.constants import (
     MAX_SQUAD_SLOTS,
     MIN_X,
     MAX_X,
     MIN_Y,
-    MAX_Y
+    MAX_Y,
+    MAX_GAME_TURNS
 )
 from wite2_tools.utils.logger import get_logger
-from wite2_tools.utils.get_valid_ids import get_valid_ground_elem_ids
+from wite2_tools.utils.get_valid_ids import get_valid_ground_elem_ids, get_valid_unit_ids
 
 # Initialize the logger for this specific module
 log = get_logger(__name__)
+
+def is_greater_than_zero(value)->bool:
+    try:
+        return float(value) > 0
+    except ValueError:
+        # Returns False if the cell is text, empty, or None
+        return False
 
 def evaluate_ob_consistency(ob_file_path: str, ground_file_path: str) -> int:
     """
@@ -71,19 +90,19 @@ def evaluate_ob_consistency(ob_file_path: str, ground_file_path: str) -> int:
         log.info("Checking consistency for: '%s'", ob_file_base_name)
 
         for _, row in ob_gen:
-            # 1. Check for Duplicate IDs (Critical for OB stability)
+            # 1. Check for Duplicate IDs (Critical for TOE(OB) stability)
             ob_id = int(row.get('id', '0'))
             ob_type = int(row.get('type', '0'))
             ob_first_year = int(row.get('firstYear', '0'))
 
             if ob_id in seen_ob_ids:
-                log.error("OB ID %d: Duplicate ID found", ob_id)
+                log.error("TOE(OB) ID %d: Duplicate IDs found", ob_id)
                 issues_found += 1
             else:
                 seen_ob_ids.add(ob_id)
 
             if ob_type != 0 and ob_first_year == 0:
-                log.warning("OB ID %d: Active Type:%d, but has First Year of:%d.",
+                log.warning("TOE(OB) ID %d: Active Type:%d, but has First Year of:%d.",
                             ob_id, ob_type, ob_first_year)
                 issues_found += 1
 
@@ -91,7 +110,7 @@ def evaluate_ob_consistency(ob_file_path: str, ground_file_path: str) -> int:
 
             # 2. Check for Row Length Consistency
             if len(row) != header_len:
-                log.error("OB ID %d: Column count mismatch. Expected %d, found %d.",
+                log.error("TOE(OB) ID %d: Column count mismatch. Expected %d, found %d.",
                           ob_id, header_len, len(row))
                 issues_found += 1
 
@@ -104,7 +123,7 @@ def evaluate_ob_consistency(ob_file_path: str, ground_file_path: str) -> int:
                 sqd_num_val = row.get(sqd_num_col, "0")
 
                 if sqd_id_val != "0" and int(sqd_id_val) not in valid_elem_ids:
-                    log.error("OB (ID %d): Slot %d has Elem ID %s but Elem ID is not found in _ground.csv.",
+                    log.error("TOE(OB) (ID %d): Slot %d has Elem ID %s but Elem ID is not found in _ground.csv.",
                               ob_id, i, sqd_id_val)
                     issues_found += 1
 
@@ -141,6 +160,7 @@ def evaluate_unit_consistency(unit_file_path: str, ground_file_path: str,
     fixed_count = 0
     seen_unit_ids: set[int] = set()
     valid_elem_ids: set[int] = set()
+    valid_unit_ids: set[int] = set()
 
     # Setup for writing fixed file
     temp_file = None
@@ -149,6 +169,7 @@ def evaluate_unit_consistency(unit_file_path: str, ground_file_path: str,
     try:
         # get the set of valid ground element ids
         valid_elem_ids = get_valid_ground_elem_ids(ground_file_path)
+        valid_unit_ids = get_valid_unit_ids(unit_file_path)
 
         unit_gen = read_csv_dict_generator(unit_file_path, 2)  # start=2 accounts for header
         reader = next(unit_gen)
@@ -185,7 +206,19 @@ def evaluate_unit_consistency(unit_file_path: str, ground_file_path: str,
             try:
                 x, y = int(row.get('x', -1)), int(row.get('y', -1))
                 if not (MIN_X <= x <= MAX_X and MIN_Y <= y <= MAX_Y):
-                    log.warning("ID %s (%s): Invalid coordinates (%d, %d)", unit_id, unit_name, x, y)
+                    log.warning("ID %s (%s): Invalid (x,y) coordinates (%d, %d)", unit_id, unit_name, x, y)
+                    issues_found += 1
+                x, y = int(row.get('tx', -1)), int(row.get('ty', -1))
+                if not (MIN_X <= x <= MAX_X and MIN_Y <= y <= MAX_Y):
+                    log.warning("ID %s (%s): Invalid (tx,ty) coordinates (%d, %d)", unit_id, unit_name, x, y)
+                    issues_found += 1
+                x, y = int(row.get('ax', -1)), int(row.get('ay', -1))
+                if not (MIN_X <= x <= MAX_X and MIN_Y <= y <= MAX_Y):
+                    log.warning("ID %s (%s): Invalid (ax,ay) coordinates (%d, %d)", unit_id, unit_name, x, y)
+                    issues_found += 1
+                x, y = int(row.get('ptx', -1)), int(row.get('pty', -1))
+                if not (MIN_X <= x <= MAX_X and MIN_Y <= y <= MAX_Y):
+                    log.warning("ID %s (%s): Invalid (ptx,pty) coordinates (%d, %d)", unit_id, unit_name, x, y)
                     issues_found += 1
             except (ValueError, TypeError):
                 log.error("ID %s (%s): Non-numeric coordinates detected.", unit_id, unit_name)
@@ -199,7 +232,7 @@ def evaluate_unit_consistency(unit_file_path: str, ground_file_path: str,
                 sqd_id_val = row.get(sqd_id_col, "0")
                 sqd_num_val = row.get(sqd_num_col, "0")
 
-                # Check for Elem Invalid IDs
+                # Check for Invalid Elem IDs
                 if sqd_id_val != "0" and int(sqd_id_val) not in valid_elem_ids:
                     log.error("ID %s (%s): Slot %d has invalid Elem ID %s.",
                               unit_id, unit_name, i, sqd_id_val)
@@ -219,11 +252,24 @@ def evaluate_unit_consistency(unit_file_path: str, ground_file_path: str,
                         fixed_count += 1
 
             # 4. Attachment/HQ Check
-            if row.get('hhq', '0') == unit_id:
-                unit_hq = int(row.get('hq') or '0')
-                if unit_hq != 0 and unit_hq != 1 :
+            unit_hhq = int(row.get('hhq') or '0')
+            if unit_hhq == int(unit_id):
+                unit_hq_type = int(row.get('hq') or '0')
+                if unit_hq_type != 0 and unit_hq_type != 1 :
                     log.warning("ID %s (%s): Unit with HQ Type(%d), is reporting itself as its own HQ.",
-                                unit_id, unit_name, unit_hq)
+                                unit_id, unit_name, unit_hq_type)
+                    issues_found += 1
+            if unit_hhq != 0:
+                if unit_hhq not in valid_unit_ids:
+                    log.warning("ID %s (%s): Unit has HQ with invalid ID (%d).",
+                                unit_id, unit_name, unit_hhq)
+                    issues_found += 1
+
+            # 5. Excess Delay Check
+            unit_delay = int (row.get("delay") or "0")
+            if unit_delay > MAX_GAME_TURNS:
+                    log.warning("ID %s (%s): Unit has a delay of %d, will never appear in game.",
+                                unit_id, unit_name, unit_delay)
                     issues_found += 1
 
             # Write the row (modified or original) to temp file

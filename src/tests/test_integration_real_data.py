@@ -1,5 +1,8 @@
 import os
 import pytest
+
+# Internal package imports
+from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.paths import (
     CONF_UNIT_FULL_PATH,
     CONF_OB_FULL_PATH,

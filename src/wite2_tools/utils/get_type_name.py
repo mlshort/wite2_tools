@@ -3,7 +3,8 @@ Type Name Resolution Utilities
 ==============================
 
 This module provides functions to resolve numerical type IDs into human-readable
-names by referencing external CSV data files (specifically OB and Ground Element files).
+names by referencing external CSV data files (specifically TOE(OB) and Ground
+Element files).
 It is primarily used for converting raw data IDs from the WiTE2 context into
 descriptive strings for logging or display.
 
@@ -18,7 +19,8 @@ this cached dictionary instantly in O(1) time.
 
 Functions
 ---------
-* `get_ob_full_name`: Resolves an OB ID to a full name (combining 'name' and 'suffix').
+* `get_ob_full_name`: Resolves an TOE(OB) ID to a full name (combining 'name'
+                      and 'suffix').
 * `get_unit_type_name`: A wrapper alias for `get_ob_full_name` used for semantic clarity.
 * `get_ground_elem_type_name`: Resolves a Ground Element ID to its name.
 """
@@ -42,19 +44,20 @@ class OBName:
 
 
 # ==========================================
-# ORDER OF BATTLE (OB) LOOKUP
+# ORDER OF BATTLE TOE(OB) LOOKUP
 # ==========================================
 
 @cache
 def _build_ob_lookup(ob_file_path: str) -> dict[int, OBName]:
     """
-    Private Helper: Scans the _ob CSV, builds the ID-to-Name dictionary, and caches it.
+    Private Helper: Scans the _ob CSV, builds the TOE(ID)-to-Name dictionary,
+    and caches it.
     The @cache decorator ensures this only runs once per unique file path.
     """
     lookup: dict[int, OBName] = {}
 
     if not os.path.exists(ob_file_path):
-        logger.error("OB file not found: %s", ob_file_path)
+        logger.error("TOE(OB) file not found: %s", ob_file_path)
         return lookup
 
     try:
@@ -74,13 +77,13 @@ def _build_ob_lookup(ob_file_path: str) -> dict[int, OBName]:
                 )
 
     except (OSError, IOError, ValueError, KeyError) as e:
-        logger.error("Error building OB lookup: %s", e)
+        logger.error("Error building TOE(OB) lookup: %s", e)
 
     return lookup
 
 def get_ob_full_name(ob_file_path: str, ob_id_to_find: int) -> str:
     """
-    Public API: Resolves an OB ID to a full name.
+    Public API: Resolves an TOE(OB) ID to a full name.
     """
     # 1. Retrieve the cached dictionary
     cached_dict = _build_ob_lookup(ob_file_path)
@@ -97,10 +100,10 @@ def get_ob_full_name(ob_file_path: str, ob_id_to_find: int) -> str:
 def get_unit_type_name(ob_file_path: str, unit_id_to_find: int) -> str:
     """
     A convenience wrapper. In WiTE2, a unit's type name is derived
-    from its assigned OB name in the _ob.csv file and equates to its
-    OB's full name.
+    from its assigned TOE(OB) name in the _ob.csv file and equates to its
+    TOE(OB)'s full name.
     """
-    # Simply route this through the OB lookup to utilize the same cache
+    # Simply route this through the TOE(OB) lookup to utilize the same cache
     return get_ob_full_name(ob_file_path, unit_id_to_find)
 
 
@@ -111,7 +114,8 @@ def get_unit_type_name(ob_file_path: str, unit_id_to_find: int) -> str:
 @cache
 def _build_ground_elem_lookup(ground_file_path: str) -> dict[int, str]:
     """
-    Private Helper: Scans the _ground CSV, builds the ID-to-Name dictionary, and caches it.
+    Private Helper: Scans the _ground CSV, builds the ID-to-Name dictionary,
+    and caches it.
     The @cache decorator ensures this only runs once per unique file path.
     """
     lookup: dict[int, str] = {}
@@ -139,7 +143,7 @@ def _build_ground_elem_lookup(ground_file_path: str) -> dict[int, str]:
 
 def get_ground_elem_type_name(ground_file_path: str, ground_id_to_find: int) -> str:
     """
-    Public API: Resolves a Ground Element ID to its name.
+    Public API: Resolves a Ground Element WID to its name.
     """
     # 1. Retrieve the cached dictionary
     cached_dict = _build_ground_elem_lookup(ground_file_path)

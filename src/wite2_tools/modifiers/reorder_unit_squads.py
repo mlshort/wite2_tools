@@ -21,7 +21,7 @@ CLI Usage
 ---------
 This module can be executed directly from the command line:
 
-    $ python reorder_unit_squads.py [target_unit_id] [ge_id] [move_to_index]
+    $ python -m wite2_tools.cli reorder-unit [target_unit_id] [ge_id] [move_to_index]
 
 Arguments:
     target_unit_id : The ID of the unit to modify.
@@ -74,7 +74,7 @@ def reorder_unit_squads(unit_file_path: str, target_unit_id: int, ge_id: int, mo
     Args:
         unit_file_path (str): The absolute or relative path to the WiTE2 _unit CSV file.
         target_unit_id (int): The unique identifier ('id' column) of the UNIT to be modified.
-        ge_id (int): The ID of the Ground Element to be moved.
+        ge_id (int): The WID of the Ground Element to be moved.
         move_to (int): The target slot index (0-31) where the element should be relocated.
 
     Returns:

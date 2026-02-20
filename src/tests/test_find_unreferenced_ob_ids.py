@@ -1,6 +1,8 @@
 import pytest
 import csv
 
+# Internal package imports
+from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.constants import MAX_SQUAD_SLOTS
 from wite2_tools.core.find_unreferenced_ob_ids import find_unreferenced_ob_ids
 
@@ -25,7 +27,7 @@ def mock_ob_csv(tmp_path) -> str:
         "0,Placeholder,,0,0,0\n"       # Should be ignored.
     )
     file_path = tmp_path / "mock_ob.csv"
-    file_path.write_text(content, encoding="ISO-8859-1")
+    file_path.write_text(content, encoding=ENCODING_TYPE)
     return str(file_path)
 
 @pytest.fixture
@@ -45,14 +47,14 @@ def mock_unit_csv(tmp_path):
         row.update({"id": uid, "name": name, "type": utype, "nat": nat})
         return row
 
-    with open(file_path, 'w', newline='', encoding="ISO-8859-1") as f:
+    with open(file_path, 'w', newline='', encoding=ENCODING_TYPE) as f:
         writer = csv.DictWriter(f, fieldnames=headers)
         writer.writeheader()
 
-        # Row 1: References OB 10 (which triggers the upgrade chain to 20)
+        # Row 1: References TOE(OB) 10 (which triggers the upgrade chain to 20)
         writer.writerow(create_row("1", "1st Panzer", "10", "1"))
 
-        # Row 2: References OB 40 (which triggers the chain to 50 -> 60)
+        # Row 2: References TOE(OB) 40 (which triggers the chain to 50 -> 60)
         writer.writerow(create_row("2", "1st Infantry", "40", "1"))
 
         # Row 3: Invalid reference (proves your script ignores bad data)
@@ -87,13 +89,13 @@ def test_find_unreferenced_ob_ids_with_nat_filter(mock_ob_csv, mock_unit_csv):
     # Execute: Filter ONLY for Nationality 1 (Germany)
     orphans_ger = find_unreferenced_ob_ids(mock_ob_csv, mock_unit_csv, nat_code={1})
 
-    # OB 70 is Nat 3, so it shouldn't even be evaluated. Only OB 30 should remain.
+    # TOE(OB) 70 is Nat 3, so it shouldn't even be evaluated. Only TOE(OB) 30 should remain.
     assert orphans_ger == {30}
 
     # Execute: Filter ONLY for Nationality 3 (Italy)
     orphans_ita = find_unreferenced_ob_ids(mock_ob_csv, mock_unit_csv, nat_code={3})
 
-    # OB 70 is never referenced by any Nat 3 units, so it is an orphan.
+    # TOE(OB) 70 is never referenced by any Nat 3 units, so it is an orphan.
     assert orphans_ita == {70}
 
 def test_find_unreferenced_ob_ids_missing_files():

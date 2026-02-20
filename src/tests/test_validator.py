@@ -1,5 +1,8 @@
 import csv
 import pytest
+
+# Internal package imports
+from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.auditing.validator import evaluate_unit_consistency
 
 # ==========================================
@@ -10,22 +13,22 @@ from wite2_tools.auditing.validator import evaluate_unit_consistency
 def mock_ground_csv(tmp_path) -> str:
     content = "id,name,other,type\n105,Panzer IV,x,1\n"
     file_path = tmp_path / "mock_ground.csv"
-    file_path.write_text(content, encoding="ISO-8859-1")
+    file_path.write_text(content, encoding=ENCODING_TYPE)
     return str(file_path)
 
 @pytest.fixture
 def mock_corrupted_unit_csv(tmp_path) -> str:
     """Creates a unit file with multiple deliberate errors for the validator to catch."""
     content = (
-        "id,name,type,x,y,hhq,hq,sqd.u0,sqd.num0\n"
-        "1,Valid Unit,10,50,50,0,0,105,10\n"       # 0 Errors: Perfectly valid
-        "1,Duplicate,10,50,50,0,0,105,10\n"        # 1 Error: Duplicate ID '1'
-        "3,Bad Coords,10,999,50,0,0,105,10\n"      # 1 Error: X=999 is off map
-        "4,Bad Elem,10,50,50,0,0,999,10\n"         # 1 Error: Elem 999 doesn't exist
-        "5,Ghost Sqd,10,50,50,0,0,0,50\n"          # 1 Error: Qty 50, but ID is 0
+        "id,name,type,x,y,delay,hhq,hq,sqd.u0,sqd.num0,ax,ay,tx,ty,ptx,pty\n"
+        "1,Valid Unit,10,50,50,0,32,0,105,10,38,17,40,14,19,78\n"         # 1 Error: Invalid HQ ID
+        "1,Duplicate,10,50,50,0,89,0,105,10,38,17,40,114,129,71\n"        # 2 Errors:Duplicate ID '1', Invalid HQ ID
+        "3,Bad Coords,10,999,50,251,0,0,105,10,38,17,40,14,19,73\n"       # 2 Errors: X=999 is off map, Excess Delay
+        "4,Bad Elem,10,50,50,0,82,0,999,10,38,17,40,134,119,78\n"         # 2 Errors: Elem 999 doesn't exist, Invalid HQ ID
+        "5,Ghost Sqd,10,50,50,0,0,59,0,50,38,17,40,114,19,28\n"           # 1 Error: Qty 50, but ID is 0
     )
     file_path = tmp_path / "mock_corrupted_unit.csv"
-    file_path.write_text(content, encoding="ISO-8859-1")
+    file_path.write_text(content, encoding=ENCODING_TYPE)
     return str(file_path)
 
 # ==========================================
@@ -42,8 +45,8 @@ def test_evaluate_unit_consistency_detects_all_errors(mock_corrupted_unit_csv, m
         fix_ghosts=False
     )
 
-    # We deliberately injected exactly 4 errors into the mock CSV
-    assert issues_found == 4
+    # We deliberately injected exactly 8 errors into the mock CSV
+    assert issues_found == 8
 
 
 def test_evaluate_unit_consistency_fixes_ghosts(mock_corrupted_unit_csv, mock_ground_csv):
@@ -58,7 +61,7 @@ def test_evaluate_unit_consistency_fixes_ghosts(mock_corrupted_unit_csv, mock_gr
     )
 
     # Read the file back to verify Ghost Squad (Unit 5) was fixed
-    with open(mock_corrupted_unit_csv, 'r', encoding="ISO-8859-1") as f:
+    with open(mock_corrupted_unit_csv, 'r', encoding=ENCODING_TYPE) as f:
         rows = list(csv.DictReader(f))
 
         # Unit 5 is index 4. The quantity (sqd.num0) should have been forcibly set to "0"

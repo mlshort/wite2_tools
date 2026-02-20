@@ -1,4 +1,7 @@
 import pytest
+
+# Internal package imports
+from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.core.group_units_by_ob import group_units_by_ob
 
 # ==========================================
@@ -18,14 +21,14 @@ def mock_unit_csv(tmp_path) -> str:
     """Creates a mock _unit.csv file for testing the grouping logic."""
     content = (
         "id,name,type,nat\n"
-        "1,1st Panzer,10,1\n"       # Valid: Group under OB 10
-        "2,2nd Panzer,10,1\n"       # Valid: Group under OB 10 (Testing lists)
-        "3,3rd Infantry,20,2\n"     # Valid: Group under OB 20
+        "1,1st Panzer,10,1\n"       # Valid: Group under TOE(OB) 10
+        "2,2nd Panzer,10,1\n"       # Valid: Group under TOE(OB) 10 (Testing lists)
+        "3,3rd Infantry,20,2\n"     # Valid: Group under TOE(OB) 20
         "0,Placeholder,0,1\n"       # Skip: Both ID and Type are 0
         "4,Ghost Unit,0,1\n"        # Skip: Type is 0
     )
     file_path = tmp_path / "mock_unit.csv"
-    file_path.write_text(content, encoding="ISO-8859-1")
+    file_path.write_text(content, encoding=ENCODING_TYPE)
     return str(file_path)
 
 @pytest.fixture
@@ -38,7 +41,7 @@ def mock_corrupted_unit_csv(tmp_path) -> str:
         "3,3rd Infantry,20,2\n"     # Valid, but won't be reached due to crash
     )
     file_path = tmp_path / "mock_corrupted_unit.csv"
-    file_path.write_text(content, encoding="ISO-8859-1")
+    file_path.write_text(content, encoding=ENCODING_TYPE)
     return str(file_path)
 
 # ==========================================
@@ -46,13 +49,13 @@ def mock_corrupted_unit_csv(tmp_path) -> str:
 # ==========================================
 
 def test_group_units_by_ob_success(mock_unit_csv):
-    """Verifies that units are correctly grouped by OB ID into lists."""
+    """Verifies that units are correctly grouped by TOE(OB) ID into lists."""
     result = group_units_by_ob(mock_unit_csv)
 
-    # OB 10 should contain two units
+    # TOE(OB) 10 should contain two units
     assert result[10] == ["1st Panzer", "2nd Panzer"]
 
-    # OB 20 should contain one unit
+    # TOE(OB) 20 should contain one unit
     assert result[20] == ["3rd Infantry"]
 
 def test_group_units_by_ob_skips_type_zero(mock_unit_csv):

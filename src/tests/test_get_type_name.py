@@ -1,4 +1,7 @@
 import pytest
+
+# Internal package imports
+from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.utils.get_type_name import (
     _build_ob_lookup,
     _build_ground_elem_lookup,
@@ -31,7 +34,7 @@ def mock_ob_csv(tmp_path) -> str:
     )
     # Write to a temporary file managed by pytest
     file_path = tmp_path / "mock_ob.csv"
-    file_path.write_text(content, encoding="ISO-8859-1")
+    file_path.write_text(content, encoding=ENCODING_TYPE)
     return str(file_path)
 
 @pytest.fixture
@@ -44,7 +47,7 @@ def mock_ground_csv(tmp_path) -> str:
         "106,Tiger I,x,14\n"          # Valid row
     )
     file_path = tmp_path / "mock_ground.csv"
-    file_path.write_text(content, encoding="ISO-8859-1")
+    file_path.write_text(content, encoding=ENCODING_TYPE)
     return str(file_path)
 
 
@@ -53,7 +56,7 @@ def mock_ground_csv(tmp_path) -> str:
 # ==========================================
 
 def test_get_ob_full_name_success(mock_ob_csv):
-    """Verifies that the OB lookup correctly parses and combines strings."""
+    """Verifies that the TOE(OB) lookup correctly parses and combines strings."""
     assert get_ob_full_name(mock_ob_csv, 10) == "Panzer Div 41"
     assert get_ob_full_name(mock_ob_csv, 11) == "Infantry Div 42"
 

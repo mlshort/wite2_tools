@@ -1,4 +1,7 @@
 import pytest
+
+# Internal package imports
+from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.utils.get_valid_ids import (
     get_valid_ob_ids,
     get_valid_ob_upgrade_ids,
@@ -38,7 +41,7 @@ def mock_ob_csv(tmp_path) -> str:
         "13,a\n"                                  # Skip: Not enough columns (IndexError)
     )
     file_path = tmp_path / "mock_ob.csv"
-    file_path.write_text(content, encoding="ISO-8859-1")
+    file_path.write_text(content, encoding=ENCODING_TYPE)
     return str(file_path)
 
 @pytest.fixture
@@ -57,7 +60,7 @@ def mock_ground_csv(tmp_path) -> str:
         "102\n"                                   # Skip: IndexError
     )
     file_path = tmp_path / "mock_ground.csv"
-    file_path.write_text(content, encoding="ISO-8859-1")
+    file_path.write_text(content, encoding=ENCODING_TYPE)
     return str(file_path)
 
 @pytest.fixture
@@ -75,7 +78,7 @@ def mock_unit_csv(tmp_path) -> str:
         "502,3rd Div,10,1\n"                      # Valid ID (502)
     )
     file_path = tmp_path / "mock_unit.csv"
-    file_path.write_text(content, encoding="ISO-8859-1")
+    file_path.write_text(content, encoding=ENCODING_TYPE)
     return str(file_path)
 
 
@@ -84,7 +87,7 @@ def mock_unit_csv(tmp_path) -> str:
 # ==========================================
 
 def test_get_valid_ob_ids(mock_ob_csv):
-    """Verifies parsing of OB IDs based on non-zero ID and non-zero type."""
+    """Verifies parsing of TOE(OB) IDs based on non-zero ID and non-zero type."""
     valid_ids = get_valid_ob_ids(mock_ob_csv)
     # 10 is valid. 12 is valid (upgrade is 0, but ob_id and type are non-zero)
     assert valid_ids == {10, 12}
@@ -96,7 +99,7 @@ def test_get_valid_ob_upgrade_ids(mock_ob_csv):
     assert upgrade_ids == {20}
 
 def test_get_valid_ground_elem_ids(mock_ground_csv):
-    """Verifies extraction of Ground Element IDs."""
+    """Verifies extraction of Ground Element WIDs."""
     elem_ids = get_valid_ground_elem_ids(mock_ground_csv)
     assert elem_ids == {100}
 

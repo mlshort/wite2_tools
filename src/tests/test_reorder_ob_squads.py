@@ -1,5 +1,7 @@
 import pytest
 
+# Internal package imports
+from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.constants import MAX_SQUAD_SLOTS
 from wite2_tools.modifiers.reorder_ob_squads import (
     reorder_ob_elems,
@@ -7,7 +9,7 @@ from wite2_tools.modifiers.reorder_ob_squads import (
 )
 
 def test_reorder_ob_elems_logic():
-    """Verifies OB space-notation headers shift correctly."""
+    """Verifies TOE(OB) space-notation headers shift correctly."""
     row = {}
     for i in range(MAX_SQUAD_SLOTS):
         row[f"sqd {i}"] = "0"
