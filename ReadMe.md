@@ -1,7 +1,7 @@
 # wite2_tools
 
 [![Build Status](https://github.com/mlshort/wite2_tools/actions/workflows/python-app.yml/badge.svg)](https://github.com/mlshort/wite2_tools/actions)
-[![Pylint](https://github.com/mlshort/wite2_tools/actions/workflows/pylint.yml/badge.svg)](https://github.com/mlshort/wite2_tools/actions/workflows/pylint.yml)
+[![Pylint](https://github.com/mlshort/wite2_tools/actions/workflows/pylint.yml/badge.svg?event=status)](https://github.com/mlshort/wite2_tools/actions/workflows/pylint.yml)
 
 
 **Version:** 0.1.1
