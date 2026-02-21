@@ -5,12 +5,20 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "wite2_tools"
 version = "0.2.0"
-description = "A specialized toolkit for WiTE2 data management."
+description = "A specialized toolkit for analyzing and modifying War in the East 2 data files."
 readme = "ReadMe.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
 authors = [{name = "Mark L. Short"}]
 dependencies = [
     "chardet>=5.2.0"
 ]
+[project.scripts]
+wite2-tools = "wite2_tools.cli:main"
 
 [project.optional-dependencies]
 dev = [
