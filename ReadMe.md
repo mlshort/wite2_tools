@@ -1,6 +1,7 @@
 # wite2_tools
 
 [![Build Status](https://github.com/mlshort/wite2_tools/actions/workflows/python-app.yml/badge.svg)](https://github.com/mlshort/wite2_tools/actions)
+![pylint Score](pylint.svg)
 
 **Version:** 0.1.1
 **Author:** Mark L. Short
