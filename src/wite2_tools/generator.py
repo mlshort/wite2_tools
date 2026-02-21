@@ -21,14 +21,15 @@ Functions
 ---------
 * `read_csv_list_generator`: Yields the header row, followed by enumerated
     tuples of (index, row_list).
-* `read_csv_dict_generator`: Yields the DictReader object (for metadata access),
-    followed by enumerated tuples of (index, row_dict).
+* `read_csv_dict_generator`: Yields the DictReader object
+    (for metadata access), followed by enumerated tuples of (index, row_dict).
 """
 import csv
 from typing import Generator, Union
 
 # Internal package imports
 from .config import ENCODING_TYPE
+
 
 def read_csv_list_generator(
     filename: str,
@@ -42,16 +43,18 @@ def read_csv_list_generator(
 
         # Manually extract the first row as the header
         try:
-            header : list[str] = next(reader)
+            header: list[str] = next(reader)
         except StopIteration:
-            return # Handle empty file
+            return  # Handle empty file
 
-        # Yield the header list (replaces the DictReader object for fieldnames access)
+        # Yield the header list (replaces the DictReader object for fieldnames
+        # access)
         yield header
 
         # Yield rows as lists with their index
         for index, row in enumerate(reader, start=enum_start):
             yield index, row
+
 
 def read_csv_dict_generator(
     filename: str,

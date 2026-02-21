@@ -2,25 +2,21 @@
 Ground Element Weapon Compacting Utility
 ======================================
 
-This module scans a WiTE2 `_ground.csv` file and consolidates the weapon loadouts.
-If a Ground Element has empty weapon slots (e.g., slot 0 is empty, but slot 1 has a weapon),
-this script will shift the active weapons "up" to fill the gaps, ensuring they are sequentially
-packed starting from slot 0.
+This module scans a WiTE2 `_ground.csv` file and consolidates the weapon
+loadouts. If a Ground Element has empty weapon slots (e.g., slot 0 is empty,
+but slot 1 has a weapon), this script will shift the active weapons "up" to
+fill the gaps, ensuring they are sequentially packed starting from slot 0.
 
-It synchronizes all 6 weapon attributes during the shift:
-- wpn (ID)
-- wpnNum (Quantity)
-- wpnAmmo (Ammo)
-- wpnRof (Rate of Fire)
-- wpnAcc (Accuracy)
-- wpnFace (Facing)
+It synchronizes all 6 weapon attributes during the shift: - wpn (ID) - wpnNum
+(Quantity) - wpnAmmo (Ammo) - wpnRof (Rate of Fire) - wpnAcc (Accuracy) -
+wpnFace (Facing)
 
 Command Line Usage:
     python -m wite2_tools.cli compact-weapons [--ground-file FILE]
 
 Example:
-    $ python -m wite2_tools.cli compact-weapons
-    Scans the default _ground.csv file and shifts weapons left/up to compact any empty slots.
+    $ python -m wite2_tools.cli compact-weapons Scans the default _ground.csv
+    file and shifts weapons left/up to compact any empty slots.
 """
 from typing import Tuple
 import os
@@ -33,10 +29,11 @@ from wite2_tools.utils.logger import get_logger
 # Initialize the log for this specific module
 log = get_logger(__name__)
 
+
 def remove_ground_weapon_gaps(ground_file_path: str) -> int:
     """
-    Scans the _ground CSV file, identifies rows with gaps in their weapon slots,
-    and shifts valid weapons left/up to fill those gaps.
+    Scans the _ground CSV file, identifies rows with gaps in their weapon
+    slots, and shifts valid weapons left/up to fill those gaps.
     """
 
     log.info("Task Start: Compacting empty weapon slots in '%s'",
@@ -55,7 +52,8 @@ def remove_ground_weapon_gaps(ground_file_path: str) -> int:
             # If the slot is NOT empty (0 or blank)
             if wpn_id != "0" and wpn_id != "":
                 # Group all stats for this weapon into a dictionary packet
-                weapon_data = {p: row.get(f"{p}{i}", "0") for p in GROUND_WPN_PREFIXES}
+                weapon_data = {p: row.get(f"{p}{i}", "0")
+                               for p in GROUND_WPN_PREFIXES}
                 valid_weapons.append(weapon_data)
 
         # 2. CHECK: Did we actually find any gaps?
@@ -79,8 +77,10 @@ def remove_ground_weapon_gaps(ground_file_path: str) -> int:
         # 4. VERIFY: Compare original layout to new layout
         if original_wpn_ids != new_wpn_ids:
             was_modified = True
-            log.debug("Row %d (ID %s): Shifted weapons. Old Layout: %s -> New Layout: %s",
-                      row_idx, row.get("id", "0"), original_wpn_ids, new_wpn_ids)
+            log.debug("Row %d (ID %s): Shifted weapons."
+                      " Old Layout: %s -> New Layout: %s",
+                      row_idx, row.get("id", "0"), original_wpn_ids,
+                      new_wpn_ids)
 
         return row, was_modified
 
@@ -88,5 +88,6 @@ def remove_ground_weapon_gaps(ground_file_path: str) -> int:
     updates = process_csv_in_place(ground_file_path, process_row)
 
     log.info("Finished. Total Ground Elements compacted: %d", updates)
-    print(f"Success! {updates} Ground Elements had their weapon slot compacted.")
+    print(f"Success! {updates} Ground Elements had their weapon slots"
+          "compacted.")
     return updates

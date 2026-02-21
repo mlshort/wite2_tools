@@ -9,6 +9,7 @@ from wite2_tools.auditing.audit_ground_element import audit_ground_element_csv
 # FIXTURES (Setup)
 # ==========================================
 
+
 @pytest.fixture(name="mock_ground_csv")
 def mock_ground_csv(tmp_path) -> str:
     """Generates a mock _ground.csv with various logical edge cases."""
@@ -24,10 +25,12 @@ def mock_ground_csv(tmp_path) -> str:
         writer.writerow(headers)
 
         # Row 1: Valid Ground Element
-        writer.writerow(["100", "Panzer IV", "x", "13", "x"]) # Type 13 = Md Tank
+        # Type 13 = Md Tank
+        writer.writerow(["100", "Panzer IV", "x", "13", "x"])
 
         # Row 2: Valid Ground Element
-        writer.writerow(["101", "Infantry", "x", "1", "x"]) # Type 1 = Rifle Squad
+        # Type 1 = Rifle Squad
+        writer.writerow(["101", "Infantry", "x", "1", "x"])
 
         # Row 3: Duplicate ID (101) -> Error
         writer.writerow(["101", "Infantry Clone", "x", "1", "x"])
@@ -51,6 +54,7 @@ def mock_ground_csv(tmp_path) -> str:
 # TEST CASES
 # ==========================================
 
+
 def test_audit_ground_element_csv_identifies_issues(mock_ground_csv):
     """
     Verifies that the audit correctly identifies duplicates,
@@ -60,15 +64,19 @@ def test_audit_ground_element_csv_identifies_issues(mock_ground_csv):
 
     # Expected Issues Identified (4 total):
     # 1. Row 3: Duplicate ID 101 triggers a uniqueness violation.
-    # 2. Row 4: Empty string `""` fails `int()` conversion, causing a ValueError.
+    # 2. Row 4: Empty string `""` fails `int()` conversion, causing a
+    # ValueError.
     # 3. Row 5: Type 9999 triggers the "Unk Type" warning from lookups.py.
-    # 4. Row 6: "INVALID" string fails `int()` conversion, causing a ValueError.
+    # 4. Row 6: "INVALID" string fails `int()` conversion, causing a
+    # ValueError.
 
     assert issues == 4
 
 
 def test_audit_ground_element_csv_file_not_found():
-    """Verifies safe failure and error handling when the file does not exist."""
+    """
+    Verifies safe failure and error handling when the file does not exist.
+    """
     issues = audit_ground_element_csv("does_not_exist.csv")
 
     # The script is designed to return -1 when the path is missing

@@ -2,26 +2,27 @@
 Type Name Resolution Utilities
 ==============================
 
-This module provides functions to resolve numerical type IDs into human-readable
-names by referencing external CSV data files (specifically TOE(OB) and Ground
-Element files).
+This module provides functions to resolve numerical type IDs into
+human-readable names by referencing external CSV data files
+(specifically TOE(OB) and Ground Element files).
 It is primarily used for converting raw data IDs from the WiTE2 context into
 descriptive strings for logging or display.
 
 Caching Mechanism
 -----------------
-To optimize performance and minimize file I/O operations, this module implements
-a private-helper caching pattern utilizing `functools.cache`.
+To optimize performance and minimize file I/O operations, this module
+implements a private-helper caching pattern utilizing `functools.cache`.
 
-The first call to a retrieval function triggers a full read of the respective
-CSV file, caching the fully parsed dictionary. All subsequent lookups query
-this cached dictionary instantly in O(1) time.
+The first call to a retrieval function triggers a full read of the
+respective CSV file, caching the fully parsed dictionary. All subsequent
+lookups query this cached dictionary instantly in O(1) time.
 
 Functions
 ---------
 * `get_ob_full_name`: Resolves an TOE(OB) ID to a full name (combining 'name'
                       and 'suffix').
-* `get_unit_type_name`: A wrapper alias for `get_ob_full_name` used for semantic clarity.
+* `get_unit_type_name`: A wrapper alias for `get_ob_full_name` used for
+                        semantic clarity.
 * `get_ground_elem_type_name`: Resolves a Ground Element ID to its name.
 """
 
@@ -31,11 +32,15 @@ from dataclasses import dataclass
 
 # Internal package imports
 from wite2_tools.constants import GroundColumn
-from wite2_tools.generator import read_csv_dict_generator, read_csv_list_generator
+from wite2_tools.generator import (
+    read_csv_dict_generator,
+    read_csv_list_generator,
+)
 from wite2_tools.utils.logger import get_logger
 
 # Initialize the log for this specific module
 logger = get_logger(__name__)
+
 
 @dataclass
 class OBName:
@@ -46,6 +51,7 @@ class OBName:
 # ==========================================
 # ORDER OF BATTLE TOE(OB) LOOKUP
 # ==========================================
+
 
 @cache
 def _build_ob_lookup(ob_file_path: str) -> dict[int, OBName]:
@@ -81,6 +87,7 @@ def _build_ob_lookup(ob_file_path: str) -> dict[int, OBName]:
 
     return lookup
 
+
 def get_ob_full_name(ob_file_path: str, ob_id_to_find: int) -> str:
     """
     Public API: Resolves an TOE(OB) ID to a full name.
@@ -111,6 +118,7 @@ def get_unit_type_name(ob_file_path: str, unit_id_to_find: int) -> str:
 # GROUND ELEMENT LOOKUP
 # ==========================================
 
+
 @cache
 def _build_ground_elem_lookup(ground_file_path: str) -> dict[int, str]:
     """
@@ -126,13 +134,14 @@ def _build_ground_elem_lookup(ground_file_path: str) -> dict[int, str]:
 
     try:
         ground_gen = read_csv_list_generator(ground_file_path)
-        next(ground_gen) # Skip Header
+        next(ground_gen)  # Skip Header
 
         for _, row in ground_gen:
             try:
-                g_id = int(row[GroundColumn.ID]) # 'id' column
+                g_id = int(row[GroundColumn.ID])  # 'id' column
                 if g_id != 0:
-                    lookup[g_id] = row[GroundColumn.NAME].strip() # 'name' column
+                    # 'name' column
+                    lookup[g_id] = row[GroundColumn.NAME].strip()
             except (ValueError, IndexError):
                 continue
 
@@ -141,7 +150,9 @@ def _build_ground_elem_lookup(ground_file_path: str) -> dict[int, str]:
 
     return lookup
 
-def get_ground_elem_type_name(ground_file_path: str, ground_id_to_find: int) -> str:
+
+def get_ground_elem_type_name(ground_file_path: str,
+                              ground_id_to_find: int) -> str:
     """
     Public API: Resolves a Ground Element WID to its name.
     """

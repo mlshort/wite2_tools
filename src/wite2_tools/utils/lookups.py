@@ -27,7 +27,8 @@ OB_COMBAT_CLASS_LOOKUP: dict[int, str] = {
     5: "Multirole"
 }
 
-def get_ob_combat_class_name(ob_class_val:int) -> str:
+
+def get_ob_combat_class_name(ob_class_val: int) -> str:
     """
     Retrieves the description for a specific Combat Class code.
     Returns 'Unk ' if the code is not found.
@@ -35,7 +36,8 @@ def get_ob_combat_class_name(ob_class_val:int) -> str:
     result = OB_COMBAT_CLASS_LOOKUP.get(ob_class_val, f"Unk ({ob_class_val})")
     return result
 
-OB_TYPE_LOOKUP: dict[int,str] = {
+
+OB_TYPE_LOOKUP: dict[int, str] = {
         0: "None",
         1: "Armor",
         2: "Mech",
@@ -46,25 +48,26 @@ OB_TYPE_LOOKUP: dict[int,str] = {
         7: "Arty",
         8: "AT",
         9: "Corps HQ",
-       10: "Army HQ",
-       11: "AG HQ",
-       12: "AA",
-       13: "Mtn",
-       14: "SP Arty",
-       15: "Eng",
-       16: "Const",
-       17: "Mortar",
-       18: "Rocket",
-       19: "Sec",
-       20: "Fort",
-       21: "MG",
-       22: "AirBase",
-       23: "Partisan",
-       24: "Air Land",
-       25: "Naval"
+        10: "Army HQ",
+        11: "AG HQ",
+        12: "AA",
+        13: "Mtn",
+        14: "SP Arty",
+        15: "Eng",
+        16: "Const",
+        17: "Mortar",
+        18: "Rocket",
+        19: "Sec",
+        20: "Fort",
+        21: "MG",
+        22: "AirBase",
+        23: "Partisan",
+        24: "Air Land",
+        25: "Naval"
     }
 
-def get_ob_type_code_name(ob_type_code:int) -> str:
+
+def get_ob_type_code_name(ob_type_code: int) -> str:
     """
     Not to be confused with 'get_ob_type_name', this one
     retrieves the name for a specific TOE(OB) Type code.
@@ -73,7 +76,8 @@ def get_ob_type_code_name(ob_type_code:int) -> str:
     result = OB_TYPE_LOOKUP.get(ob_type_code,  f"Unk ({ob_type_code})")
     return result
 
-NAT_LOOKUP : dict[int, str] = {
+
+NAT_LOOKUP: dict[int, str] = {
     1: "Ger",
     2: "Fin",
     3: "Ita",
@@ -103,13 +107,15 @@ NAT_LOOKUP : dict[int, str] = {
     41: "Swe"
 }
 
-def get_nat_abbr(nat_val:int) -> str:
+
+def get_nat_abbr(nat_val: int) -> str:
     """
     Retrieves the abbreviation for a specific nat code.
     Returns 'Unk ' if the code is not found.
     """
     result = NAT_LOOKUP.get(nat_val, f"Unk ({nat_val})")
     return result
+
 
 # Explicitly declared lookup for WiTE2 Nationalities
 # Key: Nation ID (int), Value: Nation Name (str)
@@ -177,12 +183,14 @@ NATION_LOOKUP: dict[int, str] = {
     63: "Cyprus"
 }
 
+
 def get_country_name(nat_id: int) -> str:
     """
     Returns the nation name for a given ID.
     Defaults to 'Unk ' if ID is not in the list.
     """
     return NATION_LOOKUP.get(nat_id, f"Unk ({nat_id})")
+
 
 # Explicitly declared lookup for Unit Status/Type
 # Key: Status Integer, Value: Status Description
@@ -197,12 +205,14 @@ UNIT_SPECIAL_LOOKUP: dict[int, str] = {
     7: "AL-Elite"
 }
 
+
 def get_unit_special_name(status_code: int) -> str:
     """
     Returns the string description for a given WiTE2 status code.
     Defaults to 'Unk' if the code is not in the lookup table.
     """
     return UNIT_SPECIAL_LOOKUP.get(status_code, f"Unk ({status_code})")
+
 
 # Explicitly declared lookup for WiTE2 Device Types
 # Key: Device Type Integer, Value: Description String
@@ -239,12 +249,14 @@ DEVICE_TYPE_LOOKUP: dict[int, str] = {
     29: "Naval RADAR"
 }
 
+
 def get_device_type_name(device_code: int) -> str:
     """
     Retrieves the description for a specific Device Type code.
     Returns 'Unk ' if the code is not found.
     """
     return DEVICE_TYPE_LOOKUP.get(device_code, f"Unk ({device_code})")
+
 
 # Explicitly declared lookup for WiTE2 HQ Types
 # Key: HQ Type Integer, Value: Description String
@@ -259,12 +271,14 @@ HQ_TYPE_LOOKUP: dict[int, str] = {
     7: "Amphib (Amphibious)"
 }
 
+
 def get_hq_type_description(type_code: int) -> str:
     """
     Retrieves the description for a specific HQ Type code.
     Returns 'Unk Type' if the code is not found in the dictionary.
     """
     return HQ_TYPE_LOOKUP.get(type_code, f"Unk ({type_code})")
+
 
 # Explicitly declared lookup for WiTE2 Ground Element Types
 # Key: Type ID (int), Value: Description (str)
@@ -304,7 +318,7 @@ GROUND_ELEMENT_TYPE_LOOKUP: dict[int, str] = {
     33: "Lt Flak",
     34: "Hvy Flak",
     35: "DD Tank",
-    36: "MSW Tank", # Minesweeper Tank
+    36: "MSW Tank",  # Minesweeper Tank
     37: "Engineer Tank",
     38: "Airborne Squad",
     39: "SP Inf-Gun",
@@ -352,23 +366,23 @@ GROUND_ELEMENT_TYPE_LOOKUP: dict[int, str] = {
     81: "Foreign Assault Gun",
     82: "Foreign SP Artillery",
     83: "Foreign Armoured Car",
-    84: "Foreign SP Rocket", # Unarmored?
-    85: "HT Mortar", # New to WiTE2
-    86: "Super Hvy Artillery", # New to WiTE2
-    87: "Chassis", # New to WiTE2
-    88: "Mech Recon", # New to WiTE2
-    89: "Lt Infantry", # New to WiTE2
-    90: "Hvy SP Artillery", # New to WiTE2
-    91: "CS Armored Car", # New to WiTE2
-    92: "Hvy Armored Car", # New to WiTE2
-    93: "Flame APC", # New to WiTE2
+    84: "Foreign SP Rocket",  # Unarmored?
+    85: "HT Mortar",  # New to WiTE2
+    86: "Super Hvy Artillery",  # New to WiTE2
+    87: "Chassis",  # New to WiTE2
+    88: "Mech Recon",  # New to WiTE2
+    89: "Lt Infantry",  # New to WiTE2
+    90: "Hvy SP Artillery",  # New to WiTE2
+    91: "CS Armored Car",  # New to WiTE2
+    92: "Hvy Armored Car",  # New to WiTE2
+    93: "Flame APC",  # New to WiTE2
     94: "Troop Ship",
     95: "Cargo Ship",
     96: "Vehicle Repair",
     97: "Supply Dump",
     98: "Fuel Dump",
     99: "Support",
-    100: "Air Support", # New to WiTE2
+    100: "Air Support",  # New to WiTE2
     101: "Manpower",
     102: "Hvy Industry",
     103: "Oil",
@@ -383,11 +397,12 @@ GROUND_ELEMENT_TYPE_LOOKUP: dict[int, str] = {
     112: "V-weapons launcher",
     113: "U-boat Factory",
     114: "U-boat Pen",
-    115: "Assault Squad", # New to WiTE2
-    116: "Static AT Gun", # New to WiTE2
-    117: "Mech Cav", # New to WiTE2
-    118: "MG Section" # Local Modification
+    115: "Assault Squad",  # New to WiTE2
+    116: "Static AT Gun",  # New to WiTE2
+    117: "Mech Cav",  # New to WiTE2
+    118: "MG Section"  # Local Modification
 }
+
 
 def get_ground_elem_class_name(type_id: int) -> str:
     """
@@ -395,6 +410,7 @@ def get_ground_elem_class_name(type_id: int) -> str:
     Handles undefined ranges gracefully.
     """
     return GROUND_ELEMENT_TYPE_LOOKUP.get(type_id, f"Unk ({type_id})")
+
 
 # Explicitly declared lookup for WiTE2 Device Sizes
 # Key: Size Integer, Value: Category Description
@@ -405,6 +421,7 @@ DEVICE_SIZE_LOOKUP: dict[int, str] = {
     4: "Md Tanks, Hvy Artillery",
     5: "Hvy/Super Hvy Tanks, Hvy Artillery, Siege Guns/Mortars"
 }
+
 
 def get_device_size_description(size_code: int) -> str:
     """
@@ -417,20 +434,22 @@ def get_device_size_description(size_code: int) -> str:
 
     return DEVICE_SIZE_LOOKUP.get(size_code, f"Unk ({size_code})")
 
+
 # Explicitly declared lookup for WiTE2 Device Face Types
 # Key: Face Type Integer, Value: Orientation Description
 DEVICE_FACE_TYPE_LOOKUP: dict[int, str] = {
-    0: "Fwd", # (forward)",
+    0: "Fwd",  # (forward)",
     1: "Side",
     2: "Rear",
-    3: "Turret", # (turret/top turret)",
-    4: "BT", # (ball/bottom turret)",
-    5: "TR", # (top rear)",
-    6: "BR", # (bottom rear)",
-    7: "SM", # (swivel mount)",
-    11: "Int", # (Internal bomb load)",
-    12: "Ext", # (external bomb load)"
+    3: "Turret",  # (turret/top turret)",
+    4: "BT",  # (ball/bottom turret)",
+    5: "TR",  # (top rear)",
+    6: "BR",  # (bottom rear)",
+    7: "SM",  # (swivel mount)",
+    11: "Int",  # (Internal bomb load)",
+    12: "Ext",  # (external bomb load)"
 }
+
 
 def get_device_face_type_name(face_code: int) -> str:
     """

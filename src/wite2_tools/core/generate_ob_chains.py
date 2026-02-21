@@ -2,28 +2,30 @@
 Order of Battle TOE(OB) Upgrade Chain Generator
 ===========================================
 
-This module parses the War in the East 2 (WiTE2) `_ob.csv` file to map and generate
-complete chronological upgrade paths (chains) for TOE(OB) templates.
+This module parses the War in the East 2 (WiTE2) `_ob.csv` file to map and
+generate complete chronological upgrade paths (chains) for TOE(OB) templates.
 
-It works by identifying "Root" OBs—templates that are never the destination of an
-upgrade—and recursively tracing their 'upgrade' column references until the end of
-the war is reached.
+It works by identifying "Root" OBs—templates that are never the destination of
+an upgrade—and recursively tracing their 'upgrade' column references until the
+end of the war is reached.
 
 Core Features:
 --------------
-* Full Chain Tracing: Generates easy-to-read strings mapping the entire evolution of
-  a unit structure (e.g., `[41] 1941 Inf Div -> [42] 1942 Inf Div -> [43] 1943 Inf Div`).
-* Nationality Filtering: Can restrict the chain generation to specific nations (e.g., Germany)
-  using the `nation_id` parameter.
-* Loop Protection: Implements a visited-set safety check to prevent infinite loops in the
-  event of circular upgrade references in the game data.
-* Dual Export: Outputs the results simultaneously to both a structured CSV file and a
-  plaintext file for easy searching.
+* Full Chain Tracing: Generates easy-to-read strings mapping the entire
+  evolution of a unit structure (e.g., `[41] 1941 Inf Div -> [42] 1942 Inf
+  Div -> [43] 1943 Inf Div`).
+* Nationality Filtering: Can restrict the chain generation to specific nations
+  (e.g., Germany) using the `nation_id` parameter.
+* Loop Protection: Implements a visited-set safety check to prevent infinite
+  loops in the event of circular upgrade references in the game data.
+* Dual Export: Outputs the results simultaneously to both a structured CSV
+  file and a plaintext file for easy searching.
 
 Main Functions:
 ---------------
-* generate_ob_chains : The primary function that parses the data, traces the chains,
-                       and writes the exports to the specified file paths.
+* generate_ob_chains : The primary function that parses the data, traces the
+                       chains, and writes the exports to the specified file
+                       paths.
 
 Command Line Usage:
     python -m wite2_tools.cli gen-chains [--ob-file FILE] [--csv-out FILE]
@@ -54,12 +56,14 @@ def generate_ob_chains(
     nation_id: Optional[Union[int, str, Iterable[Union[int, str]]]] = None
 ) -> int:
     """
-    Generates TOE(OB) upgrade chains, optionally filtered by a specific nationality code.
+    Generates TOE(OB) upgrade chains, optionally filtered by a specific
+    nationality code.
 
     :param ob_file_path: Path to the source _ob.csv
     :param csv_output_path: Path to save the CSV results
     :param txt_output_path: Path to save the text results
-    :param nation_id: Integer or list of integers representing the 'nat' column value to filter by.
+    :param nation_id: Integer or list of integers representing the 'nat'
+                      column value to filter by.
     :return: The total number of chains generated.
     """
     ob_id_to_name_map: dict[int, str] = {}
@@ -76,11 +80,12 @@ def generate_ob_chains(
     else:
         nat_filter = None
 
-    log.info("Starting TOE(OB) Upgrade Chain Generation from '%s'", os.path.basename(ob_file_path))
+    log.info("Starting TOE(OB) Upgrade Chain Generation from '%s'",
+             os.path.basename(ob_file_path))
 
     # 1. Read the input _ob CSV and build mappings
     data_gen = read_csv_dict_generator(ob_file_path)
-    next(data_gen) # Skip DictReader object
+    next(data_gen)  # Skip DictReader object
 
     for item in data_gen:
         # Cast the yielded item to satisfy static type checkers
@@ -88,16 +93,16 @@ def generate_ob_chains(
 
         try:
             # Early Exit: Filter by nationality
-            ob_nation_id = int(row.get('nat','0'))
+            ob_nation_id = int(row.get('nat', '0'))
             if nat_filter is not None and ob_nation_id not in nat_filter:
                 continue
 
-            ob_type = int(row.get('type','0'))
+            ob_type = int(row.get('type', '0'))
             if ob_type == 0:
                 continue
 
-            ob_id = int(row.get('id','0'))
-            ob_upgrade_id = int(row.get('upgrade','0'))
+            ob_id = int(row.get('id', '0'))
+            ob_upgrade_id = int(row.get('upgrade', '0'))
 
             # Combine ob_name and ob_suffix
             ob_name = row.get('name', '').strip()
@@ -123,17 +128,19 @@ def generate_ob_chains(
     chains_list = []
     for root in roots:
         # Filter out empty entries or structural spacers
-        if not ob_id_to_name_map.get(root) and root not in ob_id_to_upgrade_map:
-            continue
+        if not ob_id_to_name_map.get(root):
+            if root not in ob_id_to_upgrade_map:
+                continue
 
         chain = []
         curr = root
-        visited: set[int] = set() # Safety check for infinite loops in data
+        visited: set[int] = set()  # Safety check for infinite loops in data
 
         while curr != 0 and curr in ob_id_to_name_map:
             if curr in visited:
                 chain.append(f"{curr} (LOOP)")
-                log.warning("Infinite loop detected in upgrade chain at TOE(OB) ID %d", curr)
+                log.warning("Infinite loop detected in upgrade "
+                            "chain at TOE(OB) ID %d", curr)
                 break
 
             chain.append(curr)
@@ -143,7 +150,8 @@ def generate_ob_chains(
         if chain:
             # Format the chain string
             chain_str = " -> ".join([
-                f"[{cid}] {ob_id_to_name_map.get(cid, 'Unk')}" if isinstance(cid, int) else str(cid)
+                f"[{cid}] {ob_id_to_name_map.get(cid, 'Unk')}"
+                if isinstance(cid, int) else str(cid)
                 for cid in chain
             ])
             chains_list.append({
@@ -153,11 +161,13 @@ def generate_ob_chains(
             })
 
     # 4. Write the results to the CSV output
-    with open(csv_output_path, mode='w', newline='', encoding=ENCODING_TYPE) as f:
+    with open(csv_output_path, mode='w', newline='',
+              encoding=ENCODING_TYPE) as f:
         writer = csv.writer(f)
         writer.writerow(['Root ID', 'Length', 'Chain'])
         for chain_info in chains_list:
-            writer.writerow([chain_info['root_id'], chain_info['length'], chain_info['chain_str']])
+            writer.writerow([chain_info['root_id'],
+                             chain_info['length'], chain_info['chain_str']])
 
     # 5. Write the results to the Text output
     with open(txt_output_path, mode='w', encoding=ENCODING_TYPE) as f:

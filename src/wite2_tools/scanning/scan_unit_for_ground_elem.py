@@ -5,9 +5,10 @@ This module scans a War in the East 2 (WiTE2) `_unit` CSV file to find all
 active units that contain a specific Ground Element WID. It iterates through
 the squad slots (`sqd.u0` to `sqd.u31`) for active units.
 
-When a match is found, it outputs the result to the console in a formatted table,
-displaying the Unit's ID, Name, Type (resolved via a lookup), the exact squad
-column where the element was found, and the assigned quantity (`sqd.num`).
+When a match is found, it outputs the result to the console in a formatted
+table, displaying the Unit's ID, Name, Type (resolved via a lookup), the
+exact squad column where the element was found, and the assigned quantity
+(`sqd.num`).
 
 Command Line Usage:
     python -m wite2_tools.cli scan-unit-elem [-h] wid [num_squads]
@@ -18,8 +19,9 @@ Arguments:
 
 Example:
     $ python -m wite2_tools.cli scan-unit-elem 42
-    Scans the unit file and outputs a formatted table of every unit that includes
-    Ground Element 42, showing the exact slot it occupies and the quantity assigned.
+    Scans the unit file and outputs a formatted table of every unit that
+    includes Ground Element 42, showing the exact slot it occupies and the
+    quantity assigned.
 
     $ python -m wite2_tools.cli scan-unit-elem 42 10
     Same as above, but only returns matches where exactly 10 of Ground Element
@@ -31,7 +33,10 @@ from typing import cast
 # Internal package imports
 from wite2_tools.constants import MAX_SQUAD_SLOTS
 from wite2_tools.generator import read_csv_dict_generator
-from wite2_tools.utils.get_type_name import get_unit_type_name, get_ground_elem_type_name
+from wite2_tools.utils.get_type_name import (
+    get_unit_type_name,
+    get_ground_elem_type_name,
+)
 from wite2_tools.utils.logger import get_logger
 from wite2_tools.utils.parsing import parse_int
 
@@ -60,20 +65,27 @@ def _check_squad_match(
                 unit_name = row.get("name", "Unk")
                 squad_quantity = row.get(sqd_num_col, "0")
                 unit_id_val = row.get("id", "0")
-                unit_type = int(row.get("type", "0")) # unit 'type' maps to its TOE(OB) ID
+                # unit 'type' maps to its TOE(OB) ID
+                unit_type = int(row.get("type", "0"))
                 unit_type_name = get_unit_type_name(ob_full_path, unit_type)
 
-                # Filter by exact quantity if a specific number was provided (-1 means ANY)
+                # Filter by exact quantity if a specific number was provided
+                # (-1 means ANY)
                 if num_squads_filter != -1:
                     try:
                         if int(squad_quantity) == num_squads_filter:
-                            print(f"{unit_id_val:>6} | {unit_name:<15.15s} | {unit_type_name:<25.25s} | {sqd_id_col:<6} | '{sqd_num_col}': {squad_quantity}")
+                            print(f"{unit_id_val:>6} | {unit_name:<15.15s} | "
+                                  f"{unit_type_name:<25.25s} | "
+                                  f"{sqd_id_col:<6} | "
+                                  f"'{sqd_num_col}': {squad_quantity}")
                             matches_found += 1
                     except ValueError:
                         continue
                 else:
                     # Print all matches regardless of quantity
-                    print(f"{unit_id_val:>6} | {unit_name:<15.15s} | {unit_type_name:<25.25s} | {sqd_id_col:<6} | '{sqd_num_col}': {squad_quantity}")
+                    print(f"{unit_id_val:>6} | {unit_name:<15.15s} | "
+                          f"{unit_type_name:<25.25s} | {sqd_id_col:<6} | "
+                          f"'{sqd_num_col}': {squad_quantity}")
                     matches_found += 1
 
     return matches_found
@@ -100,15 +112,18 @@ def scan_unit_for_ground_elem(
 
     try:
         unit_gen = read_csv_dict_generator(unit_file_path)
-        next(unit_gen) # Skip DictReader object
+        next(unit_gen)  # Skip DictReader object
 
         scan_str = "ANY" if old_num_squads == -1 else str(old_num_squads)
         ground_elem_name = get_ground_elem_type_name(ground_file_path, wid)
 
-        print(f"\nScanning '{os.path.basename(unit_file_path)}' for '{ground_elem_name}' (WID '{wid}') where quantity == '{scan_str}'")
+        print(f"\nScanning '{os.path.basename(unit_file_path)}' for "
+              f"'{ground_elem_name}' (WID '{wid}') where "
+              f"quantity == '{scan_str}'")
 
         # Print Header for the Console Output
-        print(f"\n{'ID':^6} | {'Name':<15} | {'Type':<25} | {'Squad':<6} | {'Value':<10}")
+        print(f"\n{'ID':^6} | {'Name':<15} | {'Type':<25} | "
+              f"{'Squad':<6} | {'Value':<10}")
         print("-" * 80)
 
         # Iterate through every row

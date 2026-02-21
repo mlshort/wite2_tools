@@ -3,16 +3,20 @@ import pytest
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.core.group_units_by_ob import group_units_by_ob
-from wite2_tools.core.count_global_unit_inventory import count_global_unit_inventory
+from wite2_tools.core.count_global_unit_inventory import (
+    count_global_unit_inventory
+)
 
 # ==========================================
 # FIXTURES (Setup)
 # ==========================================
 
+
 @pytest.fixture(autouse=True, name="clear_caches")
 def clear_caches():
     """Clear the group_units_by_ob cache between tests."""
     group_units_by_ob.cache_clear()
+
 
 @pytest.fixture(name="mock_unit_csv")
 def mock_unit_csv(tmp_path) -> str:
@@ -27,6 +31,7 @@ def mock_unit_csv(tmp_path) -> str:
     file_path.write_text(content, encoding=ENCODING_TYPE)
     return str(file_path)
 
+
 @pytest.fixture(name="mock_ground_csv")
 def mock_ground_csv(tmp_path) -> str:
     content = "id,name,other,type\n105,Panzer IV,x,1\n106,Tiger I,x,1\n"
@@ -38,8 +43,12 @@ def mock_ground_csv(tmp_path) -> str:
 # TEST CASES
 # ==========================================
 
+
 def test_group_units_by_ob(mock_unit_csv):
-    """Verifies that units are correctly grouped by TOE(OB) ID and placeholders are skipped."""
+    """
+    Verifies that units are correctly grouped by TOE(OB) ID
+    and placeholders are skipped.
+    """
     result = group_units_by_ob(mock_unit_csv)
 
     # TOE(OB) 10 should have two units
@@ -49,8 +58,12 @@ def test_group_units_by_ob(mock_unit_csv):
     # Type 0 should not be in the dictionary
     assert 0 not in result
 
+
 def test_count_global_unit_inventory_no_filter(mock_unit_csv, mock_ground_csv):
-    """Verifies that the script accurately sums all equipment across all valid units."""
+    """
+    Verifies that the script accurately sums all equipment across all
+    valid units.
+    """
     inventory = count_global_unit_inventory(mock_unit_csv, mock_ground_csv)
 
     # ID 105 total: 10 + 5 = 15
@@ -60,14 +73,21 @@ def test_count_global_unit_inventory_no_filter(mock_unit_csv, mock_ground_csv):
     # Ensure the 100 panzers from the Type 0 row were not counted
     assert inventory[105] != 115
 
-def test_count_global_unit_inventory_with_nat_filter(mock_unit_csv, mock_ground_csv):
-    """Verifies that the nationality filter strictly isolates specific factions."""
+
+def test_count_global_unit_inventory_with_nat_filter(mock_unit_csv,
+                                                     mock_ground_csv):
+    """
+    Verifies that the nationality filter strictly isolates specific
+    factions.
+    """
     # Run the count only for Nationality 1
-    inventory = count_global_unit_inventory(mock_unit_csv, mock_ground_csv, nation_id={1})
+    inventory = count_global_unit_inventory(mock_unit_csv, mock_ground_csv,
+                                            nation_id={1})
 
     # ID 105 total for Nat 1: 10 + 5 = 15
     assert inventory[105] == 15
-    # ID 106 total for Nat 1: Only the 5 from 1st Panzer (3rd Infantry is Nat 2)
+    # ID 106 total for Nat 1: Only the 5 from 1st Panzer
+    # (3rd Infantry is Nat 2)
     assert inventory[106] == 5
 
 

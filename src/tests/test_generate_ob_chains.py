@@ -9,6 +9,7 @@ from wite2_tools.core.generate_ob_chains import generate_ob_chains
 # FIXTURES (Setup)
 # ==========================================
 
+
 @pytest.fixture(name="mock_workspace")
 def mock_workspace(tmp_path) -> tuple[str, str, str]:
     """
@@ -25,15 +26,15 @@ def mock_workspace(tmp_path) -> tuple[str, str, str]:
     # 3. Corrupted Chain with an infinite loop (Nat 1)
     content = (
         "id,name,suffix,type,nat,upgrade\n"
-        "10,Panzer Div,41,1,1,20\n"   # Chain 1: 10 -> 20 -> 30
+        "10,Panzer Div,41,1,1,20\n"  # Chain 1: 10 -> 20 -> 30
         "20,Panzer Div,42,1,1,30\n"
         "30,Panzer Div,43,1,1,0\n"
-        "40,Inf Div,41,4,2,50\n"      # Chain 2: 40 -> 50 (Nat 2)
+        "40,Inf Div,41,4,2,50\n"  # Chain 2: 40 -> 50 (Nat 2)
         "50,Inf Div,42,4,2,0\n"
-        "60,Loop Div,A,1,1,70\n"      # Chain 3: 60 -> 70 -> 80 -> Loop(70)
+        "60,Loop Div,A,1,1,70\n"  # Chain 3: 60 -> 70 -> 80 -> Loop(70)
         "70,Loop Div,B,1,1,80\n"
-        "80,Loop Div,C,1,1,70\n"      # Circular Reference!
-        "0,Skip Me,,0,0,0\n"          # Should be skipped (ID/Type 0)
+        "80,Loop Div,C,1,1,70\n"  # Circular Reference!
+        "0,Skip Me,,0,0,0\n"  # Should be skipped (ID/Type 0)
     )
 
     ob_file.write_text(content, encoding=ENCODING_TYPE)
@@ -44,6 +45,7 @@ def mock_workspace(tmp_path) -> tuple[str, str, str]:
 # TEST CASES
 # ==========================================
 
+
 def test_generate_ob_chains_success(mock_workspace):
     """Verifies that all valid chains are traced and counted."""
     ob_file, csv_out, txt_out = mock_workspace
@@ -53,6 +55,7 @@ def test_generate_ob_chains_success(mock_workspace):
 
     # We expect 3 roots to be found (IDs 10, 40, and 60)
     assert num_chains == 3
+
 
 def test_generate_ob_chains_nat_filter(mock_workspace):
     """Verifies that the nationality filter correctly isolates chains."""
@@ -70,6 +73,7 @@ def test_generate_ob_chains_nat_filter(mock_workspace):
         assert "[40] Inf Div 41 -> [50] Inf Div 42" in content
         assert "Panzer" not in content  # Chain 1 should not exist
 
+
 def test_generate_ob_chains_loop_protection(mock_workspace):
     """
     Verifies that circular references in the game data do not cause
@@ -84,7 +88,9 @@ def test_generate_ob_chains_loop_protection(mock_workspace):
 
         # Verify the loop was caught and appended to the chain string
         assert "70 (LOOP)" in content
-        assert "[60] Loop Div A -> [70] Loop Div B -> [80] Loop Div C -> 70 (LOOP)" in content
+        assert "[60] Loop Div A -> [70] Loop Div B -> " \
+               "[80] Loop Div C -> 70 (LOOP)" in content
+
 
 def test_generate_ob_chains_csv_output(mock_workspace):
     """Verifies that the CSV output file is structured correctly."""

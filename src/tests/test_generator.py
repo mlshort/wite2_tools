@@ -4,7 +4,11 @@ import pytest
 
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
-from wite2_tools.generator import read_csv_list_generator, read_csv_dict_generator
+from wite2_tools.generator import (
+    read_csv_list_generator,
+    read_csv_dict_generator,
+)
+
 
 @pytest.fixture(name="mock_basic_csv")
 def mock_basic_csv(tmp_path) -> str:
@@ -12,6 +16,7 @@ def mock_basic_csv(tmp_path) -> str:
     file_path = tmp_path / "mock_basic.csv"
     file_path.write_text(content, encoding=ENCODING_TYPE)
     return str(file_path)
+
 
 def test_read_csv_list_generator(mock_basic_csv):
     """Verifies list generator yields header first, then enumerated lists."""
@@ -30,6 +35,7 @@ def test_read_csv_list_generator(mock_basic_csv):
     idx2, row2 = cast(tuple[int, list], next(gen))
     assert idx2 == 2
     assert row2 == ["val4", "val5", "val6"]
+
 
 def test_read_csv_dict_generator(mock_basic_csv):
     """Verifies dict generator yields DictReader first, then enumerated dicts."""

@@ -1,27 +1,32 @@
 """
-Module for identifying units with excessive logistical stores in WiTE2 CSV files.
+Module for identifying units with excessive logistical stores in WiTE2
+CSV files.
 
 This module scans a War in the East 2 (WiTE2) `_unit` CSV file to locate active
 units holding resources far beyond their standard requirements. It evaluates
 four specific logistical categories: ammunition, supplies, fuel, and vehicles.
 
-The detection threshold is hardcoded to flag any unit where its current stockpile
-is greater than 5 times its calculated need (e.g., `ammo > 5 * aNeed`).
+The detection threshold is hardcoded to flag any unit where its current
+stockpile is greater than 5 times its calculated need
+(e.g., `ammo > 5 * aNeed`).
 
-Active units (where `type` != 0) meeting this condition are output to the console
-in a formatted table, detailing their ID, Name, Nationality, current amount,
-needed amount, and the calculated overage ratio.
+Active units (where `type` != 0) meeting this condition are output to the
+console in a formatted table, detailing their ID, Name, Nationality, current
+amount, needed amount, and the calculated overage ratio.
 
 Command Line Usage:
-    python -m wite2_tools.cli scan-excess [--operation {ammo,supplies,fuel,vehicles}]
+    python -m wite2_tools.cli scan-excess [--operation {ammo,supplies,fuel,
+            vehicles}]
 
 Arguments:
     --operation: Specifies which resource to scan for.
-                 Choices are 'ammo' (default), 'supplies', 'fuel', or 'vehicles'.
+                 Choices are 'ammo' (default), 'supplies', 'fuel', or
+                 'vehicles'.
 
 Example:
     $ python -m wite2_tools.cli scan-excess --operation fuel
-    Scans the unit file and prints a table of all units where `fuel` > 5 * `fNeed`.
+    Scans the unit file and prints a table of all units where
+    `fuel` > 5 * `fNeed`.
 """
 import os
 from typing import cast
@@ -52,11 +57,13 @@ def _scan_excess_resource(unit_file_path: str, resource_col: str,
 
     try:
         unit_gen = read_csv_dict_generator(unit_file_path)
-        next(unit_gen) # Skip DictReader object
+        next(unit_gen)  # Skip DictReader object
 
-        print(f"\nScanning '{os.path.basename(unit_file_path)}' for excess {display_name.lower()}.")
+        print(f"\nScanning '{os.path.basename(unit_file_path)}'"
+              f" for excess {display_name.lower()}.")
         # Print Header for the Console Output
-        print(f"\n{'Row':<6} | {'ID':<6} | {'Name':<20} | {'Nat':^5} | {display_name:^10} | {need_col:^10} | {'Ratio':<8}")
+        print(f"\n{'Row':<6} | {'ID':<6} | {'Name':<20} | {'Nat':^5} |"
+              f" {display_name:^10} | {need_col:^10} | {'Ratio':<8}")
         print("-" * 85)
 
         for item in unit_gen:
@@ -94,11 +101,14 @@ def _scan_excess_resource(unit_file_path: str, resource_col: str,
                     ratio = float('inf')
 
                 # 5. Print the row
-                print(f"{row_idx:<6} | {unit_id:<6} | {unit_name:20.20s} | {unit_country_str:^5} | {resource_val:>10} | {need_val:>10} | {ratio:>8.2f}")
+                print(f"{row_idx:<6} | {unit_id:<6} | {unit_name:20.20s} |"
+                      f" {unit_country_str:^5} | {resource_val:>10} |"
+                      f" {need_val:>10} | {ratio:>8.2f}")
                 matches_found += 1
 
         if matches_found == 0:
-            print(f"\nNo rows met the condition ({display_name} > 5 * {need_col}).")
+            print(f"\nNo rows met the condition ("
+                  f"{display_name} > 5 * {need_col}).")
         else:
             print(f"\nScan complete. Found {matches_found} "
                   "unit(s) with excess {display_name.lower()}.")
@@ -113,14 +123,18 @@ def _scan_excess_resource(unit_file_path: str, resource_col: str,
 # PUBLIC API WRAPPERS
 # ==========================================
 
+
 def scan_units_for_excess_ammo(unit_file_path: str) -> int:
     return _scan_excess_resource(unit_file_path, 'ammo', 'aNeed', 'Ammo')
+
 
 def scan_units_for_excess_supplies(unit_file_path: str) -> int:
     return _scan_excess_resource(unit_file_path, 'sup', 'sNeed', 'Supplies')
 
+
 def scan_units_for_excess_fuel(unit_file_path: str) -> int:
     return _scan_excess_resource(unit_file_path, 'fuel', 'fNeed', 'Fuel')
+
 
 def scan_units_for_excess_vehicles(unit_file_path: str) -> int:
     return _scan_excess_resource(unit_file_path, 'truck', 'vNeed', 'Vehicles')

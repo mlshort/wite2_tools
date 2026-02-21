@@ -14,7 +14,8 @@ Command Line Usage:
 
 Example:
     $ python -m wite2_tools.cli group-units
-    Groups all active units by their assigned TOE(OB) ID and caches the mapping.
+    Groups all active units by their assigned TOE(OB) ID and caches the
+    mapping.
 """
 
 import os
@@ -33,8 +34,8 @@ log = get_logger(__name__)
 @cache
 def group_units_by_ob(unit_file_path: str) -> dict[int, list[str]]:
     """
-    Groups all active units by their TOE(OB) type ID. Returns a dictionary mapping
-    the TOE(OB) ID to a list of unit names.
+    Groups all active units by their TOE(OB) type ID. Returns a dictionary
+    mapping the TOE(OB) ID to a list of unit names.
     """
     # Declare a defaultdict where every new key automatically starts with
     # an empty list []
@@ -48,9 +49,9 @@ def group_units_by_ob(unit_file_path: str) -> dict[int, list[str]]:
 
     try:
         log.info("Building Unit to TOE(OB) grouping cache from: '%s'",
-                    os.path.basename(unit_file_path))
+                 os.path.basename(unit_file_path))
         unit_gen = read_csv_dict_generator(unit_file_path)
-        next(unit_gen) # Skip the DictReader object
+        next(unit_gen)  # Skip the DictReader object
 
         for item in unit_gen:
             # Cast the yielded item to satisfy static type checkers
@@ -66,12 +67,14 @@ def group_units_by_ob(unit_file_path: str) -> dict[int, list[str]]:
             ob_ids_to_units[unit_type].append(unit_name)
 
         # Log the summary instead of printing every single row
-        log.info("Successfully grouped units into %d unique OBs.", len(ob_ids_to_units))
+        log.info("Successfully grouped units into %d unique OBs.",
+                 len(ob_ids_to_units))
 
-        # Relegate the granular details to the DEBUG level to prevent console spam
+        # Relegate the granular details to the DEBUG level to prevent console
+        # spam
         for unit_type, units in sorted(ob_ids_to_units.items()):
             log.debug("TOE(OB) ID %d is used by %d units: %s...",
-                        unit_type, len(units), ', '.join(units[:3]))
+                      unit_type, len(units), ', '.join(units[:3]))
 
     except (OSError, IOError, ValueError, KeyError) as e:
         log.exception("Grouping failed: %s", e)

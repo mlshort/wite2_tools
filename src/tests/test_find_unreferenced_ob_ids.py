@@ -10,6 +10,7 @@ from wite2_tools.core.find_unreferenced_ob_ids import find_unreferenced_ob_ids
 # FIXTURES (Setup)
 # ==========================================
 
+
 @pytest.fixture(name="mock_ob_csv")
 def mock_ob_csv(tmp_path) -> str:
     """
@@ -17,18 +18,21 @@ def mock_ob_csv(tmp_path) -> str:
     """
     content = (
         "id,name,suffix,type,nat,upgrade\n"
-        "10,Panzer,41,1,1,20\n"        # Referenced directly. Upgrades to 20.
-        "20,Panzer,42,1,1,0\n"         # Not directly referenced, but safe via upgrade chain.
-        "30,Orphan Div,A,1,1,0\n"      # NEVER referenced. Should be an orphan!
-        "40,Infantry,41,4,1,50\n"      # Referenced directly. Upgrades to 50.
-        "50,Infantry,42,4,1,60\n"      # Upgrades to 60.
-        "60,Infantry,43,4,1,0\n"       # Safe via a deep 3-step upgrade chain!
-        "70,Italian Div,41,4,3,0\n"    # Different Nationality (Nat 3). Never referenced.
-        "0,Placeholder,,0,0,0\n"       # Should be ignored.
+        "10,Panzer,41,1,1,20\n"  # Referenced directly. Upgrades to 20.
+        "20,Panzer,42,1,1,0\n"  # Not directly referenced, but safe via
+                                # upgrade chain.
+        "30,Orphan Div,A,1,1,0\n"  # NEVER referenced. Should be an orphan!
+        "40,Infantry,41,4,1,50\n"  # Referenced directly. Upgrades to 50.
+        "50,Infantry,42,4,1,60\n"  # Upgrades to 60.
+        "60,Infantry,43,4,1,0\n"  # Safe via a deep 3-step upgrade chain!
+        "70,Italian Div,41,4,3,0\n"  # Different Nationality (Nat 3). Never
+                                     # referenced.
+        "0,Placeholder,,0,0,0\n"  # Should be ignored.
     )
     file_path = tmp_path / "mock_ob.csv"
     file_path.write_text(content, encoding=ENCODING_TYPE)
     return str(file_path)
+
 
 @pytest.fixture(name="mock_unit_csv")
 def mock_unit_csv(tmp_path):
@@ -40,7 +44,7 @@ def mock_unit_csv(tmp_path):
         headers.append(f"sqd.u{i}")
         headers.append(f"sqd.num{i}")
 
-    def create_row(uid:str, name:str, utype:str, nat:str):
+    def create_row(uid: str, name: str, utype: str, nat: str):
         # Initialize all columns to "0"
         row = {h: "0" for h in headers}
         # Overwrite with specific unit data
@@ -66,6 +70,7 @@ def mock_unit_csv(tmp_path):
 # TEST CASES
 # ==========================================
 
+
 def test_find_unreferenced_ob_ids_success(mock_ob_csv, mock_unit_csv):
     """
     Verifies that the core logic correctly identifies true orphans while safely
@@ -81,28 +86,34 @@ def test_find_unreferenced_ob_ids_success(mock_ob_csv, mock_unit_csv):
     # 30, 70: Orphans (Never referenced directly or in a chain)
     assert orphans == {30, 70}
 
+
 def test_find_unreferenced_ob_ids_with_nat_filter(mock_ob_csv, mock_unit_csv):
     """
     Verifies that nationality filtering successfully isolates the orphan check
     to a specific faction.
     """
     # Execute: Filter ONLY for Nationality 1 (Germany)
-    orphans_ger = find_unreferenced_ob_ids(mock_ob_csv, mock_unit_csv, nation_id={1})
+    orphans_ger = find_unreferenced_ob_ids(mock_ob_csv, mock_unit_csv,
+                                           nation_id={1})
 
-    # TOE(OB) 70 is Nat 3, so it shouldn't even be evaluated. Only TOE(OB) 30 should remain.
+    # TOE(OB) 70 is Nat 3, so it shouldn't even be evaluated. Only TOE(OB) 30
+    # should remain.
     assert orphans_ger == {30}
 
     # Execute: Filter ONLY for Nationality 3 (Italy)
-    orphans_ita = find_unreferenced_ob_ids(mock_ob_csv, mock_unit_csv, nation_id={3})
+    orphans_ita = find_unreferenced_ob_ids(mock_ob_csv, mock_unit_csv,
+                                           nation_id={3})
 
     # TOE(OB) 70 is never referenced by any Nat 3 units, so it is an orphan.
     assert orphans_ita == {70}
+
 
 def test_find_unreferenced_ob_ids_missing_files():
     """
     Verifies graceful failure if the provided file paths are invalid.
     """
-    orphans = find_unreferenced_ob_ids("does_not_exist.csv", "also_missing.csv")
+    orphans = find_unreferenced_ob_ids("does_not_exist.csv",
+                                       "also_missing.csv")
 
     # Should safely return an empty set without crashing
     assert orphans == set()

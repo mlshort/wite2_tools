@@ -2,17 +2,19 @@
 Ground Element Audit Utility
 ============================
 
-This module provides functionality to audit War in the East 2 (WiTE2) `_ground.csv` files.
-It scans the ground elements database to ensure structural and logical consistency, identifying
-issues such as duplicate WIDs, missing or invalid element types, and malformed size or
-manpower data.
+This module provides functionality to audit War in the East 2 (WiTE2)
+`_ground.csv` files.
+It scans the ground elements database to ensure structural and logical
+consistency, identifying issues such as duplicate WIDs, missing or
+invalid element types, and malformed size or manpower data.
 
 Command Line Usage:
     python -m wite2_tools.cli audit-ground [--ground-file FILE]
 
 Example:
     $ python -m wite2_tools.cli audit-ground
-    Scans the default _ground CSV file to ensure all type IDs are valid and logs any logical errors.
+    Scans the default _ground CSV file to ensure all type IDs are valid and
+    logs any logical errors.
 """
 
 import os
@@ -36,7 +38,7 @@ def audit_ground_element_csv(ground_file_path: str) -> int:
         log.error("Audit failed: File not found at %s", ground_file_path)
         return -1
 
-    issues_found : int = 0
+    issues_found: int = 0
 
     seen_ground_ids: set[int] = set()
 
@@ -52,9 +54,9 @@ def audit_ground_element_csv(ground_file_path: str) -> int:
 
         # The generator automatically unpacks row_idx and row dictionary
         for _, row in ground_gen:
-            row_len : int = len(row)
-            ground_id = int(row[GroundColumn.ID] or '0') # 1st 'id' column
-            ground_name = row[GroundColumn.NAME] # 'name' column
+            row_len: int = len(row)
+            ground_id = int(row[GroundColumn.ID] or '0')  # 1st 'id' column
+            ground_name = row[GroundColumn.NAME]  # 'name' column
 
             # 1. Uniqueness Check
             if ground_id != 0 and ground_id in seen_ground_ids:
@@ -65,9 +67,10 @@ def audit_ground_element_csv(ground_file_path: str) -> int:
                 seen_ground_ids.add(ground_id)
 
             # 2. Type Validation
-            raw_type = row[GroundColumn.TYPE] # 'type' column
+            raw_type = row[GroundColumn.TYPE]  # 'type' column
             if raw_type is None:
-                log.error("WID %d (%s): Missing 'type' column value.", ground_id, ground_name)
+                log.error("WID %d (%s): Missing 'type' column value.",
+                          ground_id, ground_name)
                 issues_found += 1
                 continue
 
@@ -82,7 +85,7 @@ def audit_ground_element_csv(ground_file_path: str) -> int:
                                 ground_id, ground_name, ground_type)
                     issues_found += 1
                 elif element_class_name == "Blank":
-                    log.debug("WID %d (%s): Assigned to reserved/blank Type %d",
+                    log.debug("WID %d (%s): Assigned to a blank Type %d",
                               ground_id, ground_name, ground_type)
                 else:
                     log.debug("WID %d (%s): Validated as %s",
@@ -91,13 +94,13 @@ def audit_ground_element_csv(ground_file_path: str) -> int:
                 # following is to account for tests using weird-sized rows
                 if GroundColumn.SIZE > row_len:
                     continue
-                ground_size = int(row[GroundColumn.SIZE] or '0') # 'size' column
+                ground_size = int(row[GroundColumn.SIZE] or '0')
                 if ground_size == 0:
                     log.warning("WID %d (%s): %s has ZERO size",
                                 ground_id, ground_name, element_class_name)
                     issues_found += 1
 
-                ground_men = int(row[GroundColumn.MEN] or '0') # 'men' column
+                ground_men = int(row[GroundColumn.MEN] or '0')  # 'men' column
                 if ground_men == 0:
                     log.warning("WID %d (%s): %s has no men assigned",
                                 ground_id, ground_name, element_class_name)
@@ -110,7 +113,8 @@ def audit_ground_element_csv(ground_file_path: str) -> int:
                     issues_found += 1
 
             except ValueError:
-                log.error("WID %d (%s): 'type' value '%s' is not a valid integer.",
+                log.error("WID %d (%s): 'type' value '%s' is not a "
+                          "valid integer.",
                           ground_id, ground_name, raw_type)
                 issues_found += 1
 

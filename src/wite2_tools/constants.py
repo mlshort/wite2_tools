@@ -19,24 +19,26 @@ Core Contents:
 """
 from enum import IntEnum
 
-MIN_SQUAD_SLOTS : int = 0
-MAX_SQUAD_SLOTS : int = 32
-MAX_GROUND_MEN : int = 30
-MAX_WPN_SLOTS : int = 10
+MIN_SQUAD_SLOTS: int = 0
+MAX_SQUAD_SLOTS: int = 32
+MAX_GROUND_MEN: int = 30
+MAX_WPN_SLOTS: int = 10
 # GC41 is configured to run from 22 Jun 1941 till 2 Aug 1945
 # which is 216 turns
-MAX_GAME_TURNS : int = 225
-EXCESS_RESOURCE_MULTIPLIER : int = 5
+MAX_GAME_TURNS: int = 225
+EXCESS_RESOURCE_MULTIPLIER: int = 5
 
 # Map Coordinate Limits
-MIN_X : int = 0
-MIN_Y : int = 0
-MAX_X : int = 378
-MAX_Y : int = 354
+MIN_X: int = 0
+MIN_Y: int = 0
+MAX_X: int = 378
+MAX_Y: int = 354
 
-GROUND_WPN_PREFIXES : list[str] = ["wpn ", "wpnNum ", "wpnAmmo ", "wpnRof ", "wpnAcc ", "wpnFace "]
-UNIT_SQUAD_PREFIXES : list[str] = ["sqd.u", "sqd.num", "sqd.dis", "sqd.dam",
-                                   "sqd.fat", "sqd.fired", "sqd.exp", "sqd.expAccum"]
+GROUND_WPN_PREFIXES: list[str] = ["wpn ", "wpnNum ", "wpnAmmo ", "wpnRof ",
+                                  "wpnAcc ", "wpnFace "]
+UNIT_SQUAD_PREFIXES: list[str] = ["sqd.u", "sqd.num", "sqd.dis", "sqd.dam",
+                                  "sqd.fat", "sqd.fired", "sqd.exp",
+                                  "sqd.expAccum"]
 
 
 class GroundColumn(IntEnum):
@@ -136,6 +138,7 @@ class GroundColumn(IntEnum):
     WPN_FACE_8 = 90
     WPN_FACE_9 = 91
 
+
 class OBColumn(IntEnum):
     """
     Column indexes for WiTE2's _ob.csv files
@@ -220,6 +223,7 @@ class OBColumn(IntEnum):
     SQD_NUM_30 = 77
     SQD_NUM_31 = 78
 
+
 class UnitColumn(IntEnum):
     """
     Column indexes for WiTE2's _unit.csv files
@@ -297,8 +301,8 @@ class UnitColumn(IntEnum):
     DIV_LOST0 = 70
     DIV_LOST1 = 71
     DIV_LOST2 = 72
-    COMBAT_VALUE0 = 73 # Att CV
-    COMBAT_VALUE1 = 74 # Def CV
+    COMBAT_VALUE0 = 73  # Att CV
+    COMBAT_VALUE1 = 74  # Def CV
     RECON_VALUE0 = 75
     RECON_VALUE1 = 76
     AIR_HQ = 77
@@ -605,6 +609,7 @@ class UnitColumn(IntEnum):
     SQD_EXP31 = 378
     SQD_EXP_ACCUM31 = 379
 
+
 class Elem(IntEnum):
     """
     Work in progress for convenience
@@ -630,6 +635,7 @@ class Elem(IntEnum):
     HMG_SECTION_40 = 600
     HMG_SECTION_42 = 601
     SUPPORT_GER = 1490
+
 
 class OB(IntEnum):
     """
@@ -661,6 +667,7 @@ class OB(IntEnum):
     WAVE_12_LIGHT_DIV_41 = 599
     MTN_DIV_41 = 606
     CAV_DIV_41 = 727
+
 
 class NatCode(IntEnum):
     """

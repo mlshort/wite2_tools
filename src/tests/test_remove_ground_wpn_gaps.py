@@ -3,16 +3,22 @@ import pytest
 
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
-from wite2_tools.modifiers.remove_ground_weapon_gaps import remove_ground_weapon_gaps
+from wite2_tools.modifiers.remove_ground_weapon_gaps import (
+    remove_ground_weapon_gaps,
+)
+
 
 @pytest.fixture(name="mock_ground_csv")
 def mock_ground_csv(tmp_path) -> str:
-    """Generates a mock _ground.csv with intentional gaps in the weapon slots."""
+    """
+    Generates a mock _ground.csv with intentional gaps in the weapon slots.
+    """
     file_path = tmp_path / "mock_ground_weapons.csv"
 
     # Core headers
     headers = ["id", "name", "type"]
-    prefixes = ["wpn ", "wpnNum ", "wpnAmmo ", "wpnRof ", "wpnAcc ", "wpnFace "]
+    prefixes = ["wpn ", "wpnNum ", "wpnAmmo ",
+                "wpnRof ", "wpnAcc ", "wpnFace "]
 
     for i in range(10):
         for p in prefixes:
@@ -44,6 +50,7 @@ def mock_ground_csv(tmp_path) -> str:
         writer.writerow(create_row("3", {"wpn 0": "300", "wpnNum 0": "1"}))
 
     return str(file_path)
+
 
 def test_remove_ground_weapon_gaps(mock_ground_csv):
     """Verifies that gaps are removed and weapons are shifted left/up."""

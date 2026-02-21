@@ -44,7 +44,7 @@ os.makedirs(LOCAL_LOG_PATH, exist_ok=True)
 # otherwise defaults to the standard Windows Steam installation.
 GAME_DATA_PATH = os.getenv(
     "WITE2_DATA_PATH",
-    r"C:\Program Files (x86)\Steam\steamapps\common\Gary Grigsby's War in the East 2\Dat\CSV"
+    r"C:\Program Files (x86)\Steam\steamapps\common\"Gary Grigsby's War in the East 2\Dat\CSV"
 )
 
 # ==========================================
@@ -81,12 +81,15 @@ _LOCAL_UNIT_FULL_PATH = os.path.join(LOCAL_DATA_PATH, _MOD_UNIT_FILENAME)
 _LOCAL_GROUND_FULL_PATH = os.path.join(LOCAL_DATA_PATH, _MOD_GROUND_FILENAME)
 
 _LOCAL_GEN_OB_FULL_PATH = os.path.join(LOCAL_DATA_PATH, _GENERIC_OB_FILENAME)
-_LOCAL_GEN_UNIT_FULL_PATH = os.path.join(LOCAL_DATA_PATH, _GENERIC_UNIT_FILENAME)
-_LOCAL_GEN_GROUND_FULL_PATH = os.path.join(LOCAL_DATA_PATH, _GENERIC_GROUND_FILENAME)
+_LOCAL_GEN_UNIT_FULL_PATH = os.path.join(LOCAL_DATA_PATH,
+                                         _GENERIC_UNIT_FILENAME)
+_LOCAL_GEN_GROUND_FULL_PATH = os.path.join(LOCAL_DATA_PATH,
+                                           _GENERIC_GROUND_FILENAME)
 
 _LOCAL_GC41_OB_FULL_PATH = os.path.join(LOCAL_DATA_PATH, _GC41_OB_FILENAME)
 _LOCAL_GC41_UNIT_FULL_PATH = os.path.join(LOCAL_DATA_PATH, _GC41_UNIT_FILENAME)
-_LOCAL_GC41_GROUND_FULL_PATH = os.path.join(LOCAL_DATA_PATH, _GC41_GROUND_FILENAME)
+_LOCAL_GC41_GROUND_FULL_PATH = os.path.join(LOCAL_DATA_PATH,
+                                            _GC41_GROUND_FILENAME)
 
 # The configured filenames used throughout Wite2_tools
 CONF_OB_FULL_PATH = _LOCAL_OB_FULL_PATH

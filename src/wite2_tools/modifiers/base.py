@@ -33,15 +33,19 @@ from wite2_tools.utils.logger import get_logger
 
 log = get_logger(__name__)
 
+
 def process_csv_in_place(file_path: str,
-                         row_processor: Callable[[dict, int], Tuple[dict, bool]]) -> int:
+                         row_processor: Callable[[dict, int],
+                                                 Tuple[dict, bool]]) -> int:
     """
-    A boilerplate wrapper that safely processes a CSV file in-place using a temporary file.
+    A boilerplate wrapper that safely processes a CSV file in-place using a
+    temporary file.
 
     Args:
         file_path: The absolute path to the CSV file.
         row_processor: A callback function that takes (row_dict, row_index) and
-                       returns a tuple of (modified_row_dict, was_modified_bool).
+                       returns a tuple of (modified_row_dict,
+                       was_modified_bool).
     Returns:
         The total number of rows that were modified.
     """
@@ -50,7 +54,8 @@ def process_csv_in_place(file_path: str,
         return 0
 
     update_count = 0
-    temp_file = NamedTemporaryFile(mode='w', delete=False, dir=os.path.dirname(file_path),
+    temp_file = NamedTemporaryFile(mode='w', delete=False,
+                                   dir=os.path.dirname(file_path),
                                    newline='', encoding=ENCODING_TYPE)
 
     try:
@@ -59,15 +64,18 @@ def process_csv_in_place(file_path: str,
         # 1. Extract and cast the reader object (first yield)
         reader_item = next(data_gen)
         reader = cast(csv.DictReader, reader_item)
+        header = reader.fieldnames
 
         with temp_file as outfile:
-            writer = csv.DictWriter(outfile, fieldnames=reader.fieldnames) # type: ignore
+            writer = csv.DictWriter(outfile,
+                                    fieldnames=header)  # type: ignore
             writer.writeheader()
 
             # 2. Catch the item rather than unpacking it directly in the loop
             for item in data_gen:
 
-                # 3. Explicitly tell the type checker this is now the tuple yield
+                # 3. Explicitly tell the type checker this is now the tuple
+                # yield
                 row_idx, row = cast(tuple[int, dict], item)
 
                 # Pass the row to the custom logic callback
@@ -79,10 +87,13 @@ def process_csv_in_place(file_path: str,
                 writer.writerow(row)
 
         if update_count == 0:
-            log.warning("Process complete: No matches found or no changes made in '%s'.", os.path.basename(file_path))
+            log.warning("Process complete: No matches found or "
+                        "no changes made in '%s'.",
+                        os.path.basename(file_path))
             os.remove(temp_file.name)
         else:
-            log.info("Success: Processing complete. Total rows updated: %d.", update_count)
+            log.info("Success: Processing complete. Total rows updated: %d.",
+                     update_count)
             os.replace(temp_file.name, file_path)
 
     except (OSError, IOError, ValueError, KeyError, TypeError) as e:

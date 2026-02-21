@@ -2,36 +2,43 @@
 Orphaned Order of Battle (OB) Identifier
 ========================================
 
-This module cross-references War in the East 2 (WiTE2) `_ob.csv` and `_unit.csv` files
-to identify unreferenced or "orphaned" TOE(OB) templates.
+This module cross-references War in the East 2 (WiTE2) `_ob.csv` and
+`_unit.csv` files to identify unreferenced or "orphaned" TOE(OB) templates.
 
-An TOE(OB) is considered an "orphan" if it exists in the TOE(OB) database but is never actively
-assigned to a unit on the map, nor is it part of a valid upgrade chain for an active unit.
-Conversely, this script also identifies "invalid references," which occur when an active
-unit is assigned an OB ID that does not exist in the database.
+An TOE(OB) is considered an "orphan" if it exists in the TOE(OB) database but
+is never actively assigned to a unit on the map, nor is it part of a valid
+upgrade chain for an active unit. Conversely, this script also identifies
+"invalid references," which occur when an active unit is assigned an OB ID
+that does not exist in the database.
 
 Core Features:
 --------------
-* Full Upgrade Chain Tracing: Recursively follows the 'upgrade' column in the TOE(OB) data
-  to ensure future upgrade targets are not falsely flagged as orphans.
-* Nationality Filtering: Can isolate the audit to specific nations (e.g., Germany, Italy).
-* High-Performance Caching: Provides the `is_ob_orphaned` function, which caches the
-  calculated sets in memory. This allows other scripts to query thousands of TOE(OB) IDs
-  instantly without re-parsing the large CSV files.
+* Full Upgrade Chain Tracing: Recursively follows the 'upgrade' column in the
+  TOE(OB) data to ensure future upgrade targets are not falsely flagged as
+  orphans.
+* Nationality Filtering: Can isolate the audit to specific nations (e.g.,
+  Germany, Italy).
+* High-Performance Caching: Provides the `is_ob_orphaned` function, which
+  caches the calculated sets in memory. This allows other scripts to query
+  thousands of TOE(OB) IDs instantly without re-parsing the large CSV files.
 
 Main Functions:
 ---------------
-* find_unreferenced_ob_ids : Executes the core parsing and Set Difference logic, returning
-                             a set of all orphaned TOE(OB) IDs.
-* is_ob_orphaned           : A globally cached, O(1) time-complexity verification function
-                             to check if a specific TOE(OB) ID is currently an orphan.
+* find_unreferenced_ob_ids : Executes the core parsing and Set Difference
+  logic, returning a set of all orphaned TOE(OB) IDs.
+* is_ob_orphaned           : A globally cached, O(1) time-complexity
+  verification function
+                             to check if a specific TOE(OB) ID is currently an
+                             orphan.
 
 Command Line Usage:
-    python -m wite2_tools.cli find-orphans [--ob-file FILE] [--unit-file FILE] [--nat-codes NAT_CODES [NAT_CODES ...]]
+    python -m wite2_tools.cli find-orphans [--ob-file FILE] [--unit-file FILE]
+    [--nat-codes NAT_CODES [NAT_CODES ...]]
 
 Example:
-    $ python -m wite2_tools.cli find-orphans --nat-codes 1 3
-    Identifies all unreferenced (orphaned) TOE(OB) templates for German (1) and Italian (3) factions.
+    $ python -m wite2_tools.cli find-orphans --nat-codes 1 3 Identifies all
+    unreferenced (orphaned) TOE(OB) templates for German (1) and Italian (3)
+    factions.
 """
 import os
 from functools import cache
@@ -46,15 +53,19 @@ from wite2_tools.utils.parsing import parse_int
 # Initialize the logger for this specific module
 log = get_logger(__name__)
 
-def find_unreferenced_ob_ids(ob_file_path: str, unit_file_path: str, nation_id=None) -> Set[int]:
+
+def find_unreferenced_ob_ids(ob_file_path: str, unit_file_path: str,
+                             nation_id=None) -> Set[int]:
     """
-    Identifies IDs in the _ob CSV file that are never referenced by the 'type' or 'upgrade'
-    columns in the _unit CSV file, further filtered by the nat_codes provided.
+    Identifies IDs in the _ob CSV file that are never referenced by the 'type'
+    or 'upgrade' columns in the _unit CSV file, further filtered by the
+    nat_codes provided.
     """
     detailed_orphans = True
 
     if not os.path.exists(ob_file_path) or not os.path.exists(unit_file_path):
-        log.error("File error: One or both of the specified CSV files do not exist.")
+        log.error("File error: One or both of the specified CSV files do not "
+                  "exist.")
         return set()
 
     # complete set of TOE(OB) IDs
@@ -89,7 +100,7 @@ def find_unreferenced_ob_ids(ob_file_path: str, unit_file_path: str, nation_id=N
 
         # 1. Parse the TOE(OB) file
         ob_gen = read_csv_dict_generator(ob_file_path)
-        next(ob_gen) # Skip DictReader header yield
+        next(ob_gen)  # Skip DictReader header yield
 
         for _, row in ob_gen:
             ob_nation_id = parse_int(row.get('nat'))
@@ -113,7 +124,7 @@ def find_unreferenced_ob_ids(ob_file_path: str, unit_file_path: str, nation_id=N
 
         # 2. Parse the Unit file
         unit_gen = read_csv_dict_generator(unit_file_path)
-        next(unit_gen) # Skip header
+        next(unit_gen)  # Skip header
         ref_upgraded_id_count = 0
 
         for _, row in unit_gen:
@@ -123,7 +134,7 @@ def find_unreferenced_ob_ids(ob_file_path: str, unit_file_path: str, nation_id=N
                 continue
 
             unit_id = int(row.get('id') or '0')
-            unit_type = int(row.get('type') or '0') # 'type' maps to TOE(OB) ID
+            unit_type = int(row.get('type') or '0')  # 'type' maps to TOE(OB)
             unit_nameid = row.get('name', 'Unk') + f"({unit_id})"
 
             if unit_type != 0:
@@ -157,7 +168,8 @@ def find_unreferenced_ob_ids(ob_file_path: str, unit_file_path: str, nation_id=N
         # 4. Logging Results
         if orphans:
             sorted_orphans = sorted(list(orphans), key=int)
-            log.warning("Found %d Orphan OBs (Unused). Listing below:", len(orphans))
+            log.warning("Found %d Orphan OBs (Unused). Listing below:",
+                        len(orphans))
 
             if detailed_orphans:
                 for orphan_id in sorted_orphans:
@@ -198,7 +210,8 @@ def find_unreferenced_ob_ids(ob_file_path: str, unit_file_path: str, nation_id=N
                     affected_units
                 )
 
-            print(f"CRITICAL: {len(invalids)} units point to non-existent TOE(OB) IDs. Check logs.")
+            print(f"CRITICAL: {len(invalids)} units point to non-existent "
+                  "TOE(OB) IDs. Check logs.")
 
         if not orphans and not invalids:
             log.info(
@@ -231,18 +244,25 @@ def find_unreferenced_ob_ids(ob_file_path: str, unit_file_path: str, nation_id=N
 
 
 @cache
-def _get_cached_orphans(ob_file_path: str, unit_file_path: str, nat_code_tuple: tuple) -> set[int]:
+def _get_cached_orphans(ob_file_path: str, unit_file_path: str,
+                        nat_code_tuple: tuple) -> set[int]:
     """
     Private helper: Runs the heavy orphan logic and caches the resulting set.
     """
 
-    log.info("Building Orphan TOE(OB) cache for nat_codes %s...", nat_code_tuple)
-    return find_unreferenced_ob_ids(ob_file_path, unit_file_path, nat_code_tuple)
+    log.info("Building Orphan TOE(OB) cache for nat_codes %s...",
+             nat_code_tuple)
+    return find_unreferenced_ob_ids(ob_file_path, unit_file_path,
+                                    nat_code_tuple)
 
-def is_ob_orphaned(ob_file_path: str, unit_file_path: str, ob_id_to_check: int,
+
+def is_ob_orphaned(ob_file_path: str,
+                   unit_file_path: str,
+                   ob_id_to_check: int,
                    nation_id=None) -> bool:
     """
-    Public function: Converts arguments to hashables and queries the cached set.
+    Public function: Converts arguments to hashables and queries the cached
+    set.
     """
 
     # 1. Convert the unhashable list/set into a hashable tuple
@@ -255,7 +275,8 @@ def is_ob_orphaned(ob_file_path: str, unit_file_path: str, ob_id_to_check: int,
     else:
         nat_tuple = tuple(sorted(int(n) for n in nation_id))
 
-    # 2. Retrieve the cached set (only calculates once per unique file/nat combination)
+    # 2. Retrieve the cached set (only calculates once per unique file/nat
+    # combination)
     orphan_set = _get_cached_orphans(ob_file_path, unit_file_path, nat_tuple)
 
     # 3. Perform O(1) lookup

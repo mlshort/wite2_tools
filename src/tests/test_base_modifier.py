@@ -27,8 +27,11 @@ def mock_unit_csv(tmp_path) -> str:
 # TEST CASES
 # ==========================================
 
+
 def test_process_csv_successful_modification(mock_unit_csv):
-    """Verifies that the wrapper successfully modifies and saves the file."""
+    """
+    Verifies that the wrapper successfully modifies and saves the file.
+    """
 
     # 1. Define a callback that changes 'sqd.num0' to '99' if 'type' is '100'
     def mock_row_processor(row: dict, _row_idx: int) -> Tuple[dict, bool]:
@@ -42,13 +45,13 @@ def test_process_csv_successful_modification(mock_unit_csv):
 
     # 3. Assert it counted exactly 2 updates (1st and 2nd Panzer)
     assert updates == 2
-    #id,name,type,nat,sqd.u0,sqd.num0\n"
+    # id,name,type,nat,sqd.u0,sqd.num0\n"
     # 4. Read the file back and assert the data was actually saved
     with open(mock_unit_csv, 'r', encoding=ENCODING_TYPE) as f:
         content = f.read()
         assert "1,1st Panzer,100,1,105,99" in content
         assert "2,2nd Panzer,100,1,105,99" in content
-        assert "3,3rd Infantry,200,1,15,10" in content # Untouched
+        assert "3,3rd Infantry,200,1,15,10" in content  # Untouched
 
 
 def test_process_csv_no_modifications(mock_unit_csv):
@@ -75,16 +78,19 @@ def test_process_csv_atomic_rollback_on_error(mock_unit_csv):
     the original file is NOT corrupted or partially overwritten.
     The temporary file should be discarded and the original preserved.
     """
+
     def mock_row_processor(row: dict, row_idx: int) -> Tuple[dict, bool]:
         if row_idx == 1:
             row['sqd.num0'] = '99'
             return row, True
         if row_idx == 2:
-            # This simulates a failure after the first row was "saved" in memory
+            # This simulates a failure after the first row was "saved" in
+            # memory
             raise ValueError("Simulated unexpected crash!")
         return row, False
 
-    # The wrapper gracefully catches the error and returns the updates made prior to the crash.
+    # The wrapper gracefully catches the error and returns the updates made
+    # prior to the crash.
     process_csv_in_place(mock_unit_csv, mock_row_processor)
 
     # Verification
@@ -95,8 +101,10 @@ def test_process_csv_atomic_rollback_on_error(mock_unit_csv):
         assert "99" not in content
         assert "10" in content
 
+
 def test_process_csv_file_not_found():
     """Verifies that the script handles non-existent paths gracefully."""
+
     def dummy_processor(row: dict, _idx: int) -> Tuple[dict, bool]:
         return row, False
 

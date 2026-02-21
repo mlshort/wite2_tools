@@ -4,11 +4,16 @@ import pytest
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.constants import MAX_SQUAD_SLOTS
-from wite2_tools.modifiers.replace_unit_ground_element import replace_unit_ground_element
+from wite2_tools.modifiers.replace_unit_ground_element import (
+    replace_unit_ground_element,
+)
+
 
 @pytest.fixture(name="mock_replace_unit_csv")
 def mock_replace_unit_csv(tmp_path):
-    """Generates a mock _unit.csv to test global Ground Element replacements."""
+    """
+    Generates a mock _unit.csv to test global Ground Element replacements.
+    """
     file_path = tmp_path / "mock_replace_unit.csv"
 
     headers = ["id", "name", "type", "nat"]
@@ -26,8 +31,8 @@ def mock_replace_unit_csv(tmp_path):
             "nat": "1",
             "sqd.u0": elem_slot0,
             "sqd.u31": elem_slot31,
-            "sqd.num0": "10",   # Dummy quantity
-            "sqd.num31": "20"   # Dummy quantity
+            "sqd.num0": "10",  # Dummy quantity
+            "sqd.num31": "20"  # Dummy quantity
         })
         return row
 
@@ -38,7 +43,8 @@ def mock_replace_unit_csv(tmp_path):
         # Row 1: Target 105 at slot 0
         writer.writerow(create_row("1", "105", "0"))
 
-        # Row 2: Target 105 at the very end (slot 31) proving the loop reaches the end
+        # Row 2: Target 105 at the very end (slot 31) proving the loop reaches
+        # the end
         writer.writerow(create_row("2", "55", "105"))
 
         # Row 3: Control row (Target 105 not present, should not be updated)
@@ -47,13 +53,18 @@ def mock_replace_unit_csv(tmp_path):
         # Row 4: Multiple instances of target 105 in the same unit
         writer.writerow(create_row("4", "105", "105"))
 
-        # Row 5: Malformed string data (proves ValueError block prevents crashes)
+        # Row 5: Malformed string data (proves ValueError block prevents
+        # crashes)
         writer.writerow(create_row("5", "INVALID", ""))
 
     return str(file_path)
 
+
 def test_replace_unit_ground_element_success(mock_replace_unit_csv):
-    """Verifies that the target Ground Element is replaced globally across all valid slots."""
+    """
+    Verifies that the target Ground Element is replaced globally across
+    all valid slots.
+    """
 
     # Execute: Globally replace all instances of Ground Element 105 with 999
     updates = replace_unit_ground_element(

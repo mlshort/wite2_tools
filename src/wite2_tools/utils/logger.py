@@ -41,9 +41,11 @@ logging.basicConfig(
     format=LOG_FORMAT,
     handlers=[
         logging.FileHandler(LOG_PATH, encoding=ENCODING_TYPE),
-        logging.StreamHandler()  # Keep printing to console for real-time feedback
+        logging.StreamHandler()  # Keep printing to console for real-time
+                                 # feedback
     ]
 )
+
 
 def get_logger(name):
     """

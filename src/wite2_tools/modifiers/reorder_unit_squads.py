@@ -5,15 +5,16 @@ Unit Squad Reordering Utility
 This module provides functionality to manipulate and reorder ground element
 squads within a War in the East 2 (WiTE2) unit data file. It is designed to
 modify the internal slot allocation of units by moving specific Ground Elements
-to designated indices (0-31) while preserving data integrity for associated attributes.
+to designated indices (0-31) while preserving data integrity for associated
+attributes.
 
 Key Features
 ------------
 * **Atomic Operations**: Uses temporary files and atomic replacement to ensure
     the original CSV is not corrupted if an error occurs during processing.
-* **Comprehensive Shifting**: When a squad is moved, all associated data columns
-    (number, disruption, damage, fatigue, fired state, experience, and accumulation)
-    are moved synchronously to maintain data alignment.
+* **Comprehensive Shifting**: When a squad is moved, all associated data
+    columns (number, disruption, damage, fatigue, fired state, experience, and
+    accumulation) are moved synchronously to maintain data alignment.
 * **Memory Efficient**: Utilizes generator-based streaming to process large
     game data files without loading the entire dataset into memory.
 
@@ -21,16 +22,18 @@ CLI Usage
 ---------
 This module can be executed directly from the command line:
 
-    $ python -m wite2_tools.cli reorder-unit [target_unit_id] [wid] [move_to_index]
+    $ python -m wite2_tools.cli reorder-unit [target_unit_id] [wid]
+    [move_to_index]
 
 Arguments:
     target_unit_id : The ID of the unit to modify.
-    wid          : The ID of the ground element to search for and move.
+    wid            : The ID of the ground element to search for and move.
     move_to_index  : The target slot index (0-31) to place the element.
 
 Functions
 ---------
-* `reorder_unit_squads`: The main entry point for file I/O and processing logic.
+* `reorder_unit_squads`: The main entry point for file I/O and processing
+    logic.
 * `reorder_unit_elems`: Helper function that performs the list manipulation
     on the row dictionary.
 """
@@ -48,9 +51,11 @@ from wite2_tools.modifiers.base import process_csv_in_place
 # Initialize the logger for this specific module
 log = get_logger(__name__)
 
+
 def reorder_unit_elems(row: dict, source_slot: int, target_slot: int) -> dict:
     """
-    Moves elements at 'source_slot' to 'target_slot' and shifts others for all 8 associated unit columns.
+    Moves elements at 'source_slot' to 'target_slot' and shifts others for
+    all 8 associated unit columns.
     """
 
     for prefix in UNIT_SQUAD_PREFIXES:
@@ -63,39 +68,44 @@ def reorder_unit_elems(row: dict, source_slot: int, target_slot: int) -> dict:
     return row
 
 
-def reorder_unit_squads(unit_file_path: str, target_unit_id: int, wid: int, target_slot: int) -> int:
+def reorder_unit_squads(unit_file_path: str, target_unit_id: int, wid: int,
+                        target_slot: int) -> int:
     """
     Reorders specific Ground Element squads within a WiTE2 _unit CSV file.
 
-    This function scans a large _unit CSV for a specific target_unit_id, searches its squad
-    slots (sqd 0 through sqd 31) for a target wid, and moves that squad to a new slot
-    index using a temporary file stream to maintain memory efficiency.
+    This function scans a large _unit CSV for a specific target_unit_id,
+    searches its squad slots (sqd 0 through sqd 31) for a target wid, and moves
+    that squad to a new slot index using a temporary file stream to maintain
+    memory efficiency.
 
     Args:
-        unit_file_path (str): The absolute or relative path to the WiTE2 _unit CSV file.
-        target_unit_id (int): The unique identifier ('id' column) of the UNIT to be modified.
-        wid (int): The WID of the Ground Element to be moved.
-        target_slot (int): The target slot index (0-31) where the element should be relocated.
+        unit_file_path (str): The absolute or relative path to the WiTE2 _unit
+        CSV file. target_unit_id (int): The unique identifier ('id' column) of
+        the UNIT to be modified. wid (int): The WID of the Ground Element to be
+        moved. target_slot (int): The target slot index (0-31) where the
+        element should be relocated.
 
     Returns:
         int: The total number of rows (OBs) successfully updated. Returns 0 if
              no matches were found or if an error occurred.
 
     Note:
-        - Uses a generator-based streaming approach to handle very large CSV files.
-        - Employs a temporary file and atomic replacement (`os.replace`) to prevent
-          data loss during the write process.
+        - Uses a generator-based streaming approach to handle very large CSV
+          files.
+        - Employs a temporary file and atomic replacement (`os.replace`) to
+          prevent data loss during the write process.
         - Compatible with `csv.reader` (list-based) to safely handle files that
           may contain duplicate column headers.
     """
     if not (MIN_SQUAD_SLOTS <= target_slot < MAX_SQUAD_SLOTS):
-        log.error("Validation Error: target_slot slot %d is out of bounds (0-31).", target_slot)
+        log.error("Validation Error: target_slot slot %d is out of bounds "
+                  "(0-31).", target_slot)
         return 0
 
     target_unit_id_str = str(target_unit_id)
     ge_id_str = str(wid)
     file_name = os.path.basename(unit_file_path)
-    log.info("Reordering squads in '%s' | UNIT ID: %s | GE ID: %s | To Loc: %d",
+    log.info("Reordering squads in '%s' | UNIT ID: %s | WID: %s | To Loc: %d",
              file_name, target_unit_id_str, ge_id_str, target_slot)
 
     def process_row(row: dict, row_idx: int) -> tuple[dict, bool]:
@@ -103,12 +113,14 @@ def reorder_unit_squads(unit_file_path: str, target_unit_id: int, wid: int, targ
         if target_unit_id_str == str(unit_id):
             for i in range(MAX_SQUAD_SLOTS):
                 current_sqd_col = f"sqd.u{i}"
-                if current_sqd_col in row and row[current_sqd_col] == ge_id_str:
-                    if i != target_slot:
-                        row = reorder_unit_elems(row, i, target_slot)
-                        log.debug("Row %d: Moved squad from slot %d to %d", row_idx, i, target_slot)
-                        return row, True
-                    break
+                if current_sqd_col in row:
+                    if row[current_sqd_col] == ge_id_str:
+                        if i != target_slot:
+                            row = reorder_unit_elems(row, i, target_slot)
+                            log.debug("Row %d: Moved squad from slot %d to %d",
+                                      row_idx, i, target_slot)
+                            return row, True
+                        break
         return row, False
 
     return process_csv_in_place(unit_file_path, process_row)

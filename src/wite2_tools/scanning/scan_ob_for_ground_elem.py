@@ -1,13 +1,16 @@
 """
-Module for locating specific Ground Elements within WiTE2 Order of Battle TOE(OB) CSV files.
+Module for locating specific Ground Elements within WiTE2 Order of Battle
+TOE(OB) CSV files.
 
-This module scans a War in the East 2 (WiTE2) `_ob` CSV file to find all Orders of Battle that
-contain a specific Ground Element WID. It iterates through the squad slots (`sqd 0` to `sqd 31`)
+This module scans a War in the East 2 (WiTE2) `_ob` CSV file to find all
+Orders of Battle that contain a specific Ground Element WID. It iterates
+through the squad slots (`sqd 0` to `sqd 31`)
 for active OBs, skipping rows where the `type` evaluates to 0 or is invalid.
 
-When a match is found, it outputs the result to the console in a formatted table. This table
-displays the TOE(OB)'s ID, Name, Type (resolved via a lookup), the exact squad column where the
-element was found, and the assigned quantity from the `sqdNum` column.
+When a match is found, it outputs the result to the console in a formatted
+table. This table displays the TOE(OB)'s ID, Name, Type (resolved via a
+lookup), the exact squad column where the element was found, and the assigned
+quantity from the `sqdNum` column.
 
 Command Line Usage:
     python -m wite2_tools.cli scan-ob-elem [-h] wid
@@ -17,8 +20,9 @@ Arguments:
 
 Example:
     $ python -m wite2_tools.cli scan-ob-elem 42
-    Scans the TOE(OB) file and outputs a formatted table of every TOE(OB) that includes
-    Ground Element 42, showing the exact slot it occupies and the quantity assigned.
+    Scans the TOE(OB) file and outputs a formatted table of every TOE(OB) that
+    includes Ground Element 42, showing the exact slot it occupies and the
+    quantity assigned.
 """
 import os
 from typing import cast
@@ -48,14 +52,16 @@ def scan_ob_for_ground_elem(ob_file_path: str, ground_elem_id: int) -> int:
 
     try:
         ob_gen = read_csv_dict_generator(ob_file_path)
-        next(ob_gen) # Skip DictReader object
+        next(ob_gen)  # Skip DictReader object
 
         # Convert inputs to strings to ensure they match CSV text format
         ground_element_id_str = str(ground_elem_id)
 
-        print(f"\nScanning '{file}' for any instances of WID='{ground_element_id_str}'")
+        print(f"\nScanning '{file}' for any instances of "
+              "WID='{ground_element_id_str}'")
         # Print Header for the Console Output
-        print(f"\n{'ID':^6} | {'Name':<20} | {'Type':^9} | {'Squad':<6} | {'Value':<10}")
+        print(f"\n{'ID':^6} | {'Name':<20} | {'Type':^9} | "
+              "{'Squad':<6} | {'Value':<10}")
         print("-" * 80)
 
         # Iterate through every row using explicit type casting
@@ -79,16 +85,19 @@ def scan_ob_for_ground_elem(ob_file_path: str, ground_elem_id: int) -> int:
                 sqd_num_col = f"sqdNum {i}".strip()
 
                 # Check if column exists and matches the target ID
-                if sqd_id_col in row and row[sqd_id_col] == ground_element_id_str:
-                    ob_name = row.get("name", "").strip()
-                    ob_suffix = row.get("suffix", "").strip()
-                    ob_full_name = f"{ob_name} {ob_suffix}"
-                    sqd_num = row.get(sqd_num_col, "0")
+                if sqd_id_col in row:
+                    if row[sqd_id_col] == ground_element_id_str:
+                        ob_name = row.get("name", "").strip()
+                        ob_suffix = row.get("suffix", "").strip()
+                        ob_full_name = f"{ob_name} {ob_suffix}"
+                        sqd_num = row.get(sqd_num_col, "0")
 
-                    ob_type_name = get_ob_type_code_name(ob_type)
+                        ob_type_name = get_ob_type_code_name(ob_type)
 
-                    print(f"{ob_id:>6} | {ob_full_name:<20.20s} | {ob_type_name:<9.9s} | '{sqd_id_col}' | '{sqd_num_col}': {sqd_num}")
-                    matches_found += 1
+                        print(f"{ob_id:>6} | {ob_full_name:<20.20s} | "
+                              f"{ob_type_name:<9.9s} | '{sqd_id_col}' | "
+                              f"'{sqd_num_col}': {sqd_num}")
+                        matches_found += 1
 
         if matches_found == 0:
             print("No matches found.")

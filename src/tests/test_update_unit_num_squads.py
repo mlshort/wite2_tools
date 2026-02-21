@@ -6,6 +6,7 @@ from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.constants import MAX_SQUAD_SLOTS
 from wite2_tools.modifiers.update_unit_num_squads import update_unit_num_squads
 
+
 @pytest.fixture(name="mock_update_unit_csv")
 def mock_update_unit_csv(tmp_path):
     """Generates a 4-row truth table to test all conditional updating paths."""
@@ -49,8 +50,11 @@ def mock_update_unit_csv(tmp_path):
 
     return str(file_path)
 
+
 def test_update_unit_num_squads_success_and_filters(mock_update_unit_csv):
-    """Verifies that the strict multi-level conditions are applied correctly."""
+    """
+    Verifies that the strict multi-level conditions are applied correctly.
+    """
 
     # Execute: In TOE(OB) 50, if Elem 105 has qty 10, change it to 99
     updates = update_unit_num_squads(
@@ -68,7 +72,7 @@ def test_update_unit_num_squads_success_and_filters(mock_update_unit_csv):
         rows = list(csv.DictReader(f))
 
         # Assert data integrity using the 4-Row Truth Table
-        assert rows[0]["sqd.num0"] == "99" # Successful change
-        assert rows[1]["sqd.num0"] == "10" # Blocked by TOE(OB) check
-        assert rows[2]["sqd.num0"] == "10" # Blocked by Elem check
-        assert rows[3]["sqd.num0"] == "15" # Blocked by Old Qty check
+        assert rows[0]["sqd.num0"] == "99"  # Successful change
+        assert rows[1]["sqd.num0"] == "10"  # Blocked by TOE(OB) check
+        assert rows[2]["sqd.num0"] == "10"  # Blocked by Elem check
+        assert rows[3]["sqd.num0"] == "15"  # Blocked by Old Qty check
