@@ -24,6 +24,7 @@ from wite2_tools.constants import MAX_GROUND_MEN, GroundColumn
 from wite2_tools.utils.logger import get_logger
 from wite2_tools.utils.lookups import get_ground_elem_class_name
 from wite2_tools.generator import read_csv_list_generator
+from wite2_tools.utils.parsing import parse_int
 
 # Initialize the log for this specific module
 log = get_logger(__name__)
@@ -55,8 +56,8 @@ def audit_ground_element_csv(ground_file_path: str) -> int:
         # The generator automatically unpacks row_idx and row dictionary
         for _, row in ground_gen:
             row_len: int = len(row)
-            ground_id = int(row[GroundColumn.ID] or '0')  # 1st 'id' column
-            ground_name = row[GroundColumn.NAME]  # 'name' column
+            ground_id: int = parse_int(row[GroundColumn.ID], 0)
+            ground_name = row[GroundColumn.NAME]
 
             # 1. Uniqueness Check
             if ground_id != 0 and ground_id in seen_ground_ids:
@@ -94,13 +95,13 @@ def audit_ground_element_csv(ground_file_path: str) -> int:
                 # following is to account for tests using weird-sized rows
                 if GroundColumn.SIZE > row_len:
                     continue
-                ground_size = int(row[GroundColumn.SIZE] or '0')
+                ground_size = parse_int(row[GroundColumn.SIZE], 0)
                 if ground_size == 0:
                     log.warning("WID %d (%s): %s has ZERO size",
                                 ground_id, ground_name, element_class_name)
                     issues_found += 1
 
-                ground_men = int(row[GroundColumn.MEN] or '0')  # 'men' column
+                ground_men = parse_int(row[GroundColumn.MEN], 0)
                 if ground_men == 0:
                     log.warning("WID %d (%s): %s has no men assigned",
                                 ground_id, ground_name, element_class_name)

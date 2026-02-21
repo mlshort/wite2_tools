@@ -1,7 +1,7 @@
 import csv
 from typing import Dict
-
 import pytest
+
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.constants import MAX_SQUAD_SLOTS
@@ -47,13 +47,14 @@ def mock_unit_csv(tmp_path) -> str:
                                    {"sqd.u0": "55", "sqd.u5": "42",
                                     "sqd.num5": "10"}))
         # Row 2: Control unit
-        writer.writerow(create_row("200", "2nd Panzer", "1", {"sqd.u0": "55"}))
+        writer.writerow(create_row("200", "2nd Panzer", "1",
+                                   {"sqd.u0": "55"}))
 
         # Row 1: Valid German Unit (Nat 1), 10x ID 101, 5x ID 102
         # (Tests loop range and addition)
         writer.writerow(create_row("1", "1st Pz", "1",
-                        {"sqd.u0": "101", "sqd.num0": "10", "sqd.u31": "102",
-                         "sqd.num31": "5"}))
+                        {"sqd.u0": "101", "sqd.num0": "10",
+                         "sqd.u31": "102", "sqd.num31": "5"}))
 
         # Row 2: Valid Finnish Unit (Nat 2), 20x ID 102 (Tests filtering)
         writer.writerow(create_row("2", "1st Fin", "1",

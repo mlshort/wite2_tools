@@ -48,6 +48,7 @@ from tempfile import NamedTemporaryFile
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.generator import read_csv_dict_generator
+from wite2_tools.utils.parsing import parse_int
 from wite2_tools.constants import (
     MAX_SQUAD_SLOTS,
     MIN_X,
@@ -101,9 +102,9 @@ def evaluate_ob_consistency(ob_file_path: str, ground_file_path: str) -> int:
 
         for _, row in ob_gen:
             # 1. Check for Duplicate IDs (Critical for TOE(OB) stability)
-            ob_id = int(row.get('id', '0'))
-            ob_type = int(row.get('type', '0'))
-            ob_first_year = int(row.get('firstYear', '0'))
+            ob_id = parse_int(row.get('id') or '0')
+            ob_type = parse_int(row.get('type') or '0')
+            ob_first_year = parse_int(row.get('firstYear') or '0')
 
             if ob_id in seen_ob_ids:
                 log.error("TOE(OB) ID %d: Duplicate IDs found", ob_id)
@@ -209,10 +210,10 @@ def evaluate_unit_consistency(unit_file_path: str, ground_file_path: str,
                  unit_file_base_name, active_only, fix_ghosts)
 
         for _, row in unit_gen:
-            unit_id = row.get("id", "0")
-            unit_type = row.get("type", "0")
+            unit_id = parse_int(row.get("id"), 0)
+            unit_type = parse_int(row.get("type"), 0)
 
-            if active_only and (unit_id == "0" or unit_type == "0"):
+            if active_only and (unit_id == 0 or unit_type == 0):
                 if fix_ghosts and writer:
                     writer.writerow(row)
                 continue
@@ -221,37 +222,45 @@ def evaluate_unit_consistency(unit_file_path: str, ground_file_path: str,
             # row_modified = False
 
             # 1. Primary Key Uniqueness
-            if int(unit_id) in seen_unit_ids:
-                log.error("ID %s: Duplicate Unit ID '%s' for '%s'", unit_id,
+            if unit_id in seen_unit_ids:
+                log.error("ID %d: Duplicate Unit ID for '%s'",
                           unit_id, unit_name)
                 issues_found += 1
-            seen_unit_ids.add(int(unit_id))
+            seen_unit_ids.add(unit_id)
 
             # 2. Coordinate Validation
             try:
-                x, y = int(row.get('x', -1)), int(row.get('y', -1))
+                x = parse_int(row.get('x'), -1)
+                y = parse_int(row.get('y'), -1)
                 if not (MIN_X <= x <= MAX_X and MIN_Y <= y <= MAX_Y):
-                    log.warning("ID %s (%s): Invalid (x,y) coords (%d, %d)",
+                    log.warning("ID %d (%s): Invalid (x,y) coords (%d, %d)",
                                 unit_id, unit_name, x, y)
                     issues_found += 1
-                x, y = int(row.get('tx', -1)), int(row.get('ty', -1))
+
+                x = parse_int(row.get('tx'), -1)
+                y = parse_int(row.get('ty'), -1)
                 if not (MIN_X <= x <= MAX_X and MIN_Y <= y <= MAX_Y):
-                    log.warning("ID %s (%s): Invalid (tx,ty) coords (%d, %d)",
+                    log.warning("ID %d (%s): Invalid (tx,ty) coords (%d, %d)",
                                 unit_id, unit_name, x, y)
                     issues_found += 1
-                x, y = int(row.get('ax', -1)), int(row.get('ay', -1))
+
+                x = parse_int(row.get('ax'), -1)
+                y = parse_int(row.get('ay'), -1)
                 if not (MIN_X <= x <= MAX_X and MIN_Y <= y <= MAX_Y):
-                    log.warning("ID %s (%s): Invalid (ax,ay) coords (%d, %d)",
+                    log.warning("ID %d (%s): Invalid (ax,ay) coords (%d, %d)",
                                 unit_id, unit_name, x, y)
                     issues_found += 1
-                x, y = int(row.get('ptx', -1)), int(row.get('pty', -1))
+
+                x = parse_int(row.get('ptx'), -1)
+                y = parse_int(row.get('pty'), -1)
                 if not (MIN_X <= x <= MAX_X and MIN_Y <= y <= MAX_Y):
-                    log.warning("ID %s (%s): Invalid (ptx,pty) "
+                    log.warning("ID %d (%s): Invalid (ptx,pty) "
                                 "coords (%d, %d)",
                                 unit_id, unit_name, x, y)
                     issues_found += 1
+
             except (ValueError, TypeError):
-                log.error("ID %s (%s): Non-numeric coordinates detected.",
+                log.error("ID %d (%s): Non-numeric coordinates detected.",
                           unit_id, unit_name)
                 issues_found += 1
 
@@ -260,49 +269,50 @@ def evaluate_unit_consistency(unit_file_path: str, ground_file_path: str,
                 sqd_id_col = f"sqd.u{i}"
                 sqd_num_col = f"sqd.num{i}"
 
-                sqd_id_val = row.get(sqd_id_col, "0")
-                squad_quantity = row.get(sqd_num_col, "0")
+                sqd_id_val = parse_int(row.get(sqd_id_col), 0)
+                squad_quantity = parse_int(row.get(sqd_num_col), 0)
 
                 # Check for Invalid Elem IDs
-                if sqd_id_val != "0" and int(sqd_id_val) not in valid_elem_ids:
-                    log.error("ID %s (%s): Slot %d has invalid Elem ID %s.",
+                if sqd_id_val != 0 and sqd_id_val not in valid_elem_ids:
+                    log.error("ID %d (%s): Slot %d has invalid Elem ID %d.",
                               unit_id, unit_name, i, sqd_id_val)
                     issues_found += 1
 
                 # Check for Ghost Squads (Quantity > 0 but ID == 0)
-                if squad_quantity != "0" and sqd_id_val == "0":
-                    log.error("ID %s (%s): Ghost Squad detected in "
-                              "Slot %d (Qty: %s).",
+                if squad_quantity != 0 and sqd_id_val == 0:
+                    log.error("ID %d (%s): Ghost Squad detected in "
+                              "Slot %d (Qty: %d).",
                               unit_id, unit_name, i, squad_quantity)
                     issues_found += 1
 
                     if fix_ghosts:
-                        log.info(" -> FIXING: Zeroing out %s for Unit %s",
+                        log.info(" -> FIXING: Zeroing out %s for Unit %d",
                                  sqd_num_col, unit_id)
                         row[sqd_num_col] = "0"
                         # row_modified = True
                         fixed_count += 1
 
             # 4. Attachment/HQ Check
-            unit_hhq = int(row.get('hhq') or '0')
-            if unit_hhq == int(unit_id):
-                unit_hq_type = int(row.get('hq') or '0')
+            unit_hhq = parse_int(row.get('hhq'), 0)
+            if unit_hhq == unit_id:
+                unit_hq_type = parse_int(row.get('hq'), 0)
                 if unit_hq_type != 0 and unit_hq_type != 1:
-                    log.warning("ID %s (%s): Unit with HQ Type(%d), "
+                    log.warning("ID %d (%s): Unit with HQ Type(%d), "
                                 "is reporting itself as its own HQ.",
                                 unit_id, unit_name, unit_hq_type)
                     issues_found += 1
+
             if unit_hhq != 0:
                 if unit_hhq not in valid_unit_ids:
-                    log.warning("ID %s (%s): Unit has HQ with "
+                    log.warning("ID %d (%s): Unit has HQ "
                                 "invalid ID (%d).",
                                 unit_id, unit_name, unit_hhq)
                     issues_found += 1
 
             # 5. Excess Delay Check
-            unit_delay = int(row.get("delay") or "0")
+            unit_delay = parse_int(row.get("delay"), 0)
             if unit_delay > MAX_GAME_TURNS:
-                log.warning("ID %s (%s): Unit has a delay of %d, "
+                log.warning("ID %d (%s): Unit has a delay of %d, "
                             "will never appear in game.",
                             unit_id, unit_name, unit_delay)
                 issues_found += 1

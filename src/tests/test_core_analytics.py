@@ -2,6 +2,7 @@
 import pytest
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
+from wite2_tools.core.group_units_by_ob import Unit
 from wite2_tools.core.group_units_by_ob import group_units_by_ob
 from wite2_tools.core.count_global_unit_inventory import (
     count_global_unit_inventory
@@ -52,9 +53,13 @@ def test_group_units_by_ob(mock_unit_csv):
     result = group_units_by_ob(mock_unit_csv)
 
     # TOE(OB) 10 should have two units
-    assert result[10] == ["1st Panzer", "2nd Panzer"]
+    assert result[10] == [Unit(unit_id=1, name="1st Panzer",
+                               unit_type=10, nat=1),
+                          Unit(unit_id=2, name="2nd Panzer",
+                               unit_type=10, nat=1)]
     # TOE(OB) 20 should have one unit
-    assert result[20] == ["3rd Infantry"]
+    assert result[20] == [Unit(unit_id=3, name="3rd Infantry",
+                               unit_type=20, nat=2)]
     # Type 0 should not be in the dictionary
     assert 0 not in result
 

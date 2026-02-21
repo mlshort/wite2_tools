@@ -38,7 +38,10 @@ from wite2_tools.utils.get_type_name import (
     get_ground_elem_type_name,
 )
 from wite2_tools.utils.logger import get_logger
-from wite2_tools.utils.parsing import parse_int
+from wite2_tools.utils.parsing import (
+    parse_int,
+    parse_str
+)
 
 log = get_logger(__name__)
 
@@ -62,19 +65,19 @@ def _check_squad_match(
 
             # Search the row for the new column name and print squad_quantity
             if sqd_num_col in row:
-                unit_name = row.get("name", "Unk")
-                squad_quantity = row.get(sqd_num_col, "0")
-                unit_id_val = row.get("id", "0")
+                unit_name = parse_str(row.get("name"), "Unk")
+                squad_quantity = parse_int(row.get(sqd_num_col), 0)
+                unit_id = parse_int(row.get("id"), 0)
                 # unit 'type' maps to its TOE(OB) ID
-                unit_type = int(row.get("type", "0"))
+                unit_type = parse_int(row.get("type"), 0)
                 unit_type_name = get_unit_type_name(ob_full_path, unit_type)
 
                 # Filter by exact quantity if a specific number was provided
                 # (-1 means ANY)
                 if num_squads_filter != -1:
                     try:
-                        if int(squad_quantity) == num_squads_filter:
-                            print(f"{unit_id_val:>6} | {unit_name:<15.15s} | "
+                        if squad_quantity == num_squads_filter:
+                            print(f"{unit_id:>6} | {unit_name:<15.15s} | "
                                   f"{unit_type_name:<25.25s} | "
                                   f"{sqd_id_col:<6} | "
                                   f"'{sqd_num_col}': {squad_quantity}")
@@ -83,7 +86,7 @@ def _check_squad_match(
                         continue
                 else:
                     # Print all matches regardless of quantity
-                    print(f"{unit_id_val:>6} | {unit_name:<15.15s} | "
+                    print(f"{unit_id:>6} | {unit_name:<15.15s} | "
                           f"{unit_type_name:<25.25s} | {sqd_id_col:<6} | "
                           f"'{sqd_num_col}': {squad_quantity}")
                     matches_found += 1
@@ -129,10 +132,9 @@ def scan_unit_for_ground_elem(
         # Iterate through every row
         for item in unit_gen:
             _, row = cast(tuple[int, dict], item)
-            raw_unit_type = row.get('type', '0')
 
             # Convert to numbers for math comparison
-            unit_type = parse_int(raw_unit_type)
+            unit_type = parse_int(row.get("type"), 0)
             if unit_type == 0:
                 continue
 

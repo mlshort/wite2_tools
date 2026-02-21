@@ -38,7 +38,9 @@ def test_read_csv_list_generator(mock_basic_csv):
 
 
 def test_read_csv_dict_generator(mock_basic_csv):
-    """Verifies dict generator yields DictReader first, then enumerated dicts."""
+    """
+    Verifies dict generator yields DictReader first, then enumerated dicts.
+    """
     gen = read_csv_dict_generator(mock_basic_csv)
 
     # First yield should be the DictReader object

@@ -3,6 +3,7 @@ import pytest
 
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
+from wite2_tools.constants import GROUND_WPN_PREFIXES
 from wite2_tools.modifiers.remove_ground_weapon_gaps import (
     remove_ground_weapon_gaps,
 )
@@ -17,11 +18,9 @@ def mock_ground_csv(tmp_path) -> str:
 
     # Core headers
     headers = ["id", "name", "type"]
-    prefixes = ["wpn ", "wpnNum ", "wpnAmmo ",
-                "wpnRof ", "wpnAcc ", "wpnFace "]
 
     for i in range(10):
-        for p in prefixes:
+        for p in GROUND_WPN_PREFIXES:
             headers.append(f"{p}{i}")
 
     def create_row(uid, wpn_dict):
@@ -38,16 +37,20 @@ def mock_ground_csv(tmp_path) -> str:
         writer.writeheader()
 
         # Row 1 (ID 1): Gap at index 0. Weapon is at index 1.
-        writer.writerow(create_row("1", {"wpn 1": "500", "wpnNum 1": "2"}))
+        writer.writerow(create_row("1", {
+            "wpn 1": "500", "wpnNum 1": "2"
+            }))
 
         # Row 2 (ID 2): Multiple Gaps. Weapons at index 2 and 5.
         writer.writerow(create_row("2", {
             "wpn 2": "100", "wpnNum 2": "1",
             "wpn 5": "200", "wpnNum 5": "4"
-        }))
+            }))
 
         # Row 3 (ID 3): Perfectly packed. No gaps. Should not be modified.
-        writer.writerow(create_row("3", {"wpn 0": "300", "wpnNum 0": "1"}))
+        writer.writerow(create_row("3", {
+            "wpn 0": "300", "wpnNum 0": "1"
+            }))
 
     return str(file_path)
 

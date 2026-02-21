@@ -60,4 +60,3 @@ def test_scan_unit_for_ground_elem_exact_quantity(mock_unit_csv,
         old_num_squads=99
     )
     assert matches_wrong == 0  # Found the element, but quantity didn't match
-

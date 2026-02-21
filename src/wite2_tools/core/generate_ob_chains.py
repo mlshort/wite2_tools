@@ -44,6 +44,10 @@ from typing import Optional, Union, Iterable, cast
 from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.generator import read_csv_dict_generator
 from wite2_tools.utils.logger import get_logger
+from wite2_tools.utils.parsing import (
+    parse_int,
+    parse_str
+)
 
 # Initialize the log for this specific module
 log = get_logger(__name__)
@@ -93,20 +97,20 @@ def generate_ob_chains(
 
         try:
             # Early Exit: Filter by nationality
-            ob_nation_id = int(row.get('nat', '0'))
+            ob_nation_id = parse_int(row.get('nat'), 0)
             if nat_filter is not None and ob_nation_id not in nat_filter:
                 continue
 
-            ob_type = int(row.get('type', '0'))
+            ob_type = parse_int(row.get('type'), 0)
             if ob_type == 0:
                 continue
 
-            ob_id = int(row.get('id', '0'))
-            ob_upgrade_id = int(row.get('upgrade', '0'))
+            ob_id = parse_int(row.get('id'), 0)
+            ob_upgrade_id = parse_int(row.get('upgrade'), 0)
 
             # Combine ob_name and ob_suffix
-            ob_name = row.get('name', '').strip()
-            ob_suffix = row.get('suffix', '').strip()
+            ob_name = parse_str(row.get('name'), '')
+            ob_suffix = parse_str(row.get('suffix'), '')
             ob_full_name = f"{ob_name} {ob_suffix}"
 
             ob_id_to_name_map[ob_id] = ob_full_name

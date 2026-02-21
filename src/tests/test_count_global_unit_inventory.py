@@ -133,4 +133,4 @@ def test_inventory_empty_file(tmp_path, mock_ground_csv):
     empty_file.write_text("id,name,type,nat\n", encoding=ENCODING_TYPE)
 
     inventory = count_global_unit_inventory(str(empty_file), mock_ground_csv)
-    assert inventory == {}
+    assert not inventory

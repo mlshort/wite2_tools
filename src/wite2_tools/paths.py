@@ -44,7 +44,8 @@ os.makedirs(LOCAL_LOG_PATH, exist_ok=True)
 # otherwise defaults to the standard Windows Steam installation.
 GAME_DATA_PATH = os.getenv(
     "WITE2_DATA_PATH",
-    r"C:\Program Files (x86)\Steam\steamapps\common\"Gary Grigsby's War in the East 2\Dat\CSV"
+    "C:\\Program Files (x86)\\Steam\\steamapps\\common\\"
+    "Gary Grigsby's War in the East 2\\Dat\\CSV"
 )
 
 # ==========================================

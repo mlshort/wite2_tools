@@ -32,7 +32,10 @@ from wite2_tools.constants import MAX_SQUAD_SLOTS
 from wite2_tools.generator import read_csv_dict_generator
 from wite2_tools.utils.lookups import get_ob_type_code_name
 from wite2_tools.utils.logger import get_logger
-from wite2_tools.utils.parsing import parse_int
+from wite2_tools.utils.parsing import (
+    parse_int,
+    parse_str
+)
 
 log = get_logger(__name__)
 
@@ -68,12 +71,9 @@ def scan_ob_for_ground_elem(ob_file_path: str, ground_elem_id: int) -> int:
         for item in ob_gen:
             _, row = cast(tuple[int, dict], item)
 
-            raw_ob_type = row.get("type", "0")
-            raw_ob_id = row.get("id", "0")
-
             # Convert to numbers for math comparison
-            ob_type = parse_int(raw_ob_type)
-            ob_id = parse_int(raw_ob_id)
+            ob_type = parse_int(row.get("type"), 0)
+            ob_id = parse_int(row.get("id"), 0)
 
             if ob_id == 0 or ob_type == 0:
                 # Skip rows where type or id == 0
@@ -81,16 +81,16 @@ def scan_ob_for_ground_elem(ob_file_path: str, ground_elem_id: int) -> int:
 
             # 2. Search columns 'sqd 0' through 'sqd 31' for the ground_elem_id
             for i in range(MAX_SQUAD_SLOTS):
-                sqd_id_col = f"sqd {i}".strip()
-                sqd_num_col = f"sqdNum {i}".strip()
+                sqd_id_col = f"sqd {i}"
+                sqd_num_col = f"sqdNum {i}"
 
                 # Check if column exists and matches the target ID
                 if sqd_id_col in row:
                     if row[sqd_id_col] == ground_element_id_str:
-                        ob_name = row.get("name", "").strip()
-                        ob_suffix = row.get("suffix", "").strip()
+                        ob_name = parse_str(row.get("name"), "")
+                        ob_suffix = parse_str(row.get("suffix"), "")
                         ob_full_name = f"{ob_name} {ob_suffix}"
-                        sqd_num = row.get(sqd_num_col, "0")
+                        sqd_num = parse_int(row.get(sqd_num_col), 0)
 
                         ob_type_name = get_ob_type_code_name(ob_type)
 

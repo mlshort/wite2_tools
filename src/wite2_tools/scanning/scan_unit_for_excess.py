@@ -36,7 +36,10 @@ from wite2_tools.constants import EXCESS_RESOURCE_MULTIPLIER
 from wite2_tools.generator import read_csv_dict_generator
 from wite2_tools.utils.lookups import get_nat_abbr
 from wite2_tools.utils.logger import get_logger
-from wite2_tools.utils.parsing import parse_int
+from wite2_tools.utils.parsing import (
+    parse_int,
+    parse_str
+)
 
 # Initialize the log for this specific module
 log = get_logger(__name__)
@@ -70,40 +73,32 @@ def _scan_excess_resource(unit_file_path: str, resource_col: str,
             # Cast the yielded item to satisfy static type checkers
             row_idx, row = cast(tuple[int, dict], item)
 
-            # 1. Get raw string values
-            raw_resource = row.get(resource_col, '0')
-            raw_need = row.get(need_col, '0')
-            raw_unit_type = row.get('type', '0')
+            # 1. Convert to numbers (int) for math comparison
+            resource = parse_int(row.get(resource_col), 0)
+            resource_need = parse_int(row.get(need_col), 0)
+            unit_type = parse_int(row.get('type'), 0)
 
-            # 2. Convert to numbers (int) for math comparison
-            resource_val = parse_int(raw_resource)
-            need_val = parse_int(raw_need)
-            unit_type_val = parse_int(raw_unit_type)
-
-            if unit_type_val == 0:
+            if unit_type == 0:
                 continue
 
-            if unit_type_val == 0:
-                continue
+            # 2. Apply the Logic: Is resource greater than 5 times need?
+            if resource > (EXCESS_RESOURCE_MULTIPLIER * resource_need):
 
-            # 3. Apply the Logic: Is resource greater than 5 times need?
-            if resource_val > (EXCESS_RESOURCE_MULTIPLIER * need_val):
-
-                # 4. Extract ID, Name, and NAT
-                unit_id = int(row.get('id', '0'))
-                unit_name = row.get('name', 'Unk')
-                unit_nation_id = row.get('nat', '0')
-                unit_country_str = get_nat_abbr(int(unit_nation_id))
+                # 3. Extract ID, Name, and NAT
+                unit_id = parse_int(row.get('id'), 0)
+                unit_name = parse_str(row.get('name'), 'Unk')
+                unit_nation_id = parse_int(row.get('nat'), 0)
+                unit_nat_abbr = get_nat_abbr(unit_nation_id)
 
                 try:
-                    ratio = resource_val / need_val
+                    ratio = resource / resource_need
                 except ZeroDivisionError:
                     ratio = float('inf')
 
-                # 5. Print the row
+                # 4. Print the row
                 print(f"{row_idx:<6} | {unit_id:<6} | {unit_name:20.20s} |"
-                      f" {unit_country_str:^5} | {resource_val:>10} |"
-                      f" {need_val:>10} | {ratio:>8.2f}")
+                      f" {unit_nat_abbr:^5} | {resource:>10} |"
+                      f" {resource_need:>10} | {ratio:>8.2f}")
                 matches_found += 1
 
         if matches_found == 0:

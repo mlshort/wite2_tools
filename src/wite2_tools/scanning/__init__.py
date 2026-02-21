@@ -6,7 +6,7 @@ elements, units, or equipment concentrations within the scenario data
 without modifying the source files.
 """
 
-__version__ = "0.1.1"
+__version__ = "0.2.0"
 __date__ = "2026-02-19"
 
 from .scan_ob_for_ground_elem import scan_ob_for_ground_elem

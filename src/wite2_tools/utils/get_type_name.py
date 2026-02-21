@@ -37,13 +37,20 @@ from wite2_tools.generator import (
     read_csv_list_generator,
 )
 from wite2_tools.utils.logger import get_logger
+from wite2_tools.utils.parsing import (
+    parse_int,
+    parse_str
+)
 
 # Initialize the log for this specific module
 logger = get_logger(__name__)
 
 
-@dataclass
+@dataclass(frozen=True)
 class OBName:
+    """
+    Used when building a full ob name
+    """
     full_name: str
     suffix: str  # stores the suffix for later
 
@@ -71,10 +78,10 @@ def _build_ob_lookup(ob_file_path: str) -> dict[int, OBName]:
         next(ob_gen)  # Skip DictReader yield
 
         for _, row in ob_gen:
-            ob_id = row.get("id", "0")
-            if ob_id.isdigit() and int(ob_id) != 0:
-                ob_name = row.get('name', '').strip()
-                ob_suffix = row.get('suffix', '').strip()
+            ob_id = parse_int(row.get("id"), 0)
+            if ob_id != 0:
+                ob_name = parse_str(row.get('name'), '')
+                ob_suffix = parse_str(row.get('suffix'), '')
                 ob_full_name = f"{ob_name} {ob_suffix}"
 
                 lookup[int(ob_id)] = OBName(
@@ -138,10 +145,11 @@ def _build_ground_elem_lookup(ground_file_path: str) -> dict[int, str]:
 
         for _, row in ground_gen:
             try:
-                g_id = int(row[GroundColumn.ID])  # 'id' column
+                g_id = parse_int(row[GroundColumn.ID], 0)
                 if g_id != 0:
                     # 'name' column
-                    lookup[g_id] = row[GroundColumn.NAME].strip()
+                    g_name = parse_str(row[GroundColumn.NAME], "")
+                    lookup[g_id] = g_name
             except (ValueError, IndexError):
                 continue
 

@@ -34,11 +34,12 @@ MIN_Y: int = 0
 MAX_X: int = 378
 MAX_Y: int = 354
 
-GROUND_WPN_PREFIXES: list[str] = ["wpn ", "wpnNum ", "wpnAmmo ", "wpnRof ",
-                                  "wpnAcc ", "wpnFace "]
-UNIT_SQUAD_PREFIXES: list[str] = ["sqd.u", "sqd.num", "sqd.dis", "sqd.dam",
-                                  "sqd.fat", "sqd.fired", "sqd.exp",
-                                  "sqd.expAccum"]
+GROUND_WPN_PREFIXES: list[str] = ["wpn ", "wpnNum ", "wpnAmmo ",
+                                  "wpnRof ", "wpnAcc ", "wpnFace "]
+
+UNIT_SQUAD_PREFIXES: list[str] = ["sqd.u", "sqd.num", "sqd.dis",
+                                  "sqd.dam", "sqd.fat", "sqd.fired",
+                                  "sqd.exp", "sqd.expAccum"]
 
 
 class GroundColumn(IntEnum):

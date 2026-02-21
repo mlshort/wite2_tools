@@ -31,12 +31,14 @@ import os
 from wite2_tools.constants import MAX_SQUAD_SLOTS
 from wite2_tools.modifiers.base import process_csv_in_place
 from wite2_tools.utils.logger import get_logger
+from wite2_tools.utils.parsing import parse_int
 
 # Initialize the log for this specific module
 log = get_logger(__name__)
 
 
-def replace_unit_ground_element(unit_file_path: str, old_ge_id: int,
+def replace_unit_ground_element(unit_file_path: str,
+                                old_ge_id: int,
                                 new_ge_id: int) -> int:
     """
     Replaces a specific Ground Element WID with a new one using integer-based
@@ -52,12 +54,12 @@ def replace_unit_ground_element(unit_file_path: str, old_ge_id: int,
         # Check sqd.u0 through sqd.u31
         for i in range(MAX_SQUAD_SLOTS):
             sqd_id_col = f"sqd.u{i}"
-            ground_elem_id = row.get(sqd_id_col, "0")
+            ground_elem_id = parse_int(row.get(sqd_id_col), 0)
 
             if ground_elem_id:
                 try:
                     # Treat values as integers for comparison
-                    if int(ground_elem_id) == old_ge_id:
+                    if ground_elem_id == old_ge_id:
                         row[sqd_id_col] = str(new_ge_id)
                         was_modified = True
                 except ValueError:

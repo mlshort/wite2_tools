@@ -6,7 +6,7 @@ errors, duplicate IDs, and logical inconsistencies within and between
 the _ob, _unit, and _ground CSV files.
 """
 
-__version__ = "0.1.1"
+__version__ = "0.2.0"
 __date__ = "2026-02-19"
 
 from .validator import evaluate_ob_consistency, evaluate_unit_consistency

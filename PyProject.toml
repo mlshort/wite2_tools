@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wite2_tools"
-version = "0.1.1"
+version = "0.2.0"
 description = "A specialized toolkit for WiTE2 data management."
 readme = "ReadMe.md"
 authors = [{name = "Mark L. Short"}]

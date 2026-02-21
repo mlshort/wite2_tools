@@ -22,12 +22,12 @@ CLI Usage
 ---------
 This module can be executed directly from the command line:
 
-    $ python -m wite2_tools.cli reorder-unit [target_unit_id] [wid]
+    $ python -m wite2_tools.cli reorder-unit [target_unit_id] [target_wid]
     [move_to_index]
 
 Arguments:
     target_unit_id : The ID of the unit to modify.
-    wid            : The ID of the ground element to search for and move.
+    target_wid     : The ID of the ground element to search for and move.
     move_to_index  : The target slot index (0-31) to place the element.
 
 Functions
@@ -47,6 +47,7 @@ from wite2_tools.constants import (
 )
 from wite2_tools.utils.logger import get_logger
 from wite2_tools.modifiers.base import process_csv_in_place
+from wite2_tools.utils.parsing import parse_int
 
 # Initialize the logger for this specific module
 log = get_logger(__name__)
@@ -68,7 +69,9 @@ def reorder_unit_elems(row: dict, source_slot: int, target_slot: int) -> dict:
     return row
 
 
-def reorder_unit_squads(unit_file_path: str, target_unit_id: int, wid: int,
+def reorder_unit_squads(unit_file_path: str,
+                        target_unit_id: int,
+                        target_wid: int,
                         target_slot: int) -> int:
     """
     Reorders specific Ground Element squads within a WiTE2 _unit CSV file.
@@ -97,24 +100,23 @@ def reorder_unit_squads(unit_file_path: str, target_unit_id: int, wid: int,
         - Compatible with `csv.reader` (list-based) to safely handle files that
           may contain duplicate column headers.
     """
-    if not (MIN_SQUAD_SLOTS <= target_slot < MAX_SQUAD_SLOTS):
+    if not MIN_SQUAD_SLOTS <= target_slot < MAX_SQUAD_SLOTS:
         log.error("Validation Error: target_slot slot %d is out of bounds "
                   "(0-31).", target_slot)
         return 0
 
-    target_unit_id_str = str(target_unit_id)
-    ge_id_str = str(wid)
     file_name = os.path.basename(unit_file_path)
-    log.info("Reordering squads in '%s' | UNIT ID: %s | WID: %s | To Loc: %d",
-             file_name, target_unit_id_str, ge_id_str, target_slot)
+    log.info("Reordering squads in '%s' | UNIT ID: %d | WID: %d | To Loc: %d",
+             file_name, target_unit_id, target_wid, target_slot)
 
     def process_row(row: dict, row_idx: int) -> tuple[dict, bool]:
-        unit_id = row.get("id", "0")
-        if target_unit_id_str == str(unit_id):
+        unit_id = parse_int(row.get("id"), 0)
+        if target_unit_id == unit_id:
             for i in range(MAX_SQUAD_SLOTS):
                 current_sqd_col = f"sqd.u{i}"
                 if current_sqd_col in row:
-                    if row[current_sqd_col] == ge_id_str:
+                    wid = parse_int(row.get(current_sqd_col), 0)
+                    if wid == target_wid:
                         if i != target_slot:
                             row = reorder_unit_elems(row, i, target_slot)
                             log.debug("Row %d: Moved squad from slot %d to %d",

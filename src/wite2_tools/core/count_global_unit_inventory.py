@@ -47,6 +47,7 @@ from wite2_tools.constants import MAX_SQUAD_SLOTS
 from wite2_tools.generator import read_csv_dict_generator
 from wite2_tools.utils.logger import get_logger
 from wite2_tools.utils.get_type_name import get_ground_elem_type_name
+from wite2_tools.utils.parsing import parse_int
 
 # Initialize the logger for this specific module
 log = get_logger(__name__)
@@ -88,8 +89,8 @@ def count_global_unit_inventory(
             # Cast the yielded item to satisfy static type checkers
             row_idx, row = cast(tuple[int, dict], item)
 
-            unit_type = int(row.get('type', '0'))
-            unit_nation_id = int(row.get('nat', '0'))
+            unit_type = parse_int(row.get('type'), 0)
+            unit_nation_id = parse_int(row.get('nat'), 0)
 
             if nat_filter is not None and unit_nation_id not in nat_filter:
                 continue
@@ -99,25 +100,24 @@ def count_global_unit_inventory(
             # Iterate through the MAX_SQUAD_SLOTS potential squad slots (sqd.u0
             # to sqd.u31)
             for i in range(MAX_SQUAD_SLOTS):
-                ground_element_id_str = row.get(f'sqd.u{i}', '0')
-                squad_quantity = row.get(f'sqd.num{i}', '0')
+                ge_id = parse_int(row.get(f'sqd.u{i}', 0))
+                squad_quantity = parse_int(row.get(f'sqd.num{i}', 0))
 
                 # Check if the slot is occupied (ID is not None, empty, or '0')
-                if ground_element_id_str and ground_element_id_str != '0':
+                if ge_id != 0:
                     try:
-                        ground_element_id = int(ground_element_id_str)
                         # Default to 0 if the count string is missing or
                         # malformed
-                        count = int(squad_quantity) if squad_quantity else 0
+                        count = squad_quantity if squad_quantity else 0
 
                         # Accumulate the total using defaultdict's auto-
                         # initialization
-                        inventory[ground_element_id] += count
+                        inventory[ge_id] += count
                     except ValueError:
                         log.warning("Row %s: Malformed data in slot %d "
-                                    "(ID: %s, Num: %s)",
-                                    row_idx, i, ground_element_id_str,
-                                    squad_quantity)
+                                    "(ID: %d, Num: %d)",
+                                    row_idx, i,
+                                    ge_id, squad_quantity)
 
         # 4. Log the Final Results
         log.info("--- Inventory Audit Complete ---")
@@ -125,12 +125,12 @@ def count_global_unit_inventory(
         sorted_inventory = sorted(inventory.items(), key=lambda x: x[1],
                                   reverse=True)
 
-        for ground_element_id, total in sorted_inventory:
+        for ge_id, total in sorted_inventory:
             if total > 0:
                 ge_name = get_ground_elem_type_name(ground_file_path,
-                                                    ground_element_id)
-                log.info("%s(%d): Total Count = %d", ge_name,
-                         ground_element_id, total)
+                                                    ge_id)
+                log.info("%s(%d): Total Count = %d",
+                         ge_name, ge_id, total)
 
     except StopIteration:
         log.error("The _unit file appears to be empty.")

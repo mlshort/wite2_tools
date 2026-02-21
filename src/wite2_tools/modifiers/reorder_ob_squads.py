@@ -17,8 +17,9 @@ Command Line Usage:
     python -m wite2_tools.cli reorder-ob [-h] target_ob_id wid target_slot
 
 Arguments:
-    target_ob_id (int): The target Order of Battle TOE(OB) ID. wid (int): The
-    WID of the Ground Element to be moved. target_slot (int): The destination
+    target_ob_id (int): The target Order of Battle TOE(OB) ID.
+    target_wid (int): The WID of the Ground Element to be moved.
+    target_slot (int): The destination
     slot index (0-31) for the targeted element.
 
 Example:
@@ -31,6 +32,7 @@ Example:
 from wite2_tools.constants import MAX_SQUAD_SLOTS
 from wite2_tools.utils.logger import get_logger
 from wite2_tools.modifiers.base import process_csv_in_place
+from wite2_tools.utils.parsing import parse_int
 
 # Initialize the log for this specific module
 log = get_logger(__name__)
@@ -57,7 +59,9 @@ def reorder_ob_elems(row: dict, squad_col: str, squad_num_col: str,
     return row
 
 
-def reorder_ob_squads(ob_file_path: str, target_ob_id: int, wid: int,
+def reorder_ob_squads(ob_file_path: str,
+                      target_ob_id: int,
+                      target_wid: int,
                       target_slot: int) -> int:
     """
     Reorders specific Ground Element squads within a WiTE2 TOE(OB) (Order of
@@ -70,9 +74,11 @@ def reorder_ob_squads(ob_file_path: str, target_ob_id: int, wid: int,
 
     Args:
         ob_file_path (str): The absolute or relative path to the WiTE2 _ob CSV
-        file. target_ob_id (int): The unique identifier ('id' column) of the
-        TOE(OB) to be modified. wid (int): The WID of the Ground Element to be
-        moved. target_slot (int): The target slot index (0-31) where the
+        file.
+        target_ob_id (int): The unique identifier ('id' column) of the
+        TOE(OB) to be modified.
+        wid (int): The WID of the Ground Element to be moved.
+        target_slot (int): The target slot index (0-31) where the
         element should be relocated.
 
     Returns:
@@ -87,24 +93,26 @@ def reorder_ob_squads(ob_file_path: str, target_ob_id: int, wid: int,
         - Compatible with `csv.reader` (list-based) to safely handle files that
           may contain duplicate column headers.
     """
-    if not (0 <= target_slot <= 31):
+    if not 0 <= target_slot <= 31:
         log.error("Validation Error: target_slot slot index %d is "
                   "out of bounds (0-31).", target_slot)
         return 0
 
-    ge_id_str = str(wid)
-    log.info("Reordering squads in '%s' | TOE(ID): %d | Target WID: %s |"
+    log.info("Reordering squads in '%s' | TOE(ID): %d | Target WID: %d |"
              " To Slot Loc: %d",
-             ob_file_path, target_ob_id, ge_id_str, target_slot)
+             ob_file_path, target_ob_id, target_wid, target_slot)
 
     # Define the specific logic for processing an TOE(OB) row
     def process_row(row: dict, _: int) -> tuple[dict, bool]:
-        ob_id = int(row.get("id") or "0")
+        ob_id = parse_int(row.get("id"), 0)
         if target_ob_id == ob_id:
             for i in range(MAX_SQUAD_SLOTS):
                 current_sqd_col = f"sqd {i}"
+
                 if current_sqd_col in row:
-                    if row[current_sqd_col] == ge_id_str:
+                    wid = parse_int(row.get(current_sqd_col), 0)
+
+                    if wid == target_wid:
                         if i != target_slot:
                             row = reorder_ob_elems(row, "sqd ",
                                                    "sqdNum ", i,

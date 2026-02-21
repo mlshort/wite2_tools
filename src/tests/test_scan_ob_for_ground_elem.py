@@ -1,4 +1,3 @@
-import pytest
 
 # Internal package imports
 from wite2_tools.scanning.scan_ob_for_ground_elem import (

@@ -33,7 +33,9 @@ LOG_FILENAME = f"wite2_{timestamp}.log"
 
 # 2. Define the exact path using os.path.join and your dynamic directory
 LOG_PATH = os.path.join(LOCAL_LOG_PATH, LOG_FILENAME)
-LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+# Modified format to include clickable source code references
+LOG_FORMAT = '%(asctime)s - %(levelname)s - File "%(pathname)s", ' \
+             'line %(lineno)d - %(message)s'
 
 # 3. Configure logging immediately on import
 logging.basicConfig(

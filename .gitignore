@@ -21,6 +21,7 @@ env/
 .idea/
 .project
 .settings/
+
 # =========================
 # Local Configuration
 # =========================
@@ -42,4 +43,4 @@ logs/
 # =========================
 # Ignore project bundling tools and text dumps
 bundle_project.py
-project_dump.txt
+project_dump.*

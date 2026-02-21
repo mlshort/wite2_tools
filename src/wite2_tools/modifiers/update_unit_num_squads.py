@@ -17,9 +17,10 @@ Command Line Usage:
     new_num_squads
 
 Arguments:
-    ob_id (int): Target unit's TOE(OB) ID (Order of Battle ID). wid (int):
-    Unit's Element WID containing the squads to change. old_num_squads (int):
-    The exact number of existing squads required to trigger the update.
+    target_ob_id (int): Target unit's TOE(OB) ID (Order of Battle ID).
+    target_wid (int): Unit's Element WID containing the squads to change.
+    old_num_squads (int): The exact number of existing squads required to
+                          trigger the update.
     new_num_squads (int): Number of new squads to set.
 
 Example:
@@ -34,13 +35,17 @@ import os
 from wite2_tools.constants import MAX_SQUAD_SLOTS
 from wite2_tools.modifiers.base import process_csv_in_place
 from wite2_tools.utils.logger import get_logger
+from wite2_tools.utils.parsing import parse_int
 
 # Initialize the logger for this specific module
 log = get_logger(__name__)
 
 
-def update_unit_num_squads(unit_file_path: str, target_ob_id: int, wid: int,
-                           old_num_squads: int, new_num_squads: int) -> int:
+def update_unit_num_squads(unit_file_path: str,
+                           target_ob_id: int,
+                           target_wid: int,
+                           old_num_squads: int,
+                           new_num_squads: int) -> int:
     """
     1. Scans the _unit CSV file for rows where 'type' == target_ob_id
       (TOE(OD)).
@@ -50,45 +55,41 @@ def update_unit_num_squads(unit_file_path: str, target_ob_id: int, wid: int,
     5. If it matches, REPLACES it with 'new_num_squads'.
     """
 
-    # Convert all inputs to strings for consistent CSV comparison
-    ge_id_str = str(wid)
-    old_num_squad_str = str(old_num_squads)
-    new_num_squad_str = str(new_num_squads)
-
-    log.info("Starting update on '%s' (Target TOE(ID): %d, WID: %d)",
-             os.path.basename(unit_file_path), target_ob_id, wid)
+    log.info("Starting update on '%s' (Target TOE(ID): %d, Target WID: %d)",
+             os.path.basename(unit_file_path), target_ob_id, target_wid)
 
     # Define the specific logic for processing a Unit row
     def process_row(row: dict, _: int) -> tuple[dict, bool]:
         was_modified = False
-        unit_id = int(row.get('id') or '0')
-        unit_type = int(row.get('type') or '0')  # unit 'type' maps to TOE(OB)
+        unit_id: int = parse_int(row.get('id'), 0)
+        # _unit.'type' maps to _ob.id
+        unit_type: int = parse_int(row.get('type'), 0)
 
         # 1. Check ob_id
         if unit_type == target_ob_id:
             # 2. Check sqd.u0 through sqd.u31
             for i in range(MAX_SQUAD_SLOTS):
-                sqd_id_col = f"sqd.u{i}"
-                sqd_num_col = f"sqd.num{i}"
+                sqd_id_col: str = f"sqd.u{i}"
+                sqd_num_col: str = f"sqd.num{i}"
 
                 # 3. If wid matches
-                if row.get(sqd_id_col, "0") == ge_id_str:
-                    num_squads_val = row.get(sqd_num_col, "0")
+                wid: int = parse_int(row.get(sqd_id_col), 0)
+                if wid == target_wid:
+                    num_squads: int = parse_int(row.get(sqd_num_col), 0)
 
                     # 4. CONDITIONAL CHECK: Does it equal the exact old amount?
-                    if num_squads_val == old_num_squad_str:
+                    if num_squads == old_num_squads:
                         # 5. UPDATE VALUE
-                        row[sqd_num_col] = new_num_squad_str
+                        row[sqd_num_col] = str(new_num_squads)
                         was_modified = True
-                        log.info("Unit ID %d: Updated WID %s from '%s' to "
-                                 "'%s'",
-                                 unit_id, sqd_num_col, old_num_squad_str,
-                                 new_num_squad_str)
+                        log.info("Unit ID %d: Updated WID %s from %d to %d",
+                                 unit_id, sqd_num_col,
+                                 old_num_squads, new_num_squads)
                     else:
                         log.debug("Unit ID %d: WID match at %s, but %s was "
-                                  "'%s' (Expected '%s')",
+                                  "%d (Expected '%d')",
                                   unit_id, sqd_id_col, sqd_num_col,
-                                  num_squads_val, old_num_squad_str)
+                                  num_squads, old_num_squads)
 
         return row, was_modified
 

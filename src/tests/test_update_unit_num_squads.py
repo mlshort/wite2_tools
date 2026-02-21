@@ -17,14 +17,14 @@ def mock_update_unit_csv(tmp_path):
         headers.append(f"sqd.u{i}")
         headers.append(f"sqd.num{i}")
 
-    def create_row(uid, utype, elem_id, qty):
+    def create_row(uid, u_name, utype, elem_id, qty):
         # Initialize all columns to "0"
         row = {h: "0" for h in headers}
         # 'type' is the referenced TOE(OB) ID in _unit files
         # that maps to the 'id' column of the _ob file
         row.update({
             "id": uid,
-            "name": "Test Unit",
+            "name": u_name,
             "type": utype,
             "nat": "1",
             "sqd.u0": elem_id,
@@ -37,16 +37,16 @@ def mock_update_unit_csv(tmp_path):
         writer.writeheader()
 
         # Row 1 (Index 0): SUCCESS (Matches TOE(OB)=50, Elem=105, Qty=10)
-        writer.writerow(create_row("1", "50", "105", "10"))
+        writer.writerow(create_row("1", "Unit 1", "50", "105", "10"))
 
         # Row 2 (Index 1): FAILS (Wrong TOE(OB) ID - 99 instead of 50)
-        writer.writerow(create_row("2", "99", "105", "10"))
+        writer.writerow(create_row("2", "Unit 2", "99", "105", "10"))
 
         # Row 3 (Index 2): FAILS (Wrong Element ID - 999 instead of 105)
-        writer.writerow(create_row("3", "50", "999", "10"))
+        writer.writerow(create_row("3", "Unit 3", "50", "999", "10"))
 
         # Row 4 (Index 3): FAILS (Wrong Old Qty - 15 instead of 10)
-        writer.writerow(create_row("4", "50", "105", "15"))
+        writer.writerow(create_row("4", "Unit 4", "50", "105", "15"))
 
     return str(file_path)
 
@@ -60,7 +60,7 @@ def test_update_unit_num_squads_success_and_filters(mock_update_unit_csv):
     updates = update_unit_num_squads(
         mock_update_unit_csv,
         target_ob_id=50,
-        wid=105,
+        target_wid=105,
         old_num_squads=10,
         new_num_squads=99
     )

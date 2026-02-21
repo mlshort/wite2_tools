@@ -20,7 +20,7 @@ Core Capabilities:
   ID-to-string lookup caching.
 """
 
-__version__ = "0.1.1"
+__version__ = "0.2.0"
 __date__ = "2026-02-19"
 
 # Expose common configuration so other modules can access it easily

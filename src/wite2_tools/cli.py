@@ -78,7 +78,7 @@ from wite2_tools.auditing import (
 
 from wite2_tools.core import (
     count_global_unit_inventory,
-    find_unreferenced_ob_ids,
+    find_orphaned_ob_ids,
     is_ob_orphaned,
     generate_ob_chains,
     group_units_by_ob
@@ -276,6 +276,14 @@ def main():
                                          'units by their assigned TOE(OB) ID')
     group_parser.add_argument('--unit-file', default=CONF_UNIT_FULL_PATH,
                               help="Optional: (default: %(default)s)")
+    # NEW: Added nationality filter support to the CLI
+    group_parser.add_argument('--nat-codes', type=int, nargs='+',
+                              help='Optional: Filter by nationality'
+                              ' codes (e.g., 1, 3)')
+    group_parser.add_argument('active_only', type=str2bool, nargs='?',
+                              default=True,
+                              help="Optional: Only evaluate active units "
+                                   "(default: %(default)s)")
 
     # ==========================================
     # SCANNING
@@ -382,8 +390,8 @@ def main():
             count_global_unit_inventory(args.unit_file, args.ground_file,
                                         args.nat_codes)
         elif args.command == 'find-orphans':
-            find_unreferenced_ob_ids(args.ob_file, args.unit_file,
-                                     args.nat_codes)
+            find_orphaned_ob_ids(args.ob_file, args.unit_file,
+                                 args.nat_codes)
         elif args.command == 'check-orphan':
             is_orphan = is_ob_orphaned(args.ob_file, args.unit_file,
                                        args.ob_id, args.nat_codes)
@@ -393,7 +401,7 @@ def main():
             generate_ob_chains(args.ob_file, args.csv_out, args.txt_out,
                                args.nat_codes)
         elif args.command == 'group-units':
-            group_units_by_ob(args.unit_file)
+            group_units_by_ob(args.unit_file, args.active_only, args.nat_codes)
 
         # Scanning
         elif args.command == 'scan-ob-elem':
