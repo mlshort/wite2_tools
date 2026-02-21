@@ -28,13 +28,20 @@ Main Functions:
                        paths.
 
 Command Line Usage:
-    python -m wite2_tools.cli gen-chains [--ob-file FILE] [--csv-out FILE]
-        [--txt-out FILE] [--nat-codes NAT_CODES [NAT_CODES ...]]
+    python -m wite2_tools.cli gen-chains [-h] [--ob-file PATH] \
+        [--csv-out PATH] [--txt-out PATH] [--nat-codes CODE [CODE ...]]
+
+Arguments:
+    ob_file_path (str):    The path to the WiTE2 _ob CSV file.
+    csv_output_path (str): The destination path for the CSV output.
+    txt_output_path (str): The destination path for the plaintext output.
+    nat_codes (list of int, optional): Filter by nationality codes.
 
 Example:
     $ python -m wite2_tools.cli gen-chains --nat-codes 1
-    Generates and exports chronological TOE(OB) upgrade chains strictly for the
-    German (Nat 1) faction.
+
+    Generates and exports chronological TOE(OB) upgrade chains strictly
+    for the German (Nat 1) faction.
 """
 import csv
 import os

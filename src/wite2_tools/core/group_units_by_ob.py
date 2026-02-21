@@ -10,21 +10,28 @@ cached dictionary on subsequent calls.
 
 Core Features:
 --------------
-* **Nationality Filtering**: Supports isolating groups by specific nationality
+* Nationality Filtering: Supports isolating groups by specific nationality
   codes (e.g., 1 for Germany, 2 for Finland) to analyze faction-specific
   TOE deployments.
-* **Formatted Output**: Automatically generates a structured console table
+* Formatted Output: Automatically generates a structured console table
   displaying the TOE(OB) ID, Unit ID, resolved Nationality abbreviation,
   and Unit Name.
-* **Memory Efficiency**: Utilizes generator-based streaming to handle
+* Memory Efficiency: Utilizes generator-based streaming to handle
   massive scenario files without high memory overhead.
 
 Command Line Usage:
-    python -m wite2_tools.cli group-units [--unit-file FILE]
-        [--nat-codes NAT_CODES [NAT_CODES ...]] [active_only]
+    python -m wite2_tools.cli group-units [-h] [--unit-file PATH] \
+        [--nat-codes CODE [CODE ...]] [active_only]
+
+Arguments:
+    unit_file_path (str): The path to the WiTE2 _unit CSV file.
+    nat_codes (list of int, optional): Filter by nationality codes.
+    active_only (bool, optional): Skips inactive units (type=0) if True.
+                                  Defaults to True.
 
 Example:
     $ python -m wite2_tools.cli group-units --nat-codes 1 3
+
     Groups active German and Italian units by their assigned TOE(OB) ID
     and displays a formatted summary table.
 """

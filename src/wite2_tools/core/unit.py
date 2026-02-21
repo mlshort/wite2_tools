@@ -5,7 +5,6 @@ WiTE2 Unit Data Structure
 This module defines the core Unit dataclass used across the wite2_tools
 package for in-memory representation of War in the East 2 ground units.
 """
-
 from dataclasses import dataclass
 
 
@@ -15,17 +14,17 @@ class Unit:
     Immutable data structure representing a key WiTE2 Unit.
 
     Attributes:
-        unit_id (int): The unique identifier of the unit (Primary Key).
-        name (str): The localized or designated name of the unit.
+        unit_id (int):   The unique identifier of the unit (Primary Key).
+        name (str):      The localized or designated name of the unit.
         unit_type (int): The TOE(OB) ID that this unit is currently assigned.
-        nat (int): The nationality code of the unit
+        nat (int):       The nationality code of the unit
             (e.g., 1 for Germany, 12 for SU).
 
     Note:
         `frozen=True` makes instances of this class hashable and immutable.
         This is required when storing these objects in data structures that
         are managed by the `@cache` decorator to prevent accidental state
-          mutation.
+        mutation.
     """
     unit_id: int
     name: str

@@ -4,25 +4,30 @@ TOE(OB) CSV files.
 
 This module scans a War in the East 2 (WiTE2) `_ob` CSV file to find all
 Orders of Battle that contain a specific Ground Element WID. It iterates
-through the squad slots (`sqd 0` to `sqd 31`)
-for active OBs, skipping rows where the `type` evaluates to 0 or is invalid.
+through the squad slots (`sqd 0` to `sqd 31`) for active OBs, skipping
+rows where the `type` evaluates to 0 or is invalid.
 
 When a match is found, it outputs the result to the console in a formatted
 table. This table displays the TOE(OB)'s ID, Name, Type (resolved via a
-lookup), the exact squad column where the element was found, and the assigned
-quantity from the `sqdNum` column.
+lookup), the exact squad column where the element was found, and the
+assigned quantity from the `sqdNum` column.
 
 Command Line Usage:
-    python -m wite2_tools.cli scan-ob-elem [-h] wid
+    python -m wite2_tools.cli scan-ob-elem [-h] [--ob-file PATH] \
+        target_wid
 
 Arguments:
-    wid (int): The WID of the Ground Element to search for across all OBs.
+    ob_file_path (str): The absolute or relative path to the WiTE2
+                        _ob CSV file.
+    target_wid (int): The WID of the Ground Element to search for across
+                      all OBs.
 
 Example:
     $ python -m wite2_tools.cli scan-ob-elem 42
-    Scans the TOE(OB) file and outputs a formatted table of every TOE(OB) that
-    includes Ground Element 42, showing the exact slot it occupies and the
-    quantity assigned.
+
+    Scans the TOE(OB) file and outputs a formatted table of every TOE(OB)
+    that includes Ground Element 42, showing the exact slot it occupies
+    and the quantity assigned.
 """
 import os
 from typing import cast
@@ -40,7 +45,7 @@ from wite2_tools.utils.parsing import (
 log = get_logger(__name__)
 
 
-def scan_ob_for_ground_elem(ob_file_path: str, ground_elem_id: int) -> int:
+def scan_ob_for_ground_elem(ob_file_path: str, target_wid: int) -> int:
     """
     1. Scans 'sqd' columns for ground_elem_id (WID).
     2. If found, finds the corresponding 'sqdNum' column.
@@ -58,7 +63,7 @@ def scan_ob_for_ground_elem(ob_file_path: str, ground_elem_id: int) -> int:
         next(ob_gen)  # Skip DictReader object
 
         # Convert inputs to strings to ensure they match CSV text format
-        ground_element_id_str = str(ground_elem_id)
+        ground_element_id_str = str(target_wid)
 
         print(f"\nScanning '{file}' for any instances of "
               "WID='{ground_element_id_str}'")

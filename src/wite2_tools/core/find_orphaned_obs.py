@@ -13,18 +13,11 @@ that does not exist in the database.
 
 Core Features:
 --------------
-* Full Upgrade Chain Tracing: Recursively follows the 'upgrade' column in the
-  TOE(OB) data to ensure future upgrade targets are not falsely flagged as
-  orphaned_ob_ids.
-* Nationality Filtering: Can isolate the audit to specific nations (e.g.,
-  Germany, Italy).
-* High-Performance Caching: Provides the `is_ob_orphaned` function, which
-  caches the calculated sets in memory. This allows other scripts to query
-  thousands of TOE(OB) IDs instantly without re-parsing the large CSV files.
-* Validates active versus inactive base units.
-* Recursively traces unit upgrade chains to ensure future-referenced OBs are
-  not falsely flagged as orphaned.
-* Supports filtering by nationality ID
+* Full Upgrade Chain Tracing: Recursively follows the 'upgrade' column in
+  the TOE(OB) data to ensure future targets are not falsely flagged.
+* Nationality Filtering: Can isolate the audit to specific nations.
+* High-Performance Caching: Provides `is_ob_orphaned` which caches sets in
+  memory for O(1) lookups during batch processing.
 
 Main Functions:
 ---------------
@@ -36,13 +29,20 @@ Main Functions:
   orphan.
 
 Command Line Usage:
-    python -m wite2_tools.cli find-orphaned_ob_ids [--ob-file FILE]
-    [--unit-file FILE][--nat-codes NAT_CODES [NAT_CODES ...]]
+    python -m wite2_tools.cli find-orphans [-h] [--ob-file PATH] \
+        [--unit-file PATH] [--nat-codes CODE [CODE ...]]
+
+Arguments:
+    ob_file_path (str):   The path to the WiTE2 _ob CSV file.
+    unit_file_path (str): The path to the WiTE2 _unit CSV file.
+    nat_codes:     (list of int, optional): Filter by nationality codes.
 
 Example:
     $ python -m wite2_tools.cli find-orphaned_ob_ids --nat-codes 1 3
+
     Identifies all unreferenced (orphaned) TOE(OB) templates for
     German (1) and Italian (3) factions.
+
 """
 import os
 from functools import cache

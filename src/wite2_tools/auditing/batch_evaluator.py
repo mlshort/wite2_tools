@@ -9,19 +9,23 @@ logical consistency checks across the entire dataset to identify errors,
 fix ghost squads, and prevent runtime game crashes.
 
 Command Line Usage:
-    python -m wite2_tools.cli batch-eval [--data-path PATH] [active_only] [
-            fix_ghosts]
+    python -m wite2_tools.cli batch-eval [-h] [--data-path PATH] \
+        [only_active_units] [fix_ghosts]
 
 Arguments:
-    active_only (bool): If True, only evaluates active units
-                        (defaults to False).
-    fix_ghosts (bool): If True, automatically zeroes out ghost squads
-                        (defaults to False).
+    target_folder (str): The directory path containing the WiTE2 CSV
+                         files to be evaluated.
+    only_active_units (bool): If True, evaluates only active units.
+                              Defaults to False.
+    fix_ghosts (bool): If True, automatically zeroes out ghost squads.
+                       Defaults to False.
 
 Example:
-    $ python -m wite2_tools.cli batch-eval --data-path "C:\\My Mods" True False
-    Scans all _unit and _ob CSV files in the specified folder for consistency,
-    checking only active units.
+    $ python -m wite2_tools.cli batch-eval --data-path "C:\\My Mods" \
+        True False
+
+    Scans all _unit and _ob CSV files in the specified folder for
+    consistency, checking only active units.
 """
 
 import os

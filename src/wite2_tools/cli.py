@@ -116,9 +116,9 @@ def main():
     replace_parser = subparsers.add_parser('replace-elem',
                                            help='Replace Ground Elements '
                                            'in _unit.csv')
-    replace_parser.add_argument('old_ge_id', type=int,
+    replace_parser.add_argument('old_wid', type=int,
                                 help='The WID to search for')
-    replace_parser.add_argument('new_ge_id', type=int,
+    replace_parser.add_argument('new_wid', type=int,
                                 help='The WID to replace it with')
     replace_parser.add_argument('--unit-file', default=CONF_UNIT_FULL_PATH)
 
@@ -350,8 +350,8 @@ def main():
     try:
         # Modifiers
         if args.command == 'replace-elem':
-            replace_unit_ground_element(args.unit_file, args.old_ge_id,
-                                        args.new_ge_id)
+            replace_unit_ground_element(args.unit_file, args.old_wid,
+                                        args.new_wid)
         elif args.command == 'update-num':
             update_unit_num_squads(args.unit_file, args.ob_id, args.wid,
                                    args.old_num_squads, args.new_num_squads)

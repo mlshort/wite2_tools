@@ -11,33 +11,46 @@ game engine.
 
 Key Validation Logic
 --------------------
-* **Referential Integrity**: Verifies that all Ground Element WIDs referenced
-  in squad slots (0-31) actually exist in the master `_ground` file.
-* **Ghost/Orphan Detection**: Scans for "Ghost Squads" (slots with a quantity
-  but no valid Element ID) which are a primary cause of game instability.
-* **Coordinate Bounds**: Ensures unit X/Y coordinates fall within the valid
+* Referential Integrity: Verifies that all Ground Element WIDs
+  referenced in squad slots (0-31) actually exist in the master
+  `_ground` file.
+* Ghost/Orphan Detection: Scans for "Ghost Squads" (slots with a
+  quantity but no valid Element ID) which cause game instability.
+* Coordinate Bounds: Ensures unit X/Y coordinates fall within the valid
   game map dimensions (0-378, 0-354).
-* **Structural Checks**: Detects duplicate Primary Key IDs and column count
+* Structural Checks: Detects duplicate Primary Key IDs and column count
   mismatches.
 
 Functions
 ---------
 * `evaluate_ob_consistency`: detailed audit of Order of Battle TOE(OB) files.
 * `evaluate_unit_consistency`: Detailed audit of Unit placement files,
-including HQ attachment logic and map positioning.
+                including HQ attachment logic and map positioning.
 
 Command Line Usage:
-    python -m wite2_tools.cli audit-unit [--unit-file FILE]
-            [--ground-file FILE]
-            [active_only] [fix_ghosts]
-    python -m wite2_tools.cli audit-ob [--ob-file FILE] [--ground-file FILE]
+    python -m wite2_tools.cli audit-unit [-h] [--unit-file PATH] \
+        [--ground-file PATH] [active_only] [fix_ghosts]
+
+    python -m wite2_tools.cli audit-ob [-h] [--ob-file PATH] \
+        [--ground-file PATH]
+
+Arguments:
+    unit_file_path (str):   Path to the WiTE2 _unit CSV file.
+    ob_file_path (str):     Path to the WiTE2 _ob CSV file.
+    ground_file_path (str): Path to the WiTE2 _ground CSV file.
+    active_only (bool, optional): Skips inactive units (type=0) if
+                                  True. Defaults to True.
+    fix_ghosts (bool, optional): Automatically repairs ghost squads if
+                                 True. Defaults to False.
 
 Example:
     $ python -m wite2_tools.cli audit-unit True True
+
     Scans the default unit file, evaluating only active units, and
     automatically fixes any ghost squads found.
 
     $ python -m wite2_tools.cli audit-ob
+
     Scans the default TOE(OB) file for structural and logical errors.
 """
 

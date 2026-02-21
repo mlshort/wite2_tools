@@ -13,20 +13,21 @@ The module safely handles file updates by writing to a temporary file first
 before replacing the original file, and it includes logging for auditability.
 
 Command Line Usage:
-    python -m wite2_tools.cli update-num [-h] ob_id wid old_num_squads
-    new_num_squads
+    python -m wite2_tools.cli update-num [-h] target_ob_id target_wid
+        old_num_squads new_num_squads
 
 Arguments:
-    target_ob_id (int): Target unit's TOE(OB) ID (Order of Battle ID).
-    target_wid (int): Unit's Element WID containing the squads to change.
+    target_ob_id (int):   Target unit's TOE(OB) ID (Order of Battle ID).
+    target_wid (int):     Unit's Element WID containing the squads to change.
     old_num_squads (int): The exact number of existing squads required to
-                          trigger the update.
+        trigger the update.
     new_num_squads (int): Number of new squads to set.
 
 Example:
-    $ python -m wite2_tools.cli update-num 42 105 10 12 This will scan for
-    units with ob_id 42, look for wid 105, and if its current squad count is
-    exactly 10, update it to 12.
+    $ python -m wite2_tools.cli update-num 42 105 10 12
+
+    This will scan for units with ob_id 42, look for wid 105, and if its
+    current squad count is exactly 10, update it to 12.
 """
 
 import os
@@ -47,6 +48,20 @@ def update_unit_num_squads(unit_file_path: str,
                            old_num_squads: int,
                            new_num_squads: int) -> int:
     """
+    Updates the number of specific Ground Element squads within a WiTE2 _unit
+    CSV file.
+
+    Args:
+        unit_file_path (str): The path to the WiTE2 _unit CSV file.
+        target_unit_id (int): The identifier ('id' column) of the UNIT to
+                modify.
+        target_wid (int): The WID of the Ground Element to update.
+        old_num_squads (int):
+        new_num_squads (int): The new quantity of squads to set.
+
+    Returns:
+        int: The total number of rows successfully updated.
+
     1. Scans the _unit CSV file for rows where 'type' == target_ob_id
       (TOE(OD)).
     2. Scans the row for 'sqd.u' == wid (WID).

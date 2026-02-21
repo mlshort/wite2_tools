@@ -2,8 +2,8 @@
 Module for locating specific Ground Elements within WiTE2 _unit CSV files.
 
 This module scans a War in the East 2 (WiTE2) `_unit` CSV file to find all
-active units that contain a specific Ground Element WID. It iterates through
-the squad slots (`sqd.u0` to `sqd.u31`) for active units.
+active units that contain a specific Ground Element WID. It iterates
+through the squad slots (`sqd.u0` to `sqd.u31`) for active units.
 
 When a match is found, it outputs the result to the console in a formatted
 table, displaying the Unit's ID, Name, Type (resolved via a lookup), the
@@ -11,21 +11,27 @@ exact squad column where the element was found, and the assigned quantity
 (`sqd.num`).
 
 Command Line Usage:
-    python -m wite2_tools.cli scan-unit-elem [-h] wid [num_squads]
+    python -m wite2_tools.cli scan-unit-elem [-h] [--unit-file PATH] \
+        target_wid [num_squads]
 
 Arguments:
-    wid (int): The WID of the Ground Element to search for across all units.
+    unit_file_path (str): The absolute or relative path to the WiTE2
+                          _unit CSV file.
+    target_wid (int): The WID of the Ground Element to search for across
+                      all units.
     num_squads (int, optional): Filter by exact number of assigned squads.
 
 Example:
     $ python -m wite2_tools.cli scan-unit-elem 42
+
     Scans the unit file and outputs a formatted table of every unit that
     includes Ground Element 42, showing the exact slot it occupies and the
     quantity assigned.
 
     $ python -m wite2_tools.cli scan-unit-elem 42 10
-    Same as above, but only returns matches where exactly 10 of Ground Element
-    42 are assigned.
+
+    Same as above, but only returns matches where exactly 10 of Ground
+    Element 42 are assigned.
 """
 import os
 from typing import cast
@@ -49,19 +55,19 @@ log = get_logger(__name__)
 def _check_squad_match(
     row: dict,
     ob_full_path: str,
-    wid: int,
+    target_wid: int,
     num_squads_filter: int,
     matches_found: int
 ) -> int:
-    """Helper function to check squad matches and print results."""
-    ground_element_id_str = str(wid)
 
     for i in range(MAX_SQUAD_SLOTS):
         sqd_id_col = f"sqd.u{i}"
         sqd_num_col = f"sqd.num{i}"
 
+        wid = parse_int(row.get(sqd_id_col), 0)
+
         # Check if column exists and matches the target ID
-        if sqd_id_col in row and row[sqd_id_col] == ground_element_id_str:
+        if sqd_id_col in row and wid == target_wid:
 
             # Search the row for the new column name and print squad_quantity
             if sqd_num_col in row:
@@ -98,7 +104,7 @@ def scan_unit_for_ground_elem(
     unit_file_path: str,
     ground_file_path: str,
     ob_full_path: str,
-    wid: int,
+    target_wid: int,
     old_num_squads: int = -1
 ) -> int:
     """
@@ -118,10 +124,11 @@ def scan_unit_for_ground_elem(
         next(unit_gen)  # Skip DictReader object
 
         scan_str = "ANY" if old_num_squads == -1 else str(old_num_squads)
-        ground_elem_name = get_ground_elem_type_name(ground_file_path, wid)
+        ground_elem_name = get_ground_elem_type_name(ground_file_path,
+                                                     target_wid)
 
         print(f"\nScanning '{os.path.basename(unit_file_path)}' for "
-              f"'{ground_elem_name}' (WID '{wid}') where "
+              f"'{ground_elem_name}' (WID '{target_wid}') where "
               f"quantity == '{scan_str}'")
 
         # Print Header for the Console Output
@@ -139,7 +146,8 @@ def scan_unit_for_ground_elem(
                 continue
 
             # 2. Search columns 'sqd.u0' through 'sqd.u31' for the target ID
-            matches_found = _check_squad_match(row, ob_full_path, wid,
+            matches_found = _check_squad_match(row, ob_full_path,
+                                               target_wid,
                                                old_num_squads,
                                                matches_found)
 

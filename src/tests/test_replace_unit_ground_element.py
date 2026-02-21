@@ -69,8 +69,8 @@ def test_replace_unit_ground_element_success(mock_replace_unit_csv):
     # Execute: Globally replace all instances of Ground Element 105 with 999
     updates = replace_unit_ground_element(
         unit_file_path=mock_replace_unit_csv,
-        old_ge_id=105,
-        new_ge_id=999
+        old_wid=105,
+        new_wid=999
     )
 
     # Assert exactly 3 rows were updated (Rows 1, 2, and 4)

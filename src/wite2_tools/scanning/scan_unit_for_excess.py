@@ -2,29 +2,32 @@
 Module for identifying units with excessive logistical stores in WiTE2
 CSV files.
 
-This module scans a War in the East 2 (WiTE2) `_unit` CSV file to locate active
-units holding resources far beyond their standard requirements. It evaluates
-four specific logistical categories: ammunition, supplies, fuel, and vehicles.
+This module scans a War in the East 2 (WiTE2) `_unit` CSV file to locate
+active units holding resources far beyond their standard requirements. It
+evaluates four specific logistical categories: ammunition, supplies, fuel,
+and vehicles.
 
 The detection threshold is hardcoded to flag any unit where its current
 stockpile is greater than 5 times its calculated need
 (e.g., `ammo > 5 * aNeed`).
 
 Active units (where `type` != 0) meeting this condition are output to the
-console in a formatted table, detailing their ID, Name, Nationality, current
-amount, needed amount, and the calculated overage ratio.
+console in a formatted table, detailing their ID, Name, Nationality,
+current amount, needed amount, and the calculated overage ratio.
 
 Command Line Usage:
-    python -m wite2_tools.cli scan-excess [--operation {ammo,supplies,fuel,
-            vehicles}]
+    python -m wite2_tools.cli scan-excess [-h] [--unit-file PATH] \
+        [--operation {ammo,supplies,fuel,vehicles}]
 
 Arguments:
-    --operation: Specifies which resource to scan for.
-                 Choices are 'ammo' (default), 'supplies', 'fuel', or
-                 'vehicles'.
+    unit_file_path (str): The absolute or relative path to the WiTE2
+                          _unit CSV file.
+    operation (str): Specifies which resource to scan for. Choices are
+                     'ammo' (default), 'supplies', 'fuel', or 'vehicles'.
 
 Example:
     $ python -m wite2_tools.cli scan-excess --operation fuel
+
     Scans the unit file and prints a table of all units where
     `fuel` > 5 * `fNeed`.
 """

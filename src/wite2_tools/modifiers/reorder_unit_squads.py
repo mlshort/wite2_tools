@@ -18,17 +18,20 @@ Key Features
 * **Memory Efficient**: Utilizes generator-based streaming to process large
     game data files without loading the entire dataset into memory.
 
+
 CLI Usage
 ---------
 This module can be executed directly from the command line:
 
-    $ python -m wite2_tools.cli reorder-unit [target_unit_id] [target_wid]
-    [move_to_index]
+    $ python -m wite2_tools.cli reorder-unit [--unit-file PATH] \\
+        target_unit_id target_wid target_slot
 
 Arguments:
+    unit_file_path : The absolute or relative path to the WiTE2
+                     _unit CSV file.
     target_unit_id : The ID of the unit to modify.
     target_wid     : The ID of the ground element to search for and move.
-    move_to_index  : The target slot index (0-31) to place the element.
+    target_slot    : The target slot index (0-31) to place the element.
 
 Functions
 ---------
@@ -57,7 +60,15 @@ def reorder_unit_elems(row: dict, source_slot: int, target_slot: int) -> dict:
     """
     Moves elements at 'source_slot' to 'target_slot' and shifts others for
     all 8 associated unit columns.
-    """
+
+    Args:
+        row (dict): The dictionary representing a single CSV row.
+        source_slot (int): The current index of the squad element.
+        target_slot (int): The destination index for the squad element.
+
+    Returns:
+        dict: The modified row dictionary.
+    """""
 
     for prefix in UNIT_SQUAD_PREFIXES:
         keys = [f"{prefix}{i}" for i in range(MAX_SQUAD_SLOTS)]
@@ -83,10 +94,12 @@ def reorder_unit_squads(unit_file_path: str,
 
     Args:
         unit_file_path (str): The absolute or relative path to the WiTE2 _unit
-        CSV file. target_unit_id (int): The unique identifier ('id' column) of
-        the UNIT to be modified. wid (int): The WID of the Ground Element to be
-        moved. target_slot (int): The target slot index (0-31) where the
-        element should be relocated.
+        CSV file.
+        target_unit_id (int): The unique identifier ('id' column) of the UNIT
+                to be modified.
+        target_wid (int):  The WID of the Ground Element to be moved.
+        target_slot (int): The target slot index (0-31) where the element
+                should be relocated.
 
     Returns:
         int: The total number of rows (OBs) successfully updated. Returns 0 if

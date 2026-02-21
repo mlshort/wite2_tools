@@ -13,19 +13,27 @@ squad quantity (`sqdNum X`) are shifted in perfect synchronization. The script
 utilizes temporary files to ensure memory efficiency and safe atomic file
 replacement.
 
+
 Command Line Usage:
-    python -m wite2_tools.cli reorder-ob [-h] target_ob_id wid target_slot
+    python -m wite2_tools.cli reorder-ob [-h] [--ob-file PATH] \\
+        target_ob_id target_wid source_slot target_slot
 
 Arguments:
+    ob_file_path (str): The absolute or relative path to the WiTE2
+                        _ob CSV file.
     target_ob_id (int): The target Order of Battle TOE(OB) ID.
-    target_wid (int): The WID of the Ground Element to be moved.
-    target_slot (int): The destination
-    slot index (0-31) for the targeted element.
+    target_wid (int):  The WID of the Ground Element to be moved.
+    source_slot (int): The current slot index (0-31) of the
+                       targeted element.
+    target_slot (int): The destination slot index (0-31) for the
+                       element.
 
 Example:
-    $ python -m wite2_tools.cli reorder-ob 150 42 0 This scans for TOE(OB) ID
-    150, finds Ground Element 42 within its squad slots, and moves it to the
-    very first slot (index 0), shifting other elements down.
+    $ python -m wite2_tools.cli reorder-ob 150 42 0
+
+    This scans for TOE(OB) ID 150, finds Ground Element 42 within its squad
+    slots, and moves it to the very first slot (index 0), shifting other
+    elements down.
 """
 
 # Internal package imports
@@ -41,7 +49,18 @@ log = get_logger(__name__)
 def reorder_ob_elems(row: dict, squad_col: str, squad_num_col: str,
                      source_slot: int, target_slot: int) -> dict:
     """
-    Reorders values for two sets of numbered columns.
+    Moves elements at 'source_slot' to 'target_slot' and shifts others for
+    all associated squad columns.
+
+    Args:
+        row (dict): The dictionary representing a single CSV row.
+        squad_col (str): The column prefix for the element ID.
+        squad_num_col (str): The column prefix for the element quantity.
+        source_slot (int): The current index of the squad element.
+        target_slot (int): The destination index for the squad element.
+
+    Returns:
+        dict: The modified row dictionary.
     """
     squad_keys = [f"{squad_col}{i}" for i in range(MAX_SQUAD_SLOTS)]
     num_keys = [f"{squad_num_col}{i}" for i in range(MAX_SQUAD_SLOTS)]
@@ -74,12 +93,12 @@ def reorder_ob_squads(ob_file_path: str,
 
     Args:
         ob_file_path (str): The absolute or relative path to the WiTE2 _ob CSV
-        file.
+            file.
         target_ob_id (int): The unique identifier ('id' column) of the
-        TOE(OB) to be modified.
-        wid (int): The WID of the Ground Element to be moved.
+            TOE(OB) to be modified.
+        target_wid (int): The WID of the Ground Element to be moved.
         target_slot (int): The target slot index (0-31) where the
-        element should be relocated.
+            element should be relocated.
 
     Returns:
         int: The total number of rows (OBs) successfully updated.

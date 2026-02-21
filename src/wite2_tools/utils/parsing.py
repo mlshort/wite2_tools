@@ -11,16 +11,19 @@ from typing import Optional
 
 def parse_int(value: Optional[str], default: int = 0) -> int:
     """
-    Scans the _ground CSV file, identifies rows with gaps in their weapon
-    slots, and shifts valid weapons left/up to fill those gaps.
+    Safely parses a string into an integer.
+
+    Designed to handle the malformed, empty, or whitespace-padded data
+    frequently encountered in War in the East 2 (WiTE2) CSV files.
 
     Args:
-        ground_file_path (str): The absolute or relative path to the WiTE2
-                _ground CSV file.
+        value (Optional[str]): The string value to parse, typically from a
+            CSV cell.
+        default (int, optional): The fallback integer to return if the string
+            is None, empty, or malformed. Defaults to 0.
 
     Returns:
-        int: The total number of Ground Elements that had their weapon slots
-                compacted.
+        int: The parsed integer, or the default value if a ValueError occurs.
     """
     if not value:
         return default

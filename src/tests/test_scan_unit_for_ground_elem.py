@@ -29,7 +29,7 @@ def test_scan_unit_for_ground_elem_any_quantity(mock_unit_csv,
         unit_file_path=mock_unit_csv,
         ground_file_path=mock_ground_csv,
         ob_full_path=mock_ob_csv,
-        wid=42,
+        target_wid=42,
         old_num_squads=-1  # -1 means ANY quantity
     )
 
@@ -46,7 +46,7 @@ def test_scan_unit_for_ground_elem_exact_quantity(mock_unit_csv,
         unit_file_path=mock_unit_csv,
         ground_file_path=mock_ground_csv,
         ob_full_path=mock_ob_csv,
-        wid=42,
+        target_wid=42,
         old_num_squads=10
     )
     assert matches_correct == 1
@@ -56,7 +56,7 @@ def test_scan_unit_for_ground_elem_exact_quantity(mock_unit_csv,
         unit_file_path=mock_unit_csv,
         ground_file_path=mock_ground_csv,
         ob_full_path=mock_ob_csv,
-        wid=42,
+        target_wid=42,
         old_num_squads=99
     )
     assert matches_wrong == 0  # Found the element, but quantity didn't match
