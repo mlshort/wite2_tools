@@ -2,8 +2,7 @@ import csv
 
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
-from wite2_tools.auditing.validator import evaluate_unit_consistency
-from wite2_tools.auditing.validator import evaluate_ob_consistency
+from wite2_tools.auditing.audit_ob import audit_ob_csv
 from wite2_tools.constants import MAX_SQUAD_SLOTS
 import pytest
 
@@ -25,7 +24,7 @@ def mock_ground_csv(tmp_path) -> str:
 def mock_corrupted_unit_csv(tmp_path) -> str:
     """
     Creates a unit file with multiple deliberate errors for
-    the validator to catch.
+    the audit_ob to catch.
     """
     content = (
         "id,name,type,x,y,delay,hhq,hq,sqd.u0,sqd.num0,ax,ay,tx,ty,"
@@ -97,6 +96,26 @@ def write_ob_csv(ob_path, rows):
 
 # --- TEST CASES ---
 
+def test_audit_ob_handles_key_error(tmp_path):
+    """
+    Targets the KeyError branch by providing a CSV that is missing
+    required columns like 'id' or 'type'.
+    """
+    unit_csv = tmp_path / "missing_columns.csv"
+    # This CSV has headers, but not the 'id' or 'type' headers the
+    # audit_ob logic expects.
+    unit_csv.write_text("wrong_header1,wrong_header2\nval1,val2")
+
+    ground_csv = tmp_path / "_ground.csv"
+    ground_csv.write_text("id,name\n1,Ground")
+
+    # When the code tries row.get("id"), it is correctly handled
+    # and treated as an 'id' of 0
+    issues = audit_ob_csv(str(unit_csv), str(ground_csv))
+
+    assert issues == 0
+
+
 def test_clean_ob_passes(mock_files):
     """A perfectly valid OB should return 0 issues."""
     ground_path, ob_path = mock_files
@@ -105,7 +124,7 @@ def test_clean_ob_passes(mock_files):
             [100, 1, "Valid Div", 1941, 6, 1945, 1, 0, 1, 9, 2, 3]
         ])
 
-    issues = evaluate_ob_consistency(str(ob_path), str(ground_path))
+    issues = audit_ob_csv(str(ob_path), str(ground_path))
     assert issues == 0
 
 
@@ -117,7 +136,7 @@ def test_chronological_bounds_error(mock_files):
             [101, 1, "Time Traveler Div", 1941, 6, 1940, 1, 0]
         ])
 
-    issues = evaluate_ob_consistency(str(ob_path), str(ground_path))
+    issues = audit_ob_csv(str(ob_path), str(ground_path))
     assert issues == 1
 
 
@@ -131,7 +150,7 @@ def test_upgrade_dead_end_and_loop(mock_files):
             [103, 1, "Loop Div", 1941, 6, 1942, 1, 103]
         ])
 
-    issues = evaluate_ob_consistency(str(ob_path), str(ground_path))
+    issues = audit_ob_csv(str(ob_path), str(ground_path))
     assert issues == 2
 
 
@@ -143,7 +162,7 @@ def test_intra_template_duplicate_element(mock_files):
             [104, 1, "Dup WID Div", 1941, 6, 1945, 1, 0, 1, 9, 1, 3]
         ])
 
-    issues = evaluate_ob_consistency(str(ob_path), str(ground_path))
+    issues = audit_ob_csv(str(ob_path), str(ground_path))
     assert issues == 1
 
 
@@ -156,55 +175,5 @@ def test_ghost_and_negative_squads(mock_files):
             # num0 is 10, but u0 (WID) is 0
             [106, 1, "Ghost Div", 1941, 6, 1945, 1, 0, 0, 10]
         ])
-    issues = evaluate_ob_consistency(str(ob_path), str(ground_path))
+    issues = audit_ob_csv(str(ob_path), str(ground_path))
     assert issues == 2
-
-
-def test_evaluate_unit_consistency_detects_all_errors(mock_corrupted_unit_csv,
-                                                      mock_ground_csv):
-    """
-    Verifies the validator successfully spots duplicates,
-    bad bounds, missing references, and ghosts.
-    """
-
-    issues_found = evaluate_unit_consistency(
-        mock_corrupted_unit_csv,
-        mock_ground_csv,
-        active_only=True,
-        fix_ghosts=False
-    )
-
-    # We deliberately injected exactly 8 errors into the mock CSV
-    assert issues_found == 8
-
-
-def test_evaluate_unit_consistency_fixes_ghosts(mock_corrupted_unit_csv,
-                                                mock_ground_csv):
-    """
-    Verifies that fix_ghosts=True successfully mutates the file and zeroes
-    out corrupted quantities.
-    """
-
-    # Run in FIX mode
-    evaluate_unit_consistency(
-        mock_corrupted_unit_csv,
-        mock_ground_csv,
-        active_only=True,
-        fix_ghosts=True
-    )
-
-    # Read the file back to verify Ghost Squad (Unit 5) was fixed
-    with open(mock_corrupted_unit_csv, 'r', encoding=ENCODING_TYPE) as f:
-        rows = list(csv.DictReader(f))
-
-        # Unit 5 is index 4. The quantity (sqd.num0) should have been forcibly
-        # set to "0"
-        ghost_unit = rows[4]
-        assert ghost_unit["id"] == "5"
-        assert ghost_unit["sqd.u0"] == "0"
-        assert ghost_unit["sqd.num0"] == "0"  # This was previously "50"
-
-        # Ensure Valid Unit (Index 0) was NOT touched
-        valid_unit = rows[0]
-        assert valid_unit["sqd.num0"] == "10"
-

@@ -44,9 +44,11 @@ import configparser
 from wite2_tools.auditing.audit_ground_element import (
     audit_ground_element_csv
 )
-from wite2_tools.auditing.validator import (
-    evaluate_unit_consistency,
-    evaluate_ob_consistency
+from wite2_tools.auditing.audit_unit import (
+    audit_unit_csv
+)
+from wite2_tools.auditing.audit_ob import (
+    audit_ob_csv
 )
 from wite2_tools.auditing.batch_evaluator import (
     scan_and_evaluate_unit_files
@@ -313,14 +315,14 @@ def main():
 
         elif args.command == "audit-unit":
             # Pass the new arguments down to the validator
-            evaluate_unit_consistency(
+            audit_unit_csv(
                 paths["unit"], paths["ground"],
                 args.active_only, args.fix_ghosts,
                 args.relink_orphans, args.fallback_hq
             )
 
         elif args.command == "audit-ob":
-            evaluate_ob_consistency(paths["ob"], paths["ground"])
+            audit_ob_csv(paths["ob"], paths["ground"])
 
         elif args.command == "audit-batch":
             scan_and_evaluate_unit_files(

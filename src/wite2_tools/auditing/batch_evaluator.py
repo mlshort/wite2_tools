@@ -31,10 +31,8 @@ Example:
 import os
 
 # Internal package imports
-from wite2_tools.auditing.validator import (
-    evaluate_unit_consistency,
-    evaluate_ob_consistency
-)
+from wite2_tools.auditing.audit_unit import audit_unit_csv
+from wite2_tools.auditing.audit_ob import audit_ob_csv
 from wite2_tools.utils.logger import get_logger
 
 # Initialize the logger for this specific module
@@ -80,8 +78,8 @@ def scan_and_evaluate_unit_files(target_folder: str, active_only: bool,
         unit_file_name = os.path.basename(unit_file)
         log.info("Processing:'%s'", unit_file_name)
 
-        issues = evaluate_unit_consistency(unit_file, ground_file,
-                                           active_only, fix_ghosts)
+        issues = audit_unit_csv(unit_file, ground_file,
+                                active_only, fix_ghosts)
 
         if issues >= 0:
             files_processed += 1
@@ -138,7 +136,7 @@ def scan_and_evaluate_ob_files(target_folder: str):
         ob_file_name = os.path.basename(ob_file)
         log.info("Processing:'%s'", ob_file_name)
 
-        issues = evaluate_ob_consistency(ob_file, ground_file)
+        issues = audit_ob_csv(ob_file, ground_file)
         files_processed += 1
 
         if issues >= 0:

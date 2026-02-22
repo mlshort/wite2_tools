@@ -16,8 +16,8 @@ def test_scan_and_evaluate_logic(tmp_path):
     (scenario_dir / "scen01_unit.csv").write_text("id,name,type\n1,Alpha,1")
     (scenario_dir / "scen01_ground.csv").write_text("id,name,type\n1,Panzer,1")
 
-    # 2. Mock evaluate_unit_consistency to isolate the batching logic
-    with patch('wite2_tools.auditing.batch_evaluator.evaluate_unit_consistency') as mock_val:
+    # 2. Mock audit_unit_csv to isolate the batching logic
+    with patch('wite2_tools.auditing.batch_evaluator.audit_unit_csv') as mock_val:
         # Mock return value (0 issues found)
         mock_val.return_value = 0
 
@@ -38,7 +38,7 @@ def test_scan_and_evaluate_logic(tmp_path):
         assert "_ground.csv" in args[1]
 
 
-@patch('wite2_tools.auditing.batch_evaluator.evaluate_ob_consistency')
+@patch('wite2_tools.auditing.batch_evaluator.audit_ob_csv')
 def test_scan_and_evaluate_ob_logic(mock_ob_val, tmp_path):
     """Verifies the scanner correctly picks up and evaluates OB files."""
     scenario_dir = tmp_path / "OB_Test"

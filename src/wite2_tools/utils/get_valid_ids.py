@@ -37,7 +37,7 @@ from functools import cache
 # Internal package imports
 from wite2_tools.constants import (
     GroundColumn,
-    OBColumn
+    ObColumn
 )
 from wite2_tools.generator import (
     read_csv_list_generator,
@@ -67,8 +67,8 @@ def get_valid_ob_ids(ob_file_path: str) -> Set[int]:
 
         for _, row in data_gen:
             try:
-                ob_id = parse_int(row[OBColumn.ID], 0)  # 'id' column
-                ob_type = parse_int(row[OBColumn.TYPE], 0)  # 'type' column
+                ob_id = parse_int(row[ObColumn.ID], 0)  # 'id' column
+                ob_type = parse_int(row[ObColumn.TYPE], 0)  # 'type' column
                 if ob_id != 0 and ob_type != 0:
                     valid_ob_ids.add(ob_id)
             except (ValueError, IndexError):
@@ -100,11 +100,11 @@ def get_valid_ob_upgrade_ids(ob_file_path: str) -> Set[int]:
 
         for _, row in data_gen:
             try:
-                ob_id = parse_int(row[OBColumn.ID], 0)
+                ob_id = parse_int(row[ObColumn.ID], 0)
                 if ob_id == 0:
                     continue
-                ob_type = parse_int(row[OBColumn.TYPE], 0)
-                ob_upgrade = parse_int(row[OBColumn.UPGRADE], 0)
+                ob_type = parse_int(row[ObColumn.TYPE], 0)
+                ob_upgrade = parse_int(row[ObColumn.UPGRADE], 0)
 
                 if ob_type != 0 and ob_upgrade != 0:
                     valid_ob_upgrade_ids.add(ob_upgrade)

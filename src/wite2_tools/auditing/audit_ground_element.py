@@ -21,7 +21,11 @@ Example:
 import os
 
 # Internal package imports
-from wite2_tools.constants import MAX_GROUND_MEN, GroundColumn
+from wite2_tools.constants import (
+    MAX_GROUND_MEN,
+    GroundColumn,
+    GroundElementType
+)
 from wite2_tools.utils.logger import get_logger
 from wite2_tools.utils.lookups import get_ground_elem_class_name
 from wite2_tools.generator import read_csv_list_generator
@@ -32,6 +36,80 @@ from wite2_tools.utils.parsing import (
 
 # Initialize the log for this specific module
 log = get_logger(__name__)
+
+
+def _check_ground_type(ground_id: int,
+                       ground_name: str,
+                       raw_type: str) -> tuple[int, str]:
+    """
+    Validates the type ID and returns (issues_found, element_class_name).
+    """
+    issues = 0
+    try:
+        ground_type = int(raw_type)
+        if ground_type == 0:
+            return 0, ""  # Skip inactive
+
+        element_class_name = get_ground_elem_class_name(ground_type)
+
+        if "Unk" in element_class_name:
+            log.warning("WID %d (%s): uses undefined Type %d",
+                        ground_id, ground_name, ground_type)
+            issues += 1
+        elif element_class_name == "Blank":
+            log.debug("WID %d (%s): Assigned to a blank Type %d",
+                      ground_id, ground_name, ground_type)
+        else:
+            log.debug("WID %d (%s): Validated as %s",
+                      ground_id, ground_name, element_class_name)
+
+        return issues, element_class_name
+
+    except ValueError:
+        log.error("WID %d (%s): 'type' value '%s' is not a valid integer.",
+                  ground_id, ground_name, raw_type)
+        return 1, ""
+
+
+def _check_ground_stats(ground_id: int,
+                        ground_name: str,
+                        element_class_name: str,
+                        row: str | list[str]) -> int:
+    """Validates physical size and manpower assignments safely."""
+    issues = 0
+    try:
+        ground_type = parse_int(row[GroundColumn.TYPE], 0)
+        ground_size = parse_int(row[GroundColumn.SIZE], 0)
+        ground_men = parse_int(row[GroundColumn.MEN], 0)
+
+        elem = GroundElementType(ground_type)
+        if elem.is_combat_element:
+
+            if ground_size == 0:
+                log.warning("WID %d (%s): %s has ZERO size",
+                            ground_id, ground_name, element_class_name)
+                issues += 1
+
+            if ground_men == 0:
+                log.warning("WID %d (%s): %s has no men assigned",
+                            ground_id, ground_name, element_class_name)
+                issues += 1
+
+            elif ground_men > MAX_GROUND_MEN:
+                log.warning("WID %d (%s): %s has %d > %d men assigned",
+                            ground_id, ground_name, element_class_name,
+                            ground_men, MAX_GROUND_MEN)
+                issues += 1
+
+    except ValueError as e:
+        log.error("(%s): Value error.", e)
+
+    except IndexError:
+        log.error("WID %d (%s): Row data is severely truncated.",
+                  ground_id, ground_name)
+        issues += 1
+
+    return issues
 
 
 def audit_ground_element_csv(ground_file_path: str) -> int:
@@ -68,8 +146,9 @@ def audit_ground_element_csv(ground_file_path: str) -> int:
                 log.error("WID %d: Duplicate IDs (%s)",
                           ground_id, ground_name)
                 issues_found += 1
-            else:
-                seen_ground_ids.add(ground_id)
+                continue
+
+            seen_ground_ids.add(ground_id)
 
             # 2. Type Validation
             raw_type = row[GroundColumn.TYPE]  # 'type' column
@@ -100,23 +179,11 @@ def audit_ground_element_csv(ground_file_path: str) -> int:
                 # following is to account for tests using weird-sized rows
                 if GroundColumn.SIZE > row_len:
                     continue
-                ground_size = parse_int(row[GroundColumn.SIZE], 0)
-                if ground_size == 0:
-                    log.warning("WID %d (%s): %s has ZERO size",
-                                ground_id, ground_name, element_class_name)
-                    issues_found += 1
 
-                ground_men = parse_int(row[GroundColumn.MEN], 0)
-                if ground_men == 0:
-                    log.warning("WID %d (%s): %s has no men assigned",
-                                ground_id, ground_name, element_class_name)
-                    issues_found += 1
-
-                elif ground_men > MAX_GROUND_MEN:
-                    log.warning("WID %d (%s): %s has %d > %d men assigned",
-                                ground_id, ground_name, element_class_name,
-                                ground_men, MAX_GROUND_MEN)
-                    issues_found += 1
+                issues_found += _check_ground_stats(ground_id,
+                                                    ground_name,
+                                                    element_class_name,
+                                                    row)
 
             except ValueError:
                 log.error("WID %d (%s): 'type' value '%s' is not a "
@@ -124,7 +191,7 @@ def audit_ground_element_csv(ground_file_path: str) -> int:
                           ground_id, ground_name, raw_type)
                 issues_found += 1
 
-        log.info("%d Units Checked - _unit.csv Audit complete with %d "
+        log.info("%d Elements Checked - _ground.csv Audit complete with %d "
                  "issues identified ",
                  len(seen_ground_ids), issues_found)
 
