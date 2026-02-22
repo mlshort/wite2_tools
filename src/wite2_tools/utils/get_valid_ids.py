@@ -37,10 +37,12 @@ from functools import cache
 # Internal package imports
 from wite2_tools.constants import (
     GroundColumn,
-    OBColumn,
-    UnitColumn
+    OBColumn
 )
-from wite2_tools.generator import read_csv_list_generator
+from wite2_tools.generator import (
+    read_csv_list_generator,
+    read_csv_dict_generator
+)
 from wite2_tools.utils.logger import get_logger
 from wite2_tools.utils.parsing import parse_int
 
@@ -156,39 +158,39 @@ def get_valid_ground_elem_ids(ground_file_path: str) -> Set[int]:
         return set()
 
 
-@cache
-def get_valid_unit_ids(unit_file_path: str) -> Set[int]:
+def get_valid_unit_ids(unit_file_path: str,
+                       active_only: bool = False) -> set[int]:
     """
-    Builds and returns a set of valid unit IDs from the _unit CSV.
-    Caches the result to avoid repeated file I/O.
+    Extracts a set of valid unit IDs from a _unit.csv file.
+
+    Args:
+        unit_file_path: Path to the _unit.csv file.
+        active_only: If True, only returns IDs for units where type != 0.
+
+    Returns:
+        A set of valid integer unit IDs.
     """
-    valid_unit_ids: Set[int] = set()
-    file_name = os.path.basename(unit_file_path)
-    logger.info("Building valid Unit ID cache from '%s'...", file_name)
+    valid_ids: set[int] = set()
 
     try:
-        unit_gen = read_csv_list_generator(unit_file_path)
-        # Skip header
-        next(unit_gen)
+        # start=2 accounts for WiTE2 headers
+        unit_gen = read_csv_dict_generator(unit_file_path, 2)
+        next(unit_gen)  # skip the header row
 
         for _, row in unit_gen:
-            try:
-                # Access by index to avoid duplicate header issues
-                unit_id = parse_int(row[UnitColumn.ID], 0)  # 'id' column
-                unit_type = parse_int(row[UnitColumn.TYPE], 0)  # 'type' column
-                if unit_id == 0:
+            uid = parse_int(row.get("id"), 0)
+
+            # If filtering by active, skip Type 0 units
+            if active_only:
+                utype = parse_int(row.get("type"), 0)
+                if utype == 0:
                     continue
 
-                if unit_type != 0:
-                    valid_unit_ids.add(unit_id)
-            except (ValueError, IndexError):
-                # Skip malformed rows or empty lines
-                continue
+            if uid != 0:
+                valid_ids.add(uid)
 
-        logger.info("  Cache built with %d valid Unit IDs.",
-                    len(valid_unit_ids))
-        return valid_unit_ids
+    except (OSError, IOError, ValueError, KeyError, TypeError) as e:
+        logger.exception("Could not retrieve unit IDs from %s: %s",
+                         unit_file_path, e)
 
-    except FileNotFoundError:
-        logger.error("_unit csv file not found: %s", unit_file_path)
-        return set()
+    return valid_ids

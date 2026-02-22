@@ -173,6 +173,16 @@ def create_parser() -> argparse.ArgumentParser:
         help="Automatically zeroes out ghost squads."
     )
 
+# --- NEW ARGUMENTS ---
+    audit_unit.add_argument(
+        "--relink-orphans", action="store_true",
+        help="Automatically reassigns units with inactive/missing HQs."
+    )
+    audit_unit.add_argument(
+        "--fallback-hq", type=int, default=0,
+        help="The Unit ID to assign orphaned units to (e.g., OKH/STAVKA)."
+    )
+
     subparsers.add_parser(
         "audit-ob", parents=[base_parser],
         help="Audit _ob.csv referential integrity."
@@ -302,9 +312,11 @@ def main():
             audit_ground_element_csv(paths["ground"])
 
         elif args.command == "audit-unit":
+            # Pass the new arguments down to the validator
             evaluate_unit_consistency(
                 paths["unit"], paths["ground"],
-                args.active_only, args.fix_ghosts
+                args.active_only, args.fix_ghosts,
+                args.relink_orphans, args.fallback_hq
             )
 
         elif args.command == "audit-ob":

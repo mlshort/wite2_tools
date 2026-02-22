@@ -217,9 +217,9 @@ def get_unit_special_name(status_code: int) -> str:
 # Explicitly declared lookup for WiTE2 Device Types
 # Key: Device Type Integer, Value: Description String
 DEVICE_TYPE_LOOKUP: dict[int, str] = {
-    0: "aircraft cannon",
-    1: "man weapon",
-    2: "squad weapon",
+    0: "Aircraft cannon",
+    1: "Man weapon",
+    2: "Squad weapon",
     3: "Hvy squad weapon",
     4: "AA weapon",
     5: "Lt gun",
@@ -227,12 +227,12 @@ DEVICE_TYPE_LOOKUP: dict[int, str] = {
     7: "Hvy gun",
     8: "Flame",
     9: "AA Rocket",
-    10: "naval gun",
-    11: "air-to-air rocket",
-    12: "incendiary bomb",
+    10: "Naval gun",
+    11: "Air-to-air rocket",
+    12: "Incendiary bomb",
     13: "GP bomb/rocket",
-    14: "factory",
-    15: "drop tank",
+    14: "Factory",
+    15: "Drop tank",
     16: "RADAR detector",
     17: "RADAR jammer",
     18: "Air navigation",
@@ -246,7 +246,8 @@ DEVICE_TYPE_LOOKUP: dict[int, str] = {
     26: "ASW",
     27: "Mine",
     28: "Camera",
-    29: "Naval RADAR"
+    29: "Naval RADAR",
+    30: "Armor"  # New to WiTE2
 }
 
 

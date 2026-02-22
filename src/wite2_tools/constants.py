@@ -611,6 +611,286 @@ class UnitColumn(IntEnum):
     SQD_EXP_ACCUM31 = 379
 
 
+# pylint: disable=invalid-name
+class DeviceCol(IntEnum):
+    """
+    Column indices for WiTE2's _device.csv file.
+    """
+    ID = 0
+    NAME = 1
+    TYPE = 2
+    SYM = 3
+    LOAD_COST = 4
+    RANGE = 5
+    EFFECT = 6
+    PEN = 7  # Penetration
+    ACC = 8  # Accuracy
+    CEILING = 9  # Max Ceiling
+    ANTI_ARMOR = 10
+    ANTI_SOFT = 11
+    WARHEAD = 12  # Not displayed in the Editor
+    ANTI_AIR = 13
+    RG = 14  # Range
+    ROF = 15  # Rate of Fire
+    HEAT = 16  # HEAT Pen
+    HVAP = 17  # HVAP Pen
+    BLAST = 18
+    DUD_RATE = 19  # Not displayed in the Editor
+    COUNTER_DEV = 20
+    COUNTER_DT = 21
+    COUNTER_VAL = 22
+    COUNTER_T_VAL = 23
+    EFF_CEILING = 24
+
+
+# pylint: disable=invalid-name
+class DeviceType(IntEnum):
+    """
+    Mapping for the 'type' column in WiTE2's _device.csv.
+    """
+    AIRCRAFT_CANNON = 0
+    MAN_WEAPON = 1
+    SQUAD_WEAPON = 2
+    HVY_SQUAD_WEAPON = 3
+    AA_WEAPON = 4
+    LT_GUN = 5
+    MD_GUN = 6
+    HVY_GUN = 7
+    FLAME = 8
+    AA_ROCKET = 9
+    NAVAL_GUN = 10
+    AIR_TO_AIR_ROCKET = 11
+    INCENDIARY_BOMB = 12
+    GP_BOMB_ROCKET = 13
+    FACTORY = 14
+    DROP_TANK = 15
+    RADAR_DETECTOR = 16
+    RADAR_JAMMER = 17
+    AIR_NAVIGATION = 18
+    AIR_RADAR = 19
+    GROUND_RADAR = 20
+    ELINT = 21
+    BALLOON = 22
+    FLAK = 23
+    TORPEDO = 24
+    DP_GUN = 25
+    ASW = 26
+    MINE = 27
+    CAMERA = 28
+    NAVAL_RADAR = 29
+
+    @classmethod
+    def get_description(cls, value: int) -> str:
+        """Returns the original descriptive string for the type ID."""
+        descriptions = {
+            0: "Aircraft cannon", 1: "Man weapon", 2: "Squad weapon",
+            3: "Hvy squad weapon", 4: "AA weapon", 5: "Lt gun",
+            6: "Md gun", 7: "Hvy gun", 8: "Flame", 9: "AA Rocket",
+            10: "Naval gun", 11: "Air-to-air rocket", 12: "Incendiary bomb",
+            13: "GP bomb/rocket", 14: "Factory", 15: "Drop tank",
+            16: "RADAR detector", 17: "RADAR jammer", 18: "Air navigation",
+            19: "Air RADAR", 20: "Ground RADAR", 21: "ELINT",
+            22: "Balloon", 23: "Flak", 24: "Torpedo", 25: "DP Gun",
+            26: "ASW", 27: "Mine", 28: "Camera", 29: "Naval RADAR"
+        }
+        return descriptions.get(value, "Unknown")
+
+
+# pylint: disable=invalid-name
+class AircraftCol(IntEnum):
+    """
+    Column indices for WiTE2's _aircraft.csv file.
+    """
+    ID = 0
+    NAME = 1
+    MAX_ALT = 2
+    NAT = 3
+    SYM = 4
+    MAX_SPEED = 5
+    MAX_SPEED_ALT = 6
+    ZERO_ALT_SPEED = 7
+    MAX_ALT_SPEED = 8
+    CRU_SPEED = 9
+    CLIMB = 10
+    MAX_LOAD = 11
+    ENDURANCE = 12
+    RANGE = 13
+    YEAR = 14
+    MVR = 15
+    ARMOR = 16
+    DURAB = 17
+    MONTH = 18
+    TYPE = 19
+    BLANK = 20
+    UPGRADE = 21
+    CREW = 22
+    SORTIE_AMMO = 23
+    SORTIE_FUEL = 24
+    BUILD_COST = 25
+    POOL = 26
+    BUILD_LIMIT = 27
+    MAX_IMPORT = 28
+    IMPORT_FROM = 29
+    LAST_YEAR = 30
+    LAST_MONTH = 31
+    RELIB = 32
+    PHOTO = 33
+    EXP_RATE = 34
+    ENGINE_NUM = 35
+    AIR_PROFILE = 36
+    WPN_0 = 37
+    WPN_1 = 38
+    WPN_2 = 39
+    WPN_3 = 40
+    WPN_4 = 41
+    WPN_5 = 42
+    WPN_6 = 43
+    WPN_7 = 44
+    WPN_8 = 45
+    WPN_9 = 46
+    WPN_NUM_0 = 47
+    WPN_NUM_1 = 48
+    WPN_NUM_2 = 49
+    WPN_NUM_3 = 50
+    WPN_NUM_4 = 51
+    WPN_NUM_5 = 52
+    WPN_NUM_6 = 53
+    WPN_NUM_7 = 54
+    WPN_NUM_8 = 55
+    WPN_NUM_9 = 56
+    WPN_FACE_0 = 57
+    WPN_FACE_1 = 58
+    WPN_FACE_2 = 59
+    WPN_FACE_3 = 60
+    WPN_FACE_4 = 61
+    WPN_FACE_5 = 62
+    WPN_FACE_6 = 63
+    WPN_FACE_7 = 64
+    WPN_FACE_8 = 65
+    WPN_FACE_9 = 66
+    # ... Weapon Sets (WS0 through WS4) follow ...
+    WS0_WPN_0 = 67
+    WS0_WPN_NUM_0 = 68
+    # [322 total columns]
+    WS4_SPD_MOD = 321
+
+
+# pylint: disable=invalid-name
+class AircraftType(IntEnum):
+    """
+    Mapping for the 'type' column in _aircraft.csv and
+    'airType' in _airgroup.csv.
+    """
+    FIGHTER = 0
+    FIGHTER_BOMBER = 1
+    NIGHT_FIGHTER = 2
+    TACTICAL_BOMBER = 3
+    LEVEL_BOMBER = 4
+    RECON = 5
+    JET_FIGHTER = 6
+    EW = 7
+    TRANSPORT = 8
+    PATROL = 9
+    FLOAT_PLANE = 10
+    FLOAT_FIGHTER = 11
+    TORPEDO_BOMBER = 12
+    AIR_FRAME = 13  # New for WiTE2
+
+
+# pylint: disable=invalid-name
+class AirGroupCol(IntEnum):
+    """
+    Column indices for WiTE2's _airgroup.csv file.
+    """
+    ID = 0
+    NAME = 1
+    PLAYER = 2
+    TYPE = 3
+    AIR_TYPE = 4
+    LEADER = 5
+    PRIM = 6
+    SUB_NUM = 7
+    BASE = 8
+    START_BASE = 9
+    MISSION = 10
+    SEC_MISSION = 11
+    TARGET = 12
+    PASSENGER = 13
+    TRANSFER_TO = 14
+    TRAVELED = 15
+    SUB_TO = 16
+    SUB_ID = 17
+    MAX_RG = 18
+    TRAINED_AS = 19
+    MORALE = 20
+    EXP = 21
+    TACTIC = 22
+    MOVED = 23
+    PAT_X = 24
+    PAT_Y = 25
+    LANDING = 26
+    FLYING = 27
+    TAKEOFF = 28
+    ASSIGNED = 29
+    READY = 30
+    FUELING = 31
+    MAINT = 32
+    RESERVE = 33
+    MOVING = 34
+    DAMAGED = 35
+    TOTAL = 36
+    ALT_TARGET = 37
+    DEPART0 = 38
+    DEPART1 = 39
+    NAT = 40
+    DELAY = 41
+    REPLACE_DELAY = 42
+    DETACHMENT = 43
+    DETACHED_FROM = 44
+    NAV_DEV = 45
+    RADAR_DEV = 46
+    KILLS = 47
+    CHANGED = 48
+    PILOT_NUM = 49
+    NOW_READY = 50
+    NOW_DAMAGED = 51
+    NOW_RESERVE = 52
+    NIGHT_FLY = 53
+    GUARDS = 54
+    WITHDRAW = 55
+    A_KILLS = 56
+    UPGRADE_ALLOW = 57
+    UPGRADE_DONE = 58
+    FATIGUE = 59
+    REPLACE_MODE = 60
+    NAVAL_TRAIN = 61
+    NAVAL_ONLY = 62
+    AIR_TASK = 63
+    AIR_HQ = 64
+    TRAVELED_DAY = 65
+    CUR_WS = 66
+    HQ_CHANGE = 67
+    MISSION_PCT = 68
+    TRAIN_PCT = 69
+    REST_PCT = 70
+    GROUP_ARRIVED = 71
+    TO_TRAVEL = 72
+    AIR_SYM = 73
+    INFO_LINK = 74
+    THEATER_BOX = 75
+    TH_BOX_LOCK = 76
+    WITH_TURN_0 = 77
+    WITH_DEST_0 = 78
+    WITH_TURN_1 = 79
+    WITH_DEST_1 = 80
+    WITH_TURN_2 = 81
+    WITH_DEST_2 = 82
+    WITH_TURN_3 = 83
+    WITH_DEST_3 = 84
+    WITH_TURN_4 = 85
+    WITH_DEST_4 = 86
+
+
 class Elem(IntEnum):
     """
     Work in progress for convenience
@@ -638,6 +918,7 @@ class Elem(IntEnum):
     SUPPORT_GER = 1490
 
 
+# pylint: disable=invalid-name
 class OB(IntEnum):
     """
     Work in progress for convenience

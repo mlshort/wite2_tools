@@ -1,3 +1,4 @@
+import csv
 import pytest
 
 # Internal package imports
@@ -23,7 +24,7 @@ def clear_caches():
     get_valid_ob_ids.cache_clear()
     get_valid_ob_upgrade_ids.cache_clear()
     get_valid_ground_elem_ids.cache_clear()
-    get_valid_unit_ids.cache_clear()
+    # get_valid_unit_ids.cache_clear()
 
 
 @pytest.fixture(name="mock_ob_csv")
@@ -88,7 +89,6 @@ def mock_unit_csv(tmp_path) -> str:
     file_path.write_text(content, encoding=ENCODING_TYPE)
     return str(file_path)
 
-
 # ==========================================
 # TEST CASES
 # ==========================================
@@ -122,7 +122,7 @@ def test_get_valid_ground_elem_ids(mock_ground_csv):
 
 def test_get_valid_unit_ids(mock_unit_csv):
     """Verifies extraction of Unit IDs."""
-    unit_ids = get_valid_unit_ids(mock_unit_csv)
+    unit_ids = get_valid_unit_ids(mock_unit_csv, True)
     assert unit_ids == {500, 502}
 
 

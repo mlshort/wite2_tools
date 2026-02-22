@@ -73,6 +73,7 @@ from wite2_tools.utils.logger import get_logger
 from wite2_tools.utils.get_valid_ids import (
     get_valid_ground_elem_ids,
     get_valid_unit_ids,
+    get_valid_ob_ids
 )
 
 # Initialize the logger for this specific module
@@ -87,6 +88,89 @@ def is_greater_than_zero(value) -> bool:
         return False
 
 
+def _check_coords(unit_id: int, unit_name: str, row: dict) -> int:
+    """Helper to validate all coordinate sets (x, y, tx, ty, etc.)."""
+    issues = 0
+    coord_pairs = [('x', 'y'), ('tx', 'ty'), ('ax', 'ay'), ('ptx', 'pty')]
+
+    for cx, cy in coord_pairs:
+        x = parse_int(row.get(cx), -1)
+        y = parse_int(row.get(cy), -1)
+
+        # NEW: Ignore holding/production pool coordinates (0, 0)
+        if x == 0 and y == 0:
+            continue
+
+        if not (MIN_X <= x <= MAX_X and MIN_Y <= y <= MAX_Y):
+            log.warning("ID %d (%s): Invalid (%s,%s) coords (%d, %d)",
+                        unit_id, unit_name, cx, cy, x, y)
+            issues += 1
+    return issues
+
+
+def _check_squads(unit_id: int, unit_name: str, row: dict,
+                  valid_elem_ids: set, fix_ghosts: bool) -> tuple[int, int]:
+    """Helper to validate squad integrity and detect ghost squads."""
+    issues = 0
+    fixed = 0
+    for i in range(MAX_SQUAD_SLOTS):
+        sqd_id_col, sqd_num_col = f"sqd.u{i}", f"sqd.num{i}"
+        sqd_id = parse_int(row.get(sqd_id_col), 0)
+        qty = parse_int(row.get(sqd_num_col), 0)
+
+        if sqd_id != 0 and sqd_id not in valid_elem_ids:
+            log.error("ID %d (%s): Slot %d has invalid Elem ID %d.",
+                      unit_id, unit_name, i, sqd_id)
+            issues += 1
+
+        if qty != 0 and sqd_id == 0:
+            log.error("ID %d (%s): Ghost Squad detected in Slot %d (Qty: %d).",
+                      unit_id, unit_name, i, qty)
+            issues += 1
+            if fix_ghosts:
+                row[sqd_num_col] = "0"
+                fixed += 1
+    return issues, fixed
+
+
+def _check_hq_and_delay(unit_id: int, unit_name: str, row: dict,
+                        valid_active_unit_ids: set, relink_orphans: bool,
+                        fallback_hq: int) -> tuple[int, int]:
+    """Helper to validate HQ attachment logic and deployment delays."""
+    issues = 0
+    fixed = 0
+    unit_hhq = parse_int(row.get('hhq'), 0)
+
+    if unit_hhq == unit_id:
+        hq_type = parse_int(row.get('hq'), 0)
+        if hq_type not in (0, 1):
+            log.warning("ID %d (%s): Self-reporting as HQ with Type(%d).",
+                        unit_id, unit_name, hq_type)
+            issues += 1
+
+    if unit_hhq != 0:
+        # NEW: Check if the HQ exists AND is currently active
+        if unit_hhq not in valid_active_unit_ids:
+            log.error("ID %d (%s): Unit reports to an invalid or "
+                      "inactive HQ (%d).",
+                      unit_id, unit_name, unit_hhq)
+            issues += 1
+
+            # NEW: Auto-repair orphaned units
+            if relink_orphans and fallback_hq > 0:
+                log.info(" -> FIXING: Relinking Unit %d to Fallback HQ %d",
+                         unit_id, fallback_hq)
+                row['hhq'] = str(fallback_hq)
+                fixed += 1
+
+    if parse_int(row.get("delay"), 0) > MAX_GAME_TURNS:
+        log.warning("ID %d (%s): Delay exceeds MAX_GAME_TURNS.",
+                    unit_id, unit_name)
+        issues += 1
+
+    return issues, fixed
+
+
 def evaluate_ob_consistency(ob_file_path: str,
                             ground_file_path: str) -> int:
     """
@@ -95,12 +179,14 @@ def evaluate_ob_consistency(ob_file_path: str,
     issues_found = 0
     seen_ob_ids: set[int] = set()
     valid_elem_ids: set[int] = set()
+    valid_ob_ids: set[int] = set()
 
     try:
         ob_file_base_name = os.path.basename(ob_file_path)
         # get the set of valid ground element ids
         valid_elem_ids = get_valid_ground_elem_ids(ground_file_path)
         # start=2 accounts for header
+        valid_ob_ids = get_valid_ob_ids(ob_file_path)
         ob_gen = read_csv_dict_generator(ob_file_path, 2)
         reader = next(ob_gen)
         headers = reader.fieldnames  # type: ignore
@@ -115,9 +201,9 @@ def evaluate_ob_consistency(ob_file_path: str,
 
         for _, row in ob_gen:
             # 1. Check for Duplicate IDs (Critical for TOE(OB) stability)
-            ob_id = parse_int(row.get('id') or '0')
-            ob_type = parse_int(row.get('type') or '0')
-            ob_first_year = parse_int(row.get('firstYear') or '0')
+            ob_id = parse_int(row.get('id'), 0)
+            ob_type = parse_int(row.get('type'), 0)
+            ob_name = parse_str(row.get('name'), "Unk")
 
             if ob_id in seen_ob_ids:
                 log.error("TOE(OB) ID %d: Duplicate IDs found", ob_id)
@@ -125,29 +211,65 @@ def evaluate_ob_consistency(ob_file_path: str,
             else:
                 seen_ob_ids.add(ob_id)
 
-            if ob_type != 0 and ob_first_year == 0:
-                log.warning("TOE(OB) ID %d: Active Type:%d, "
-                            "but has First Year of:%d.",
-                            ob_id, ob_type, ob_first_year)
-                issues_found += 1
+            if ob_type != 0:
+                # 2. Chronological Validation
+                f_year = parse_int(row.get('firstYear'), 0)
+                f_month = parse_int(row.get('firstMonth'), 0)
+                l_year = parse_int(row.get('lastYear'), 0)
+                l_month = parse_int(row.get('lastMonth'), 0)
 
-            header_len = len(headers) if headers is not None else 0
+                if f_year == 0:
+                    log.warning("TOE(OB) ID %d (%s): Active but has First"
+                                " Year of 0.", ob_id, ob_name)
+                    issues_found += 1
+
+                if l_year > 0:
+                    if l_year < f_year:
+                        log.error("TOE(OB) ID %d (%s): Expires (%d) before "
+                                  "intro year (%d).",
+                                  ob_id, ob_name, l_year, f_year)
+                        issues_found += 1
+                    elif l_year == f_year and l_month < f_month:
+                        log.error("TOE(OB) ID %d (%s): Expires in month %d "
+                                  "but introduced in month %d of same year.",
+                                  ob_id, ob_name, l_month, f_month)
+                        issues_found += 1
 
             # 2. Check for Row Length Consistency
+            header_len = len(headers) if headers is not None else 0
             if len(row) != header_len:
                 log.error("TOE(OB) ID %d: Column count mismatch. "
-                          "Expected %d, found %d.",
+                          "Expected %d Row(s), found %d Row(s).",
                           ob_id, header_len, len(row))
                 issues_found += 1
 
+            # 3. Upgrade Path Validation
+            upgrade_id = parse_int(row.get('upgrade'), 0)
+            if upgrade_id > 0:
+                if upgrade_id == ob_id:
+                    log.error("TOE(OB) ID %d (%s): Upgrades into itself "
+                              "(Infinite Loop).", ob_id, ob_name)
+                    issues_found += 1
+                elif upgrade_id not in valid_ob_ids:
+                    log.error("TOE(OB) ID %d (%s): Upgrades to "
+                              "non-existent OB ID %d.",
+                              ob_id, ob_name, upgrade_id)
+                    issues_found += 1
+
             # 3. Logical Squad Check (Ghost Squads)
+            seen_wids_in_row = set()
             for i in range(MAX_SQUAD_SLOTS):
                 # in the WiTE2 editor, this field is called 'WID'
                 sqd_id_col = f"sqd.u{i}"
                 sqd_num_col = f"sqd.num{i}"
 
                 sqd_id = parse_int(row.get(sqd_id_col), 0)
-                squad_quantity = parse_int(row.get(sqd_num_col), 0)
+                qty = parse_int(row.get(sqd_num_col), 0)
+
+                if qty < 0:
+                    log.error("TOE(OB) ID %d (%s): Slot %d has negative "
+                              "quantity (%d).", ob_id, ob_name, i, qty)
+                    issues_found += 1
 
                 if sqd_id != 0 and sqd_id not in valid_elem_ids:
                     log.error("TOE(OB) (ID %d): Slot %d has WID %d but WID is"
@@ -156,11 +278,20 @@ def evaluate_ob_consistency(ob_file_path: str,
                     issues_found += 1
 
                 # Inverse: If num > 0, sqd_id_val cannot be '0'
-                if squad_quantity != 0 and sqd_id == 0:
+                if qty != 0 and sqd_id == 0:
                     log.warning("OB (ID %d): Ghost Squad! %s has quantity %d"
                                 " but %s is '0'",
-                                ob_id, sqd_num_col, squad_quantity, sqd_id_col)
+                                ob_id, sqd_num_col, qty, sqd_id_col)
                     issues_found += 1
+
+                # Intra-Template Duplicate Check
+                if sqd_id != 0 and qty > 0:
+                    if sqd_id in seen_wids_in_row:
+                        log.warning("TOE(OB) ID %d (%s): WID %d is assigned "
+                                    "to multiple slots.",
+                                    ob_id, ob_name, sqd_id)
+                        issues_found += 1
+                    seen_wids_in_row.add(sqd_id)
 
         if issues_found == 0:
             log.info("%d OBs Checked - _ob.csv Consistency Check Passed.",
@@ -177,9 +308,12 @@ def evaluate_ob_consistency(ob_file_path: str,
     return issues_found
 
 
-def evaluate_unit_consistency(unit_file_path: str, ground_file_path: str,
+def evaluate_unit_consistency(unit_file_path: str,
+                              ground_file_path: str,
                               active_only: bool = True,
-                              fix_ghosts: bool = False) -> int:
+                              fix_ghosts: bool = False,
+                              relink_orphans: bool = False,
+                              fallback_hq: int = 0) -> int:
     """
     Validates a WiTE2 _unit CSV file for structural integrity and game-logic
     errors.
@@ -192,24 +326,21 @@ def evaluate_unit_consistency(unit_file_path: str, ground_file_path: str,
                     the ID is 0.
     """
     issues_found = 0
-    fixed_count = 0
-    seen_unit_ids: set[int] = set()
-    valid_elem_ids: set[int] = set()
-    valid_unit_ids: set[int] = set()
-
-    # Setup for writing fixed file
+    ghosts_fixed = 0
+    orphans_fixed = 0
+    seen_unit_ids = set()
     temp_file = None
-    writer = None
 
     try:
         # get the set of valid ground element ids
         valid_elem_ids = get_valid_ground_elem_ids(ground_file_path)
-        valid_unit_ids = get_valid_unit_ids(unit_file_path)
+        valid_unit_ids = get_valid_unit_ids(unit_file_path, active_only)
 
         unit_gen = read_csv_dict_generator(unit_file_path, 2)
         reader = next(unit_gen)
 
         # Initialize temp file if fix mode is enabled
+        writer = None
         if fix_ghosts:
             temp_file = NamedTemporaryFile(mode='w', delete=False,
                                            dir=os.path.dirname(unit_file_path),
@@ -225,124 +356,51 @@ def evaluate_unit_consistency(unit_file_path: str, ground_file_path: str,
                  unit_file_base_name, active_only, fix_ghosts)
 
         for _, row in unit_gen:
-            unit_id = parse_int(row.get("id"), 0)
-            unit_type = parse_int(row.get("type"), 0)
+            uid = parse_int(row.get("id"), 0)
+            utype = parse_int(row.get("type"), 0)
 
-            if active_only and (unit_id == 0 or unit_type == 0):
+            if active_only and (uid == 0 or utype == 0):
                 if fix_ghosts and writer:
                     writer.writerow(row)
                 continue
 
-            unit_name = parse_str(row.get("name"), "Unk")
+            uname = parse_str(row.get("name"), "Unk")
             # row_modified = False
 
             # 1. Primary Key Uniqueness
-            if unit_id in seen_unit_ids:
+            if uid in seen_unit_ids:
                 log.error("ID %d: Duplicate Unit ID for '%s'",
-                          unit_id, unit_name)
+                          uid, uname)
                 issues_found += 1
-            seen_unit_ids.add(unit_id)
+            seen_unit_ids.add(uid)
 
             # 2. Coordinate Validation
-            try:
-                x = parse_int(row.get('x'), -1)
-                y = parse_int(row.get('y'), -1)
-                if not (MIN_X <= x <= MAX_X and MIN_Y <= y <= MAX_Y):
-                    log.warning("ID %d (%s): Invalid (x,y) coords (%d, %d)",
-                                unit_id, unit_name, x, y)
-                    issues_found += 1
+            issues_found += _check_coords(uid, uname, row)
+            # 3. Squad Valididation
+            # 2. Ghost Squad Check
+            s_issues, s_fixed = _check_squads(uid, uname, row,
+                                              valid_elem_ids, fix_ghosts)
+            issues_found += s_issues
+            ghosts_fixed += s_fixed
 
-                x = parse_int(row.get('tx'), -1)
-                y = parse_int(row.get('ty'), -1)
-                if not (MIN_X <= x <= MAX_X and MIN_Y <= y <= MAX_Y):
-                    log.warning("ID %d (%s): Invalid (tx,ty) coords (%d, %d)",
-                                unit_id, unit_name, x, y)
-                    issues_found += 1
+            # 3. HQ & Delay Check
+            hq_issues, hq_fixed = _check_hq_and_delay(uid, uname, row,
+                                                      valid_unit_ids,
+                                                      relink_orphans,
+                                                      fallback_hq)
+            issues_found += hq_issues
+            orphans_fixed += hq_fixed
 
-                x = parse_int(row.get('ax'), -1)
-                y = parse_int(row.get('ay'), -1)
-                if not (MIN_X <= x <= MAX_X and MIN_Y <= y <= MAX_Y):
-                    log.warning("ID %d (%s): Invalid (ax,ay) coords (%d, %d)",
-                                unit_id, unit_name, x, y)
-                    issues_found += 1
-
-                x = parse_int(row.get('ptx'), -1)
-                y = parse_int(row.get('pty'), -1)
-                if not (MIN_X <= x <= MAX_X and MIN_Y <= y <= MAX_Y):
-                    log.warning("ID %d (%s): Invalid (ptx,pty) "
-                                "coords (%d, %d)",
-                                unit_id, unit_name, x, y)
-                    issues_found += 1
-
-            except (ValueError, TypeError):
-                log.error("ID %d (%s): Non-numeric coordinates detected.",
-                          unit_id, unit_name)
-                issues_found += 1
-
-            # 3. Squad ID vs Squad Number Logic
-            for i in range(MAX_SQUAD_SLOTS):
-                sqd_id_col = f"sqd.u{i}"
-                sqd_num_col = f"sqd.num{i}"
-
-                sqd_id_val = parse_int(row.get(sqd_id_col), 0)
-                squad_quantity = parse_int(row.get(sqd_num_col), 0)
-
-                # Check for Invalid Elem IDs
-                if sqd_id_val != 0 and sqd_id_val not in valid_elem_ids:
-                    log.error("ID %d (%s): Slot %d has invalid Elem ID %d.",
-                              unit_id, unit_name, i, sqd_id_val)
-                    issues_found += 1
-
-                # Check for Ghost Squads (Quantity > 0 but ID == 0)
-                if squad_quantity != 0 and sqd_id_val == 0:
-                    log.error("ID %d (%s): Ghost Squad detected in "
-                              "Slot %d (Qty: %d).",
-                              unit_id, unit_name, i, squad_quantity)
-                    issues_found += 1
-
-                    if fix_ghosts:
-                        log.info(" -> FIXING: Zeroing out %s for Unit %d",
-                                 sqd_num_col, unit_id)
-                        row[sqd_num_col] = "0"
-                        # row_modified = True
-                        fixed_count += 1
-
-            # 4. Attachment/HQ Check
-            unit_hhq = parse_int(row.get('hhq'), 0)
-            if unit_hhq == unit_id:
-                unit_hq_type = parse_int(row.get('hq'), 0)
-                if unit_hq_type != 0 and unit_hq_type != 1:
-                    log.warning("ID %d (%s): Unit with HQ Type(%d), "
-                                "is reporting itself as its own HQ.",
-                                unit_id, unit_name, unit_hq_type)
-                    issues_found += 1
-
-            if unit_hhq != 0:
-                if unit_hhq not in valid_unit_ids:
-                    log.warning("ID %d (%s): Unit has an invalid HQ "
-                                "(%d).",
-                                unit_id, unit_name, unit_hhq)
-                    issues_found += 1
-
-            # 5. Excess Delay Check
-            unit_delay = parse_int(row.get("delay"), 0)
-            if unit_delay > MAX_GAME_TURNS:
-                log.warning("ID %d (%s): Unit has a delay of %d, "
-                            "will never appear in game.",
-                            unit_id, unit_name, unit_delay)
-                issues_found += 1
-
-            # Write the row (modified or original) to temp file
-            if fix_ghosts and writer:
+            if writer:
                 writer.writerow(row)
 
         # Finalize and swap files if changes were made
-        if fix_ghosts and temp_file:
+        if (fix_ghosts or relink_orphans) and temp_file:
             temp_file.close()
-            if fixed_count > 0:
-                log.info("Fix Mode Complete: Repaired %d Ghost Squads. "
-                         "Overwriting original file.",
-                         fixed_count)
+            if ghosts_fixed > 0 or orphans_fixed > 0:
+                log.info("Fix Mode Complete: Repaired %d Ghost Squads "
+                         "and %d Orphaned Links.",
+                         ghosts_fixed, orphans_fixed)
                 os.replace(temp_file.name, unit_file_path)
             else:
                 log.info("Fix Mode Complete: No Ghost Squads found to fix.")
