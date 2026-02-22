@@ -25,7 +25,10 @@ from wite2_tools.constants import MAX_GROUND_MEN, GroundColumn
 from wite2_tools.utils.logger import get_logger
 from wite2_tools.utils.lookups import get_ground_elem_class_name
 from wite2_tools.generator import read_csv_list_generator
-from wite2_tools.utils.parsing import parse_int
+from wite2_tools.utils.parsing import (
+    parse_int,
+    parse_str
+)
 
 # Initialize the log for this specific module
 log = get_logger(__name__)
@@ -58,7 +61,7 @@ def audit_ground_element_csv(ground_file_path: str) -> int:
         for _, row in ground_gen:
             row_len: int = len(row)
             ground_id: int = parse_int(row[GroundColumn.ID], 0)
-            ground_name = row[GroundColumn.NAME]
+            ground_name = parse_str(row[GroundColumn.NAME], "Unk")
 
             # 1. Uniqueness Check
             if ground_id != 0 and ground_id in seen_ground_ids:
@@ -78,6 +81,7 @@ def audit_ground_element_csv(ground_file_path: str) -> int:
 
             try:
                 ground_type = int(raw_type)
+                # skip over inactive ground units
                 if ground_type == 0:
                     continue
                 element_class_name = get_ground_elem_class_name(ground_type)
@@ -120,7 +124,10 @@ def audit_ground_element_csv(ground_file_path: str) -> int:
                           ground_id, ground_name, raw_type)
                 issues_found += 1
 
-        log.info("--- Audit Complete: %d issues identified ---", issues_found)
+        log.info("%d Units Checked - _unit.csv Audit complete with %d "
+                 "issues identified ",
+                 len(seen_ground_ids), issues_found)
+
         return issues_found
 
     except (OSError, IOError, ValueError, KeyError, IndexError) as e:

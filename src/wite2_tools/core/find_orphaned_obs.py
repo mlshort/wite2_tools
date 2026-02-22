@@ -264,8 +264,7 @@ def find_orphaned_ob_ids(ob_file_path: str, unit_file_path: str,
                             orphan_unit.name)
 
             print(f"CRITICAL: {len(inv_ref_ob_ids)} units point to "
-                  "non-existent "
-                  "TOE(OB) IDs. Check logs.")
+                  "non-existent TOE(OB) IDs. Check logs.")
 
         if not orphaned_ob_ids and not inv_ref_ob_ids:
             log.info(

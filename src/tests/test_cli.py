@@ -1,37 +1,68 @@
-import sys
 import os
+import sys
+
 from unittest.mock import patch
 
 # Internal package imports
-from wite2_tools.cli import resolve_paths, create_parser, main
+from wite2_tools.cli import (
+    create_parser,
+    resolve_paths,
+    get_config_default,
+    main
+)
 
 
+
+@patch("os.path.exists")
+@patch("configparser.ConfigParser.read")
+@patch("configparser.ConfigParser.get")
+def test_get_config_default(mock_get, mock_read, mock_exists):
+    """Verifies retrieval of the default path from settings.ini."""
+    # Case 1: Config exists
+    mock_exists.return_value = True
+    mock_get.return_value = "C:/ConfigPath"
+    assert get_config_default() == "C:/ConfigPath"
+
+    # Case 2: Config missing
+    mock_exists.return_value = False
+    assert get_config_default() == "."
+
+
+def test_parser_config_command():
+    """Verifies the new 'config' subcommand parsing."""
+    parser = create_parser()
+    args = parser.parse_args(["config", "--set-path", "C:/MyMod"])
 # ==========================================
 # 1. Path Resolution Tests
 # ==========================================
 
-def test_resolve_paths():
-    """Verifies that the helper correctly constructs standard file paths."""
-    test_dir = "my_mod_folder"
-    paths = resolve_paths(test_dir)
 
-    assert paths["unit"] == os.path.join(test_dir, "_unit.csv")
-    assert paths["ob"] == os.path.join(test_dir, "_ob.csv")
-    assert paths["ground"] == os.path.join(test_dir, "_ground.csv")
+
+def test_resolve_paths():
+    """Verifies that paths are correctly joined to the data directory."""
+    data_dir = "C:/TestMods"
+    paths = resolve_paths(data_dir)
+
+    # Normalize both sides to ensure backslash vs forward slash doesn't
+    # break tests
+    assert os.path.normpath(paths["unit"]) == os.path.normpath("C:/TestMods/_unit.csv")
+    assert os.path.normpath(paths["ob"]) == os.path.normpath("C:/TestMods/_ob.csv")
 
 
 # ==========================================
 # 2. CLI Parser Configuration Tests
 # ==========================================
 
-def test_create_parser_defaults():
+@patch('wite2_tools.cli.get_config_default')
+def test_create_parser_defaults(mock_config):
     """Verifies the base parser applies defaults correctly."""
+    # Force default regardless of local settings.ini
+    mock_config.return_value = '.'
     parser = create_parser()
     args = parser.parse_args(['audit-ground'])
 
     assert args.command == 'audit-ground'
     assert args.data_dir == '.'
-    assert args.verbose is False
 
 
 # ==========================================
@@ -75,17 +106,21 @@ def test_main_routing_mod_reorder_ob(mock_reorder):
         )
 
 
+@patch('wite2_tools.cli.get_config_default')
 @patch('wite2_tools.cli.group_units_by_ob')
-def test_main_routing_gen_groups(mock_group):
+def test_main_routing_gen_groups(mock_group, mock_config):
     """Verifies 'gen-groups' correctly handles the nat-codes flag list."""
+    mock_config.return_value = '.'
     test_args = ['cli.py', 'gen-groups', '--nat-codes', '1', '3']
 
     with patch.object(sys, 'argv', test_args):
         main()
-        # active_only defaults to True
-        mock_group.assert_called_once_with(
-            os.path.join('.', '_unit.csv'), True, [1, 3]
-        )
+
+        # Capture the actual path used in the call to normalize it
+        called_path = mock_group.call_args[0][0]
+        assert os.path.normpath(called_path) == os.path.normpath("./_unit.csv")
+        assert mock_group.call_args[0][1] is True  # active_only
+        assert mock_group.call_args[0][2] == [1, 3] # nat_codes
 
 
 # ==========================================

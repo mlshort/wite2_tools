@@ -39,6 +39,7 @@ Note: Target file paths are resolved automatically from the provided
 import argparse
 import os
 import sys
+import configparser
 
 from wite2_tools.auditing.audit_ground_element import (
     audit_ground_element_csv
@@ -78,6 +79,17 @@ from wite2_tools.utils.logger import get_logger
 
 log = get_logger(__name__)
 
+CONFIG_FILE = "settings.ini"
+
+
+def get_config_default() -> str:
+    """Reads the data_dir from a local settings.ini file."""
+    config = configparser.ConfigParser()
+    if os.path.exists(CONFIG_FILE):
+        config.read(CONFIG_FILE)
+        return config.get("Paths", "data_dir", fallback=".")
+    return "."
+
 
 def resolve_paths(data_dir: str) -> dict[str, str]:
     """
@@ -100,16 +112,16 @@ def resolve_paths(data_dir: str) -> dict[str, str]:
 def create_parser() -> argparse.ArgumentParser:
     """
     Constructs the CLI argument parser with inherited parent parsers.
-
-    Returns:
-        argparse.ArgumentParser: The fully configured CLI parser.
     """
+    # Load the default path from config for the help text and default value
+    default_path = get_config_default()
 
     # --- PARENT PARSERS ---
     base_parser = argparse.ArgumentParser(add_help=False)
     base_parser.add_argument(
-        "-d", "--data-dir", default=".",
-        help="Directory containing the WiTE2 CSV files."
+        "-d", "--data-dir", default=default_path,
+        help=f"Directory containing the WiTE2 CSV files "
+             f"(Current default: {default_path})."
     )
     base_parser.add_argument(
         "-v", "--verbose", action="store_true",
@@ -135,6 +147,16 @@ def create_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     subparsers = main_parser.add_subparsers(dest="command", required=True)
+
+    # NEW CONFIG COMMAND
+    config_parser = subparsers.add_parser(
+        "config",
+        help="Manage global tool settings like default data directory."
+    )
+    config_parser.add_argument(
+        "--set-path", type=str,
+        help="Save a new default data directory to settings.ini."
+    )
 
     # 1. AUDIT COMMANDS
     subparsers.add_parser(
@@ -165,13 +187,13 @@ def create_parser() -> argparse.ArgumentParser:
     # 2. SCAN COMMANDS
     scan_ob = subparsers.add_parser(
         "scan-ob", parents=[base_parser],
-        help="Find a specific Ground Element in OBs"
+        help="Find a specific Ground Element in _ob.csv"
     )
     scan_ob.add_argument("target_wid", type=int)
 
     scan_unit = subparsers.add_parser(
         "scan-unit", parents=[base_parser],
-        help="Find a specific Ground Element in units"
+        help="Find a specific Ground Element in _unit.csv"
     )
     scan_unit.add_argument("target_wid", type=int)
     scan_unit.add_argument("--num-squads", type=int, default=-1)
@@ -211,8 +233,8 @@ def create_parser() -> argparse.ArgumentParser:
         "mod-replace-elem", parents=[base_parser],
         help="Globally replace a Ground Element ID"
     )
-    mod_rep.add_argument("old_ge_id", type=int)
-    mod_rep.add_argument("new_ge_id", type=int)
+    mod_rep.add_argument("old_wid_id", type=int)
+    mod_rep.add_argument("new_wid_id", type=int)
 
     mod_num = subparsers.add_parser(
         "mod-update-num", parents=[base_parser],
@@ -254,6 +276,19 @@ def main():
     """
     parser = create_parser()
     args = parser.parse_args()
+
+    # Handle Config command before path resolution
+    if args.command == "config":
+        if args.set_path:
+            config = configparser.ConfigParser()
+            config["Paths"] = {"data_dir": args.set_path}
+            with open(CONFIG_FILE, "w") as configfile:
+                config.write(configfile)
+            print(f"Default data directory saved: {args.set_path}")
+        else:
+            current = get_config_default()
+            print(f"Current default data directory: {current}")
+        sys.exit(0)
 
     paths = resolve_paths(args.data_dir)
 
@@ -320,7 +355,7 @@ def main():
 
         elif args.command == "mod-replace-elem":
             replace_unit_ground_element(
-                paths["unit"], args.old_ge_id, args.new_ge_id
+                paths["unit"], args.old_wid, args.new_wid
             )
 
         elif args.command == "mod-update-num":

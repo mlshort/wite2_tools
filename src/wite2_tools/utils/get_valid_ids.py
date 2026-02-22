@@ -28,7 +28,7 @@ Main Functions:
                               IDs.
 * get_valid_ground_elem_ids : Returns a set of all active Ground Element WIDs.
 * get_valid_unit_ids        : Returns a set of all active Unit IDs deployed in
-  the scenario.
+                              the scenario.
 """
 import os
 from typing import Set
@@ -42,6 +42,7 @@ from wite2_tools.constants import (
 )
 from wite2_tools.generator import read_csv_list_generator
 from wite2_tools.utils.logger import get_logger
+from wite2_tools.utils.parsing import parse_int
 
 # Initialize the log for this specific module
 logger = get_logger(__name__)
@@ -64,19 +65,19 @@ def get_valid_ob_ids(ob_file_path: str) -> Set[int]:
 
         for _, row in data_gen:
             try:
-                ob_id = int(row[OBColumn.ID])  # 'id' column
-                ob_type = int(row[OBColumn.TYPE])  # 'type' column
+                ob_id = parse_int(row[OBColumn.ID], 0)  # 'id' column
+                ob_type = parse_int(row[OBColumn.TYPE], 0)  # 'type' column
                 if ob_id != 0 and ob_type != 0:
                     valid_ob_ids.add(ob_id)
             except (ValueError, IndexError):
                 continue
 
-        logger.info("Cache built with %d valid TOE(OB) IDs.",
+        logger.info("  Cache built with %d valid TOE(OB) IDs.",
                     len(valid_ob_ids))
         return valid_ob_ids
 
     except FileNotFoundError:
-        logger.error("TOE(OB) file not found:'%s'", ob_file_path)
+        logger.error("_ob csv file not found:'%s'", ob_file_path)
         return set()
 
 
@@ -97,11 +98,11 @@ def get_valid_ob_upgrade_ids(ob_file_path: str) -> Set[int]:
 
         for _, row in data_gen:
             try:
-                ob_id = int(row[OBColumn.ID])  # 'id' column
+                ob_id = parse_int(row[OBColumn.ID], 0)
                 if ob_id == 0:
                     continue
-                ob_type = int(row[OBColumn.TYPE])  # 'type' column
-                ob_upgrade = int(row[OBColumn.UPGRADE])  # 'upgrade' column
+                ob_type = parse_int(row[OBColumn.TYPE], 0)
+                ob_upgrade = parse_int(row[OBColumn.UPGRADE], 0)
 
                 if ob_type != 0 and ob_upgrade != 0:
                     valid_ob_upgrade_ids.add(ob_upgrade)
@@ -109,12 +110,12 @@ def get_valid_ob_upgrade_ids(ob_file_path: str) -> Set[int]:
                 # Skip malformed rows or empty lines
                 continue
 
-        logger.info("Cache built with %d valid TOE(OB) upgrade IDs.",
+        logger.info("  Cache built with %d valid TOE(OB) upgrade IDs.",
                     len(valid_ob_upgrade_ids))
         return valid_ob_upgrade_ids
 
     except FileNotFoundError:
-        logger.error("TOE(OB) file not found: %s", ob_file_path)
+        logger.error("_ob csv file not found: %s", ob_file_path)
         return set()
 
 
@@ -137,21 +138,21 @@ def get_valid_ground_elem_ids(ground_file_path: str) -> Set[int]:
         for _, row in ground_gen:
             try:
                 # Access by index to avoid duplicate header issues
-                ground_elem_id = int(row[GroundColumn.ID])  # 1st 'id' column
+                ground_elem_id = parse_int(row[GroundColumn.ID], 0)
                 if ground_elem_id == 0:
                     continue
-                ground_type = int(row[GroundColumn.TYPE])  # 'type' column
+                ground_type = parse_int(row[GroundColumn.TYPE], 0)
                 if ground_type != 0:
                     valid_elem_ids.add(ground_elem_id)
             except (ValueError, IndexError):
                 # Skip malformed rows or empty lines
                 continue
 
-        logger.info("Cache built with %d valid WIDs.", len(valid_elem_ids))
+        logger.info("  Cache built with %d valid WIDs.", len(valid_elem_ids))
         return valid_elem_ids
 
     except FileNotFoundError:
-        logger.error("Ground element file not found:'%s'", ground_file_path)
+        logger.error("_ground.csv file not found:'%s'", ground_file_path)
         return set()
 
 
@@ -173,8 +174,8 @@ def get_valid_unit_ids(unit_file_path: str) -> Set[int]:
         for _, row in unit_gen:
             try:
                 # Access by index to avoid duplicate header issues
-                unit_id = int(row[UnitColumn.ID])  # 'id' column
-                unit_type = int(row[UnitColumn.TYPE])  # 'type' column
+                unit_id = parse_int(row[UnitColumn.ID], 0)  # 'id' column
+                unit_type = parse_int(row[UnitColumn.TYPE], 0)  # 'type' column
                 if unit_id == 0:
                     continue
 
@@ -184,9 +185,10 @@ def get_valid_unit_ids(unit_file_path: str) -> Set[int]:
                 # Skip malformed rows or empty lines
                 continue
 
-        logger.info("Cache built with %d valid Unit IDs.", len(valid_unit_ids))
+        logger.info("  Cache built with %d valid Unit IDs.",
+                    len(valid_unit_ids))
         return valid_unit_ids
 
     except FileNotFoundError:
-        logger.error("Unit file not found: %s", unit_file_path)
+        logger.error("_unit csv file not found: %s", unit_file_path)
         return set()

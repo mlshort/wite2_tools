@@ -1,8 +1,6 @@
-import os
-import pytest
-
 from unittest.mock import patch
 from wite2_tools.auditing.batch_evaluator import scan_and_evaluate_unit_files
+from wite2_tools.auditing.batch_evaluator import scan_and_evaluate_ob_files
 
 
 def test_scan_and_evaluate_logic(tmp_path):
@@ -53,7 +51,6 @@ def test_scan_and_evaluate_ob_logic(mock_ob_val, tmp_path):
     # FIX: Set the return value to an integer so the >= comparison works
     mock_ob_val.return_value = 0
 
-    from wite2_tools.auditing.batch_evaluator import scan_and_evaluate_ob_files
     scan_and_evaluate_ob_files(str(scenario_dir))
 
     mock_ob_val.assert_called_once()

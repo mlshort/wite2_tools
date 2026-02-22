@@ -57,7 +57,10 @@ from tempfile import NamedTemporaryFile
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.generator import read_csv_dict_generator
-from wite2_tools.utils.parsing import parse_int
+from wite2_tools.utils.parsing import (
+     parse_int,
+     parse_str
+)
 from wite2_tools.constants import (
     MAX_SQUAD_SLOTS,
     MIN_X,
@@ -84,7 +87,8 @@ def is_greater_than_zero(value) -> bool:
         return False
 
 
-def evaluate_ob_consistency(ob_file_path: str, ground_file_path: str) -> int:
+def evaluate_ob_consistency(ob_file_path: str,
+                            ground_file_path: str) -> int:
     """
     Performs a deep consistency check on a WiTE2 _ob CSV file.
     """
@@ -107,7 +111,7 @@ def evaluate_ob_consistency(ob_file_path: str, ground_file_path: str) -> int:
             return issues_found
 
         # Iterate through every row
-        log.info("Checking consistency for: '%s'", ob_file_base_name)
+        log.info("Checking consistency on: '%s'", ob_file_base_name)
 
         for _, row in ob_gen:
             # 1. Check for Duplicate IDs (Critical for TOE(OB) stability)
@@ -142,28 +146,29 @@ def evaluate_ob_consistency(ob_file_path: str, ground_file_path: str) -> int:
                 sqd_id_col = f"sqd.u{i}"
                 sqd_num_col = f"sqd.num{i}"
 
-                sqd_id_val = row.get(sqd_id_col, "0")
-                squad_quantity = row.get(sqd_num_col, "0")
+                sqd_id = parse_int(row.get(sqd_id_col), 0)
+                squad_quantity = parse_int(row.get(sqd_num_col), 0)
 
-                if sqd_id_val != "0" and int(sqd_id_val) not in valid_elem_ids:
-                    log.error("TOE(OB) (ID %d): Slot %d has WID %s but WID is"
+                if sqd_id != 0 and sqd_id not in valid_elem_ids:
+                    log.error("TOE(OB) (ID %d): Slot %d has WID %d but WID is"
                               " not found in _ground.csv.",
-                              ob_id, i, sqd_id_val)
+                              ob_id, i, sqd_id)
                     issues_found += 1
 
                 # Inverse: If num > 0, sqd_id_val cannot be '0'
-                if squad_quantity != "0" and sqd_id_val == "0":
-                    log.warning("OB (ID %d): Ghost Squad! %s has quantity '%s'"
+                if squad_quantity != 0 and sqd_id == 0:
+                    log.warning("OB (ID %d): Ghost Squad! %s has quantity %d"
                                 " but %s is '0'",
                                 ob_id, sqd_num_col, squad_quantity, sqd_id_col)
                     issues_found += 1
 
         if issues_found == 0:
-            log.info("Consistency Check Passed: No structural or logical "
-                     "issues detected.")
+            log.info("%d OBs Checked - _ob.csv Consistency Check Passed.",
+                     len(seen_ob_ids))
         else:
-            log.error("Consistency Check Failed: %d issues identified.",
-                      issues_found)
+            log.info("%d OBs Checked - _ob.csv Consistency Check Failed:"
+                     "%d issues identified.",
+                     issues_found, len(seen_ob_ids))
 
     except (OSError, IOError, ValueError, KeyError, TypeError) as e:
         log.exception("Could not complete consistency check: %s", e)
@@ -213,6 +218,7 @@ def evaluate_unit_consistency(unit_file_path: str, ground_file_path: str,
             writer = csv.DictWriter(temp_file,
                                     fieldnames=header)  # type: ignore
             writer.writeheader()
+
         unit_file_base_name = os.path.basename(unit_file_path)
         log.info("Evaluating Unit file consistency:'%s' (Active Only:%s)"
                  "(Fix Mode:%s)",
@@ -227,7 +233,7 @@ def evaluate_unit_consistency(unit_file_path: str, ground_file_path: str,
                     writer.writerow(row)
                 continue
 
-            unit_name = row.get("name", "Unk")
+            unit_name = parse_str(row.get("name"), "Unk")
             # row_modified = False
 
             # 1. Primary Key Uniqueness
@@ -313,8 +319,8 @@ def evaluate_unit_consistency(unit_file_path: str, ground_file_path: str,
 
             if unit_hhq != 0:
                 if unit_hhq not in valid_unit_ids:
-                    log.warning("ID %d (%s): Unit has HQ "
-                                "invalid ID (%d).",
+                    log.warning("ID %d (%s): Unit has an invalid HQ "
+                                "(%d).",
                                 unit_id, unit_name, unit_hhq)
                     issues_found += 1
 
@@ -343,14 +349,14 @@ def evaluate_unit_consistency(unit_file_path: str, ground_file_path: str,
                 os.remove(temp_file.name)
 
         if issues_found == 0:
-            log.info("%d Units Checked - Unit Consistency Check Passed.",
+            log.info("%d Units Checked - _unit.csv Consistency Check Passed.",
                      len(seen_unit_ids))
         else:
-            log.error("Unit Consistency Check Failed with %d issues.",
-                      issues_found)
+            log.warning("%d Units Checked - _unit.csv Consistency Check Failed"
+                        " with %d issues.", len(seen_unit_ids), issues_found)
 
     except (OSError, IOError, ValueError, KeyError, TypeError) as e:
-        log.exception("Critical error during unit evaluation: %s", e)
+        log.exception("Critical error during _unit.csv evaluation: %s", e)
         if temp_file and os.path.exists(temp_file.name):
             try:
                 temp_file.close()

@@ -33,14 +33,21 @@ LOG_FILENAME = f"wite2_{timestamp}.log"
 
 # 2. Define the exact path using os.path.join and your dynamic directory
 LOG_PATH = os.path.join(LOCAL_LOG_PATH, LOG_FILENAME)
+DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+
+CLEAN_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
 # Modified format to include clickable source code references
-LOG_FORMAT = '%(asctime)s - %(levelname)s - File "%(pathname)s", ' \
+DETAILED_FORMAT = '%(asctime)s - %(levelname)s - File "%(pathname)s", ' \
              'line %(lineno)d - %(message)s'
+JSON_FORMAT = '{"timestamp": "%(asctime)s", "level": "%(levelname)s", "msg": \
+              "%(message)s"}'
+CSV_FORMAT = "%(asctime)s,%(levelname)s,%(message)s"
+MIN_FORMAT = "%(message)s"
 
 # 3. Configure logging immediately on import
 logging.basicConfig(
     level=logging.INFO,
-    format=LOG_FORMAT,
+    format=CLEAN_FORMAT,
     handlers=[
         logging.FileHandler(LOG_PATH, encoding=ENCODING_TYPE),
         logging.StreamHandler()  # Keep printing to console for real-time
@@ -61,7 +68,7 @@ def get_logger(name):
     # 2. Prevent double-logging by checking if handlers already exist
     if not logger.handlers:
         logger.setLevel(logging.INFO)
-        formatter = logging.Formatter(LOG_FORMAT)
+        formatter = logging.Formatter(CLEAN_FORMAT)
 
         # File Handler
         file_handler = logging.FileHandler(LOG_PATH, encoding=ENCODING_TYPE)
@@ -74,3 +81,15 @@ def get_logger(name):
         logger.addHandler(console_handler)
 
     return logger
+
+
+def set_formatter(msg_format: str):
+
+    new_formatter = logging.Formatter(msg_format, datefmt=DATE_FORMAT)
+
+    # 1. Access the root logger (or your specific tool logger)
+    root_logger = logging.getLogger()
+
+    # 2. Update all existing handlers at runtime
+    for handler in root_logger.handlers:
+        handler.setFormatter(new_formatter)

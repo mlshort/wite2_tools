@@ -84,7 +84,7 @@ def _build_ob_lookup(ob_file_path: str) -> dict[int, OBName]:
                 ob_suffix = parse_str(row.get('suffix'), '')
                 ob_full_name = f"{ob_name} {ob_suffix}"
 
-                lookup[int(ob_id)] = OBName(
+                lookup[ob_id] = OBName(
                     full_name=ob_full_name,
                     suffix=ob_suffix
                 )
