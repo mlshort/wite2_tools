@@ -13,14 +13,11 @@ squad quantity (`sqdNum X`) are shifted in perfect synchronization. The script
 utilizes temporary files to ensure memory efficiency and safe atomic file
 replacement.
 
-
 Command Line Usage:
-    python -m wite2_tools.cli reorder-ob [-h] [--ob-file PATH] \\
-        target_ob_id target_wid source_slot target_slot
+    python -m wite2_tools.cli mod-mod-reorder-ob [-h] [-d DATA_DIR] \
+        target_ob_id target_wid target_slot
 
 Arguments:
-    ob_file_path (str): The absolute or relative path to the WiTE2
-                        _ob CSV file.
     target_ob_id (int): The target Order of Battle TOE(OB) ID.
     target_wid (int):  The WID of the Ground Element to be moved.
     source_slot (int): The current slot index (0-31) of the
@@ -29,11 +26,11 @@ Arguments:
                        element.
 
 Example:
-    $ python -m wite2_tools.cli reorder-ob 150 42 0
+    $ python -m wite2_tools.cli mod-mod-reorder-ob -d "C:\\My_Mods" 150 42 0
 
-    This scans for TOE(OB) ID 150, finds Ground Element 42 within its squad
-    slots, and moves it to the very first slot (index 0), shifting other
-    elements down.
+    This scans the _ob.csv located in "C:\\My_Mods" for TOE(OB) ID 150,
+    finds Ground Element 42, and moves it to the very first slot (index 0)
+
 """
 
 # Internal package imports

@@ -4,7 +4,7 @@
 [![Pylint](https://github.com/mlshort/wite2_tools/actions/workflows/pylint.yml/badge.svg?event=push)](https://github.com/mlshort/wite2_tools/actions/workflows/pylint.yml)
 
 
-**Version:** 0.2.0
+**Version:** 0.3.0
 **Author:** Mark L. Short
 
 A specialized, Python-based toolkit for managing, modifying, and analyzing

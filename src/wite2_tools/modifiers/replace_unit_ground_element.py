@@ -12,13 +12,10 @@ streams the data using a generator and writes to a temporary file, which
 atomically replaces the original file only upon successful completion.
 
 Command Line Usage:
-    python -m wite2_tools.cli replace-elem [-h] [--unit-file PATH] \\
+    python -m wite2_tools.cli mod-replace-elem [-h] [-d DATA_DIR] \
         old_ge_id new_ge_id
 
 Arguments:
-    unit_file_path (str): The absolute or relative path to the WiTE2
-                          _unit CSV file.
-
     old_wid (int): The existing Ground Element WID to be replaced.
     new_wid (int): The new Ground Element WID value.
 """

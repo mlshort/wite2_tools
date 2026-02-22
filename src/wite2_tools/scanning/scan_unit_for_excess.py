@@ -16,12 +16,10 @@ console in a formatted table, detailing their ID, Name, Nationality,
 current amount, needed amount, and the calculated overage ratio.
 
 Command Line Usage:
-    python -m wite2_tools.cli scan-excess [-h] [--unit-file PATH] \
+    python -m wite2_tools.cli scan-excess [-h] [-d DATA_DIR] \
         [--operation {ammo,supplies,fuel,vehicles}]
 
 Arguments:
-    unit_file_path (str): The absolute or relative path to the WiTE2
-                          _unit CSV file.
     operation (str): Specifies which resource to scan for. Choices are
                      'ammo' (default), 'supplies', 'fuel', or 'vehicles'.
 

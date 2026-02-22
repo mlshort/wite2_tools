@@ -28,16 +28,12 @@ Functions
                 including HQ attachment logic and map positioning.
 
 Command Line Usage:
-    python -m wite2_tools.cli audit-unit [-h] [--unit-file PATH] \
-        [--ground-file PATH] [active_only] [fix_ghosts]
+    python -m wite2_tools.cli audit-unit [-h] [-d DATA_DIR] [active_only] \
+        [fix_ghosts]
 
-    python -m wite2_tools.cli audit-ob [-h] [--ob-file PATH] \
-        [--ground-file PATH]
+    python -m wite2_tools.cli audit-ob [-h] [-d DATA_DIR]
 
 Arguments:
-    unit_file_path (str):   Path to the WiTE2 _unit CSV file.
-    ob_file_path (str):     Path to the WiTE2 _ob CSV file.
-    ground_file_path (str): Path to the WiTE2 _ground CSV file.
     active_only (bool, optional): Skips inactive units (type=0) if
                                   True. Defaults to True.
     fix_ghosts (bool, optional): Automatically repairs ghost squads if

@@ -9,11 +9,7 @@ consistency, identifying issues such as duplicate WIDs, missing or
 invalid element types, and malformed size or manpower data.
 
 Command Line Usage:
-    python -m wite2_tools.cli audit-ground [-h] [--ground-file PATH]
-
-Arguments:
-    ground_file_path (str): The absolute or relative path to the WiTE2
-                            _ground CSV file.
+    python -m wite2_tools.cli audit-ground [-h] [-d DATA_DIR]
 
 Example:
     $ python -m wite2_tools.cli audit-ground

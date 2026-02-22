@@ -29,12 +29,10 @@ Main Functions:
   orphan.
 
 Command Line Usage:
-    python -m wite2_tools.cli find-orphans [-h] [--ob-file PATH] \
-        [--unit-file PATH] [--nat-codes CODE [CODE ...]]
+    python -m wite2_tools.cli gen-orphans [-h] [-d DATA_DIR] \
+        [--nat-codes CODE [CODE ...]]
 
 Arguments:
-    ob_file_path (str):   The path to the WiTE2 _ob CSV file.
-    unit_file_path (str): The path to the WiTE2 _unit CSV file.
     nat_codes:     (list of int, optional): Filter by nationality codes.
 
 Example:

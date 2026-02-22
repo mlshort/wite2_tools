@@ -24,10 +24,10 @@ It synchronizes all 6 weapon attributes during the shift:
     - wpnFace (Facing)
 
 Command Line Usage:
-    python -m wite2_tools.cli compact-weapons [--ground-file FILE]
+    python -m wite2_tools.cli mod-compact-wpn [-d DATA_DIR]
 
 Example:
-    $ python -m wite2_tools.cli compact-weapons Scans the default _ground.csv
+    $ python -m wite2_tools.cli mod-compact-wpn Scans the default _ground.csv
     file and shifts weapons left/up to compact any empty slots.
 """
 from typing import Tuple, List

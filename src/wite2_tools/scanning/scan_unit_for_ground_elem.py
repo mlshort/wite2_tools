@@ -11,24 +11,22 @@ exact squad column where the element was found, and the assigned quantity
 (`sqd.num`).
 
 Command Line Usage:
-    python -m wite2_tools.cli scan-unit-elem [-h] [--unit-file PATH] \
+    python -m wite2_tools.cli scan-unit [-h] [-d DATA_DIR] \
         target_wid [num_squads]
 
 Arguments:
-    unit_file_path (str): The absolute or relative path to the WiTE2
-                          _unit CSV file.
     target_wid (int): The WID of the Ground Element to search for across
                       all units.
     num_squads (int, optional): Filter by exact number of assigned squads.
 
 Example:
-    $ python -m wite2_tools.cli scan-unit-elem 42
+    $ python -m wite2_tools.cli scan-unit 42
 
     Scans the unit file and outputs a formatted table of every unit that
     includes Ground Element 42, showing the exact slot it occupies and the
     quantity assigned.
 
-    $ python -m wite2_tools.cli scan-unit-elem 42 10
+    $ python -m wite2_tools.cli scan-unit 42 10
 
     Same as above, but only returns matches where exactly 10 of Ground
     Element 42 are assigned.

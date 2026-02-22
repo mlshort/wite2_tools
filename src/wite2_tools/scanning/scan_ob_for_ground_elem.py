@@ -13,17 +13,15 @@ lookup), the exact squad column where the element was found, and the
 assigned quantity from the `sqdNum` column.
 
 Command Line Usage:
-    python -m wite2_tools.cli scan-ob-elem [-h] [--ob-file PATH] \
+    python -m wite2_tools.cli scan-ob [-h] [-d DATA_DIR] \
         target_wid
 
 Arguments:
-    ob_file_path (str): The absolute or relative path to the WiTE2
-                        _ob CSV file.
     target_wid (int): The WID of the Ground Element to search for across
                       all OBs.
 
 Example:
-    $ python -m wite2_tools.cli scan-ob-elem 42
+    $ python -m wite2_tools.cli scan-ob 42
 
     Scans the TOE(OB) file and outputs a formatted table of every TOE(OB)
     that includes Ground Element 42, showing the exact slot it occupies

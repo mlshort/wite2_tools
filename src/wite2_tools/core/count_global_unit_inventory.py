@@ -19,17 +19,15 @@ Core Features:
   for easy review.
 
 Command Line Usage:
-    python -m wite2_tools.cli count-inventory [-h] [--unit-file PATH] \
-        [--ground-file PATH] [--nat-codes CODE [CODE ...]]
+    python -m wite2_tools.cli gen-inventory [-h] [-d DATA_DIR] \
+        [--nat-codes CODE [CODE ...]]
 
 Arguments:
-    unit_file_path (str): The path to the WiTE2 _unit CSV file.
-    ground_file_path (str): The path to the WiTE2 _ground CSV file.
     nat_codes (list of int, optional): Filter by nationality codes
                                        (e.g., 1 for Germany, 3 for Italy).
 
 Example:
-    $ python -m wite2_tools.cli count-inventory --nat-codes 1
+    $ python -m wite2_tools.cli gen-inventory --nat-codes 1
 
     Calculates the total equipment inventory for all active German (Nat 1)
     units.

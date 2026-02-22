@@ -23,7 +23,7 @@ CLI Usage
 ---------
 This module can be executed directly from the command line:
 
-    $ python -m wite2_tools.cli reorder-unit [--unit-file PATH] \\
+    $ python -m wite2_tools.cli mod-reorder-unit [-d DATA_DIR] \\
         target_unit_id target_wid target_slot
 
 Arguments:

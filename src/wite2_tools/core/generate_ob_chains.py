@@ -28,11 +28,10 @@ Main Functions:
                        paths.
 
 Command Line Usage:
-    python -m wite2_tools.cli gen-chains [-h] [--ob-file PATH] \
+    python -m wite2_tools.cli gen-chains [-h] [-d DATA_DIR] \
         [--csv-out PATH] [--txt-out PATH] [--nat-codes CODE [CODE ...]]
 
 Arguments:
-    ob_file_path (str):    The path to the WiTE2 _ob CSV file.
     csv_output_path (str): The destination path for the CSV output.
     txt_output_path (str): The destination path for the plaintext output.
     nat_codes (list of int, optional): Filter by nationality codes.

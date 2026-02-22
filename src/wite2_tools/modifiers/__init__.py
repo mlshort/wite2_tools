@@ -6,7 +6,7 @@ Includes tools for bulk-updating squad quantities and reordering TOE
 elements within the TOE(OB) database.
 """
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 __date__ = "2026-02-19"
 
 from .replace_unit_ground_element import replace_unit_ground_element

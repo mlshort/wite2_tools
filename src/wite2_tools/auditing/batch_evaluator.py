@@ -9,19 +9,19 @@ logical consistency checks across the entire dataset to identify errors,
 fix ghost squads, and prevent runtime game crashes.
 
 Command Line Usage:
-    python -m wite2_tools.cli batch-eval [-h] [--data-path PATH] \
-        [only_active_units] [fix_ghosts]
+    python -m wite2_tools.cli audit-batch [-h] [--data-path PATH] \
+        [active_only] [fix_ghosts]
 
 Arguments:
     target_folder (str): The directory path containing the WiTE2 CSV
                          files to be evaluated.
-    only_active_units (bool): If True, evaluates only active units.
-                              Defaults to False.
-    fix_ghosts (bool): If True, automatically zeroes out ghost squads.
-                       Defaults to False.
+    active_only (bool):  If True, evaluates only active units.
+                         Defaults to False.
+    fix_ghosts (bool):   If True, automatically zeroes out ghost squads.
+                         Defaults to False.
 
 Example:
-    $ python -m wite2_tools.cli batch-eval --data-path "C:\\My Mods" \
+    $ python -m wite2_tools.cli audit-batch --data-path "C:\\My Mods" \
         True False
 
     Scans all _unit and _ob CSV files in the specified folder for
@@ -41,7 +41,7 @@ from wite2_tools.utils.logger import get_logger
 log = get_logger(__name__)
 
 
-def scan_and_evaluate_unit_files(target_folder: str, only_active_units: bool,
+def scan_and_evaluate_unit_files(target_folder: str, active_only: bool,
                                  fix_ghosts: bool):
     """
     Scans a folder for CSV files containing '_unit','_ground' and runs
@@ -81,7 +81,7 @@ def scan_and_evaluate_unit_files(target_folder: str, only_active_units: bool,
         log.info("Processing:'%s'", unit_file_name)
 
         issues = evaluate_unit_consistency(unit_file, ground_file,
-                                           only_active_units, fix_ghosts)
+                                           active_only, fix_ghosts)
 
         if issues >= 0:
             files_processed += 1

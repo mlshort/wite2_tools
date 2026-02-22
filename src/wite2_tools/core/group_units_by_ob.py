@@ -20,17 +20,16 @@ Core Features:
   massive scenario files without high memory overhead.
 
 Command Line Usage:
-    python -m wite2_tools.cli group-units [-h] [--unit-file PATH] \
+    python -m wite2_tools.cli gen-groups [-h] [-d DATA_DIR] \
         [--nat-codes CODE [CODE ...]] [active_only]
 
 Arguments:
-    unit_file_path (str): The path to the WiTE2 _unit CSV file.
     nat_codes (list of int, optional): Filter by nationality codes.
     active_only (bool, optional): Skips inactive units (type=0) if True.
                                   Defaults to True.
 
 Example:
-    $ python -m wite2_tools.cli group-units --nat-codes 1 3
+    $ python -m wite2_tools.cli gen-groups --nat-codes 1 3
 
     Groups active German and Italian units by their assigned TOE(OB) ID
     and displays a formatted summary table.

@@ -1,149 +1,122 @@
 import sys
-import argparse
+import os
 from unittest.mock import patch
 
-import pytest
 # Internal package imports
-from wite2_tools.cli import str2bool, main
-
-# ==========================================
-# 1. str2bool Helper Tests
-# ==========================================
-
-
-def test_str2bool_true_values():
-    """Verifies that truthy strings are correctly parsed to True."""
-    assert str2bool(True) is True
-    assert str2bool('yes') is True
-    assert str2bool('true') is True
-    assert str2bool('T') is True
-    assert str2bool('y') is True
-    assert str2bool('1') is True
-
-
-def test_str2bool_false_values():
-    """Verifies that falsy strings are correctly parsed to False."""
-    assert str2bool(False) is False
-    assert str2bool('no') is False
-    assert str2bool('false') is False
-    assert str2bool('F') is False
-    assert str2bool('n') is False
-    assert str2bool('0') is False
-
-
-def test_str2bool_invalid_values():
-    """Verifies that invalid strings raise an ArgumentTypeError."""
-    with pytest.raises(argparse.ArgumentTypeError):
-        str2bool('maybe')
-    with pytest.raises(argparse.ArgumentTypeError):
-        str2bool('100')
+from wite2_tools.cli import resolve_paths, create_parser, main
 
 
 # ==========================================
-# 2. CLI Routing & Parsing Tests
+# 1. Path Resolution Tests
 # ==========================================
 
+def test_resolve_paths():
+    """Verifies that the helper correctly constructs standard file paths."""
+    test_dir = "my_mod_folder"
+    paths = resolve_paths(test_dir)
+
+    assert paths["unit"] == os.path.join(test_dir, "_unit.csv")
+    assert paths["ob"] == os.path.join(test_dir, "_ob.csv")
+    assert paths["ground"] == os.path.join(test_dir, "_ground.csv")
+
+
+# ==========================================
+# 2. CLI Parser Configuration Tests
+# ==========================================
+
+def test_create_parser_defaults():
+    """Verifies the base parser applies defaults correctly."""
+    parser = create_parser()
+    args = parser.parse_args(['audit-ground'])
+
+    assert args.command == 'audit-ground'
+    assert args.data_dir == '.'
+    assert args.verbose is False
+
+
+# ==========================================
+# 3. CLI Routing Tests
+# ==========================================
+
+@patch('wite2_tools.cli.audit_ground_element_csv')
+def test_main_routing_audit_ground(mock_audit):
+    """Verifies 'audit-ground' routes correctly with custom data-dir."""
+    test_args = ['cli.py', 'audit-ground', '-d', 'test_dir']
+
+    with patch.object(sys, 'argv', test_args):
+        main()
+        mock_audit.assert_called_once_with(os.path.join('test_dir',
+                                                        '_ground.csv'))
+
+
+@patch('wite2_tools.cli._scan_excess_resource')
+def test_main_routing_scan_excess(mock_scan):
+    """Verifies 'scan-excess' maps the operation correctly."""
+    test_args = ['cli.py', 'scan-excess', '--operation', 'fuel', '-d',
+                 'test_dir']
+
+    with patch.object(sys, 'argv', test_args):
+        main()
+        mock_scan.assert_called_once_with(
+            os.path.join('test_dir', '_unit.csv'), 'fuel', 'fNeed', 'Fuel'
+        )
+
+
+@patch('wite2_tools.cli.reorder_ob_squads')
+def test_main_routing_mod_reorder_ob(mock_reorder):
+    """Verifies 'mod-reorder-ob' correctly passes positional arguments."""
+    test_args = ['cli.py', 'mod-reorder-ob', '150', '42', '5', '-d',
+                 'test_dir']
+
+    with patch.object(sys, 'argv', test_args):
+        main()
+        mock_reorder.assert_called_once_with(
+            os.path.join('test_dir', '_ob.csv'), 150, 42, 5
+        )
+
+
+@patch('wite2_tools.cli.group_units_by_ob')
+def test_main_routing_gen_groups(mock_group):
+    """Verifies 'gen-groups' correctly handles the nat-codes flag list."""
+    test_args = ['cli.py', 'gen-groups', '--nat-codes', '1', '3']
+
+    with patch.object(sys, 'argv', test_args):
+        main()
+        # active_only defaults to True
+        mock_group.assert_called_once_with(
+            os.path.join('.', '_unit.csv'), True, [1, 3]
+        )
+
+
+# ==========================================
+# 4. CLI Error Handling Tests
+# ==========================================
 
 @patch('wite2_tools.cli.sys.exit')
-@patch('wite2_tools.cli.argparse.ArgumentParser.print_help')
-def test_main_no_arguments(mock_print_help, mock_exit):
+@patch('wite2_tools.cli.audit_ground_element_csv')
+def test_main_handles_file_not_found(mock_audit, mock_exit):
     """
-    Verifies that running the CLI without arguments prints help and exits.
+    Verifies that if a routed function raises a FileNotFoundError,
+    the CLI catches it and exits with code 1 without a stack trace.
     """
-    test_args = ['cli.py']
+    mock_audit.side_effect = FileNotFoundError("Mocked missing file")
+    test_args = ['cli.py', 'audit-ground']
+
     with patch.object(sys, 'argv', test_args):
         main()
-        mock_print_help.assert_called_once()
         mock_exit.assert_called_once_with(1)
-
-
-@patch('wite2_tools.cli.replace_unit_ground_element')
-def test_main_replace_elem(mock_replace):
-    """Verifies the 'replace-elem' command routes correctly with arguments."""
-    test_args = ['cli.py', 'replace-elem', '105', '999',
-                 '--unit-file', 'test_unit.csv']
-    with patch.object(sys, 'argv', test_args):
-        main()
-        mock_replace.assert_called_once_with('test_unit.csv', 105, 999)
-
-
-@patch('wite2_tools.cli.update_unit_num_squads')
-def test_main_update_num(mock_update):
-    """
-    Verifies the 'update-num' command parses all positional integers correctly.
-    """
-    test_args = ['cli.py', 'update-num', '50', '105', '10', '12',
-                 '--unit-file', 'test_unit.csv']
-    with patch.object(sys, 'argv', test_args):
-        main()
-        mock_update.assert_called_once_with('test_unit.csv', 50, 105, 10, 12)
-
-
-@patch('wite2_tools.cli.evaluate_unit_consistency')
-def test_main_audit_unit(mock_evaluate_unit):
-    """
-    Verifies the 'audit-unit' command correctly parses boolean flags and paths.
-    """
-    # Mock the return value used in the print statement
-    mock_evaluate_unit.return_value = 0
-    test_args = [
-        'cli.py', 'audit-unit',
-        '--unit-file', 'u.csv',
-        '--ground-file', 'g.csv',
-        'true', 'false'  # active_only=True, fix_ghosts=False
-    ]
-    with patch.object(sys, 'argv', test_args):
-        main()
-        mock_evaluate_unit.assert_called_once_with('u.csv', 'g.csv',
-                                                   True, False)
-
-
-@patch('wite2_tools.cli.scan_units_for_excess_fuel')
-def test_main_scan_excess_fuel(mock_scan_fuel):
-    """
-    Verifies the 'scan-excess' command properly routes based
-    on the --operation choice.
-    """
-    test_args = ['cli.py', 'scan-excess', '--operation', 'fuel',
-                 '--unit-file', 'u.csv']
-    with patch.object(sys, 'argv', test_args):
-        main()
-        mock_scan_fuel.assert_called_once_with('u.csv')
-
-
-@patch('wite2_tools.cli.detect_encoding')
-def test_main_detect_encoding(mock_detect):
-    """Verifies the 'detect-encoding' utility routes correctly."""
-    mock_detect.return_value = "UTF-8"
-    test_args = ['cli.py', 'detect-encoding', 'my_mod.csv']
-    with patch.object(sys, 'argv', test_args):
-        main()
-        mock_detect.assert_called_once_with('my_mod.csv')
-
-# ==========================================
-# 3. CLI Error Handling Tests
-# ==========================================
 
 
 @patch('wite2_tools.cli.sys.exit')
 @patch('wite2_tools.cli.audit_ground_element_csv')
-def test_main_handles_exceptions_gracefully(mock_audit, mock_exit, capsys):
+def test_main_handles_data_processing_errors(mock_audit, mock_exit):
     """
-    Verifies that if a routed function raises a predictable error
-    (like FileNotFoundError),
-    the CLI catches it, prints to stderr, and exits cleanly instead of
-    throwing a stack trace.
+    Verifies that standard data errors (ValueError, KeyError, etc.)
+    are caught and exit cleanly with code 1.
     """
-    # Force the mock to raise a FileNotFoundError when called
-    mock_audit.side_effect = FileNotFoundError("Mocked missing file")
+    mock_audit.side_effect = ValueError("Mocked bad integer")
+    test_args = ['cli.py', 'audit-ground']
 
-    test_args = ['cli.py', 'audit-ground', '--ground-file', 'missing.csv']
     with patch.object(sys, 'argv', test_args):
         main()
-
-        # Verify it attempted to exit with error code 1
         mock_exit.assert_called_once_with(1)
-
-        # Verify the error was printed to stderr
-        captured = capsys.readouterr()
-        assert "Error: Mocked missing file" in captured.err

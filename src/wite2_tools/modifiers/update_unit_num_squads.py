@@ -13,18 +13,18 @@ The module safely handles file updates by writing to a temporary file first
 before replacing the original file, and it includes logging for auditability.
 
 Command Line Usage:
-    python -m wite2_tools.cli update-num [-h] target_ob_id target_wid
+    python -m wite2_tools.cli mod-update-num [-h] target_ob_id target_wid \
         old_num_squads new_num_squads
 
 Arguments:
     target_ob_id (int):   Target unit's TOE(OB) ID (Order of Battle ID).
     target_wid (int):     Unit's Element WID containing the squads to change.
     old_num_squads (int): The exact number of existing squads required to
-        trigger the update.
+                          trigger the update.
     new_num_squads (int): Number of new squads to set.
 
 Example:
-    $ python -m wite2_tools.cli update-num 42 105 10 12
+    $ python -m wite2_tools.cli mod-update-num 42 105 10 12
 
     This will scan for units with ob_id 42, look for wid 105, and if its
     current squad count is exactly 10, update it to 12.
