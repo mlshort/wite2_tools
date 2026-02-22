@@ -53,13 +53,13 @@ def test_group_units_by_ob(mock_unit_csv):
     result = group_units_by_ob(mock_unit_csv)
 
     # TOE(OB) 10 should have two units
-    assert result[10] == [Unit(unit_id=1, name="1st Panzer",
-                               unit_type=10, nat=1),
-                          Unit(unit_id=2, name="2nd Panzer",
-                               unit_type=10, nat=1)]
+    assert result[10] == [Unit(uid=1, name="1st Panzer",
+                               utype=10, nat=1),
+                          Unit(uid=2, name="2nd Panzer",
+                               utype=10, nat=1)]
     # TOE(OB) 20 should have one unit
-    assert result[20] == [Unit(unit_id=3, name="3rd Infantry",
-                               unit_type=20, nat=2)]
+    assert result[20] == [Unit(uid=3, name="3rd Infantry",
+                               utype=20, nat=2)]
     # Type 0 should not be in the dictionary
     assert 0 not in result
 
@@ -87,7 +87,7 @@ def test_count_global_unit_inventory_with_nat_filter(mock_unit_csv,
     """
     # Run the count only for Nationality 1
     inventory = count_global_unit_inventory(mock_unit_csv, mock_ground_csv,
-                                            nation_id={1})
+                                            nat_codes={1})
 
     # ID 105 total for Nat 1: 10 + 5 = 15
     assert inventory[105] == 15

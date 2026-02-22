@@ -63,7 +63,7 @@ def generate_ob_chains(
     ob_file_path: str,
     csv_output_path: str,
     txt_output_path: str,
-    nation_id: Optional[Union[int, str, Iterable[Union[int, str]]]] = None
+    nat_codes: Optional[Union[int, str, Iterable[Union[int, str]]]] = None
 ) -> int:
     """
     Generates TOE(OB) upgrade chains, optionally filtered by a specific
@@ -72,7 +72,7 @@ def generate_ob_chains(
     :param ob_file_path: Path to the source _ob.csv
     :param csv_output_path: Path to save the CSV results
     :param txt_output_path: Path to save the text results
-    :param nation_id: Integer or list of integers representing the 'nat'
+    :param nat_codes: Integer or list of integers representing the 'nat'
                       column value to filter by.
     :return: The total number of chains generated.
     """
@@ -82,11 +82,11 @@ def generate_ob_chains(
     ob_upgrade_ids: set[int] = set()
 
     # Standardize nation_id to a set for efficient lookup
-    if nation_id is not None:
-        if isinstance(nation_id, (int, str)):
-            nat_filter = {int(nation_id)}
+    if nat_codes is not None:
+        if isinstance(nat_codes, (int, str)):
+            nat_filter = {int(nat_codes)}
         else:
-            nat_filter = {int(n) for n in nation_id}
+            nat_filter = {int(n) for n in nat_codes}
     else:
         nat_filter = None
 
@@ -186,7 +186,7 @@ def generate_ob_chains(
             f.write(str(chain_info['chain_str']) + "\n")
 
     log.info("Successfully generated %d upgrade chains.", len(chains_list))
-    if nation_id:
+    if nat_codes:
         log.debug("Filtered by nation_id: %s", nat_filter)
 
     return len(chains_list)

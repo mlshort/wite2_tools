@@ -58,7 +58,7 @@ log = get_logger(__name__)
 def group_units_by_ob(
     unit_file_path: str,
     active_only: bool = True,
-    nation_id: Optional[Union[int, str, Iterable[Union[int, str]]]] = None
+    nat_codes: Optional[Union[int, str, Iterable[Union[int, str]]]] = None
 ) -> dict[int, list[Unit]]:
     """
     Groups units by TOE(OB) ID with optional nationality filtering.
@@ -68,7 +68,7 @@ def group_units_by_ob(
                 CSV file.
         active_only (bool, optional): If True, skips units that have a TOE(OB)
                 type of 0. Defaults to True.
-        nation_id (int, str, or Iterable, optional): A single nationality code
+        nat_codes (int, str, or Iterable, optional): A single nationality code
                 or a collection of codes to filter the results. Defaults to
                 None.
 
@@ -79,11 +79,11 @@ def group_units_by_ob(
     ob_ids_to_units = defaultdict(list)
 
     # Standardize nation_id to a set for efficient lookup
-    if nation_id is not None:
-        if isinstance(nation_id, (int, str)):
-            nat_filter = {int(nation_id)}
+    if nat_codes is not None:
+        if isinstance(nat_codes, (int, str)):
+            nat_filter = {int(nat_codes)}
         else:
-            nat_filter = {int(n) for n in nation_id}
+            nat_filter = {int(n) for n in nat_codes}
     else:
         nat_filter = None
 
@@ -98,20 +98,20 @@ def group_units_by_ob(
         for item in unit_gen:
             _, row = cast(tuple[int, dict], item)
 
-            u_type = parse_int(row.get('type'), 0)
+            utype = parse_int(row.get('type'), 0)
             u_nat = parse_int(row.get('nat'), 0)
 
             # Apply filters: Activity and Nationality
-            if active_only and u_type == 0:
+            if active_only and utype == 0:
                 continue
             if nat_filter is not None and u_nat not in nat_filter:
                 continue
 
-            u_id = parse_int(row.get('id'), 0)
-            u_name = parse_str(row.get('name'), 'Unk')
+            uid = parse_int(row.get('id'), 0)
+            uname = parse_str(row.get('name'), 'Unk')
 
-            unit = Unit(unit_id=u_id, name=u_name, unit_type=u_type, nat=u_nat)
-            ob_ids_to_units[u_type].append(unit)
+            unit = Unit(uid=uid, name=uname, utype=utype, nat=u_nat)
+            ob_ids_to_units[utype].append(unit)
 
         print_unit_table(ob_ids_to_units)
 
@@ -132,10 +132,10 @@ def print_unit_table(grouped_data: dict[int, list[Unit]]):
     print(header)
     print(separator)
 
-    for unit_type in sorted(grouped_data.keys()):
-        units = grouped_data[unit_type]
-        for unit in sorted(units, key=lambda x: x.unit_id):
+    for utype in sorted(grouped_data.keys()):
+        units = grouped_data[utype]
+        for unit in sorted(units, key=lambda x: x.uid):
             nat_str = get_nat_abbr(unit.nat)  # Resolve Nat code to abbr
-            print(f"{unit.unit_type:<8} | {unit.unit_id:<8} | "
+            print(f"{unit.utype:<8} | {unit.uid:<8} | "
                   f"{nat_str:<5} | {unit.name}")
         print(separator)

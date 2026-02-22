@@ -62,11 +62,11 @@ from wite2_tools.core.generate_ob_chains import generate_ob_chains
 from wite2_tools.modifiers.remove_ground_weapon_gaps import (
     remove_ground_weapon_gaps
 )
-from wite2_tools.modifiers.replace_unit_ground_element import (
-    replace_unit_ground_element
+from wite2_tools.modifiers.modify_unit_ground_element import (
+    modify_unit_ground_element
 )
-from wite2_tools.modifiers.update_unit_num_squads import (
-    update_unit_num_squads
+from wite2_tools.modifiers.modify_unit_num_squads import (
+    modify_unit_num_squads
 )
 from wite2_tools.modifiers.reorder_ob_squads import reorder_ob_squads
 from wite2_tools.modifiers.reorder_unit_squads import reorder_unit_squads
@@ -237,7 +237,7 @@ def create_parser() -> argparse.ArgumentParser:
         "mod-reorder-unit", parents=[base_parser],
         help="Move a squad to a new slot in _unit.csv"
     )
-    mod_re_unit.add_argument("target_unit_id", type=int)
+    mod_re_unit.add_argument("target_uid", type=int)
     mod_re_unit.add_argument("target_wid", type=int)
     mod_re_unit.add_argument("target_slot", type=int)
 
@@ -363,17 +363,17 @@ def main():
 
         elif args.command == "mod-reorder-unit":
             reorder_unit_squads(
-                paths["unit"], args.target_unit_id,
+                paths["unit"], args.target_uid,
                 args.target_wid, args.target_slot
             )
 
         elif args.command == "mod-replace-elem":
-            replace_unit_ground_element(
+            modify_unit_ground_element(
                 paths["unit"], args.old_wid, args.new_wid
             )
 
         elif args.command == "mod-update-num":
-            update_unit_num_squads(
+            modify_unit_num_squads(
                 paths["unit"], args.target_ob_id, args.target_wid,
                 args.old_num_squads, args.new_num_squads
             )

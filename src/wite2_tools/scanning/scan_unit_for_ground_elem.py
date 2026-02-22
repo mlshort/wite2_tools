@@ -17,7 +17,8 @@ Command Line Usage:
 Arguments:
     target_wid (int): The WID of the Ground Element to search for across
                       all units.
-    num_squads (int, optional): Filter by exact number of assigned squads.
+    target_num_squads (int, optional): Filter by exact number of assigned
+                                       squads.
 
 Example:
     $ python -m wite2_tools.cli scan-unit 42
@@ -69,19 +70,19 @@ def _check_squad_match(
 
             # Search the row for the new column name and print squad_quantity
             if sqd_num_col in row:
-                unit_name = parse_str(row.get("name"), "Unk")
+                uname = parse_str(row.get("name"), "Unk")
                 squad_quantity = parse_int(row.get(sqd_num_col), 0)
-                unit_id = parse_int(row.get("id"), 0)
+                uid = parse_int(row.get("id"), 0)
                 # unit 'type' maps to its TOE(OB) ID
-                unit_type = parse_int(row.get("type"), 0)
-                unit_type_name = get_unit_type_name(ob_full_path, unit_type)
+                utype = parse_int(row.get("type"), 0)
+                unit_type_name = get_unit_type_name(ob_full_path, utype)
 
                 # Filter by exact quantity if a specific number was provided
                 # (-1 means ANY)
                 if num_squads_filter != -1:
                     try:
                         if squad_quantity == num_squads_filter:
-                            print(f"{unit_id:>6} | {unit_name:<15.15s} | "
+                            print(f"{uid:>6} | {uname:<15.15s} | "
                                   f"{unit_type_name:<25.25s} | "
                                   f"{sqd_id_col:<6} | "
                                   f"'{sqd_num_col}': {squad_quantity}")
@@ -90,7 +91,7 @@ def _check_squad_match(
                         continue
                 else:
                     # Print all matches regardless of quantity
-                    print(f"{unit_id:>6} | {unit_name:<15.15s} | "
+                    print(f"{uid:>6} | {uname:<15.15s} | "
                           f"{unit_type_name:<25.25s} | {sqd_id_col:<6} | "
                           f"'{sqd_num_col}': {squad_quantity}")
                     matches_found += 1
@@ -103,7 +104,7 @@ def scan_unit_for_ground_elem(
     ground_file_path: str,
     ob_full_path: str,
     target_wid: int,
-    old_num_squads: int = -1
+    target_num_squads: int = -1
 ) -> int:
     """
     1. Scans a _unit CSV 'sqd.u' columns for ground_elem_id.
@@ -121,7 +122,7 @@ def scan_unit_for_ground_elem(
         unit_gen = read_csv_dict_generator(unit_file_path)
         next(unit_gen)  # Skip DictReader object
 
-        scan_str = "ANY" if old_num_squads == -1 else str(old_num_squads)
+        scan_str = "ANY" if target_num_squads == -1 else str(target_num_squads)
         ground_elem_name = get_ground_elem_type_name(ground_file_path,
                                                      target_wid)
 
@@ -139,14 +140,14 @@ def scan_unit_for_ground_elem(
             _, row = cast(tuple[int, dict], item)
 
             # Convert to numbers for math comparison
-            unit_type = parse_int(row.get("type"), 0)
-            if unit_type == 0:
+            utype = parse_int(row.get("type"), 0)
+            if utype == 0:
                 continue
 
             # 2. Search columns 'sqd.u0' through 'sqd.u31' for the target ID
             matches_found = _check_squad_match(row, ob_full_path,
                                                target_wid,
-                                               old_num_squads,
+                                               target_num_squads,
                                                matches_found)
 
         if matches_found == 0:

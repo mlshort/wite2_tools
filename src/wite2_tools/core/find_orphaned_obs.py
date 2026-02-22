@@ -33,7 +33,7 @@ Command Line Usage:
         [--nat-codes CODE [CODE ...]]
 
 Arguments:
-    nat_codes:     (list of int, optional): Filter by nationality codes.
+    nat_codes: (list of int, optional): Filter by nationality codes.
 
 Example:
     $ python -m wite2_tools.cli find-orphaned_ob_ids --nat-codes 1 3
@@ -60,8 +60,9 @@ from wite2_tools.utils.parsing import (
 log = get_logger(__name__)
 
 
-def find_orphaned_ob_ids(ob_file_path: str, unit_file_path: str,
-                         nation_id=None) -> Set[int]:
+def find_orphaned_ob_ids(ob_file_path: str,
+                         unit_file_path: str,
+                         nat_codes=None) -> Set[int]:
     """
     Identifies IDs in the _ob CSV file that are never referenced by the 'type'
     or 'upgrade' columns in the _unit CSV file, further filtered by the
@@ -86,11 +87,11 @@ def find_orphaned_ob_ids(ob_file_path: str, unit_file_path: str,
     ob_ids_to_units: dict[int, list[Unit]] = {}
 
     # Standardize nation_id to a set for efficient lookup
-    if nation_id is not None:
-        if isinstance(nation_id, (int, str)):
-            nat_filter = {int(nation_id)}
+    if nat_codes is not None:
+        if isinstance(nat_codes, (int, str)):
+            nat_filter = {int(nat_codes)}
         else:
-            nat_filter = {int(n) for n in nation_id}
+            nat_filter = {int(n) for n in nat_codes}
     else:
         nat_filter = None
 
@@ -158,25 +159,25 @@ def find_orphaned_ob_ids(ob_file_path: str, unit_file_path: str,
             if nat_filter is not None and unit_nat not in nat_filter:
                 continue
 
-            unit_id: int = parse_int(row.get('id'), 0)
+            uid: int = parse_int(row.get('id'), 0)
 
-            # unit_type is the FK to ob_id / TOE(OB)
-            unit_type: int = parse_int(row.get('type'), 0)
-            unit_name: str = parse_str(row.get('name'), 'Unk')
+            # utype is the FK to ob_id / TOE(OB)
+            utype: int = parse_int(row.get('type'), 0)
+            uname: str = parse_str(row.get('name'), 'Unk')
 
             # do we have a valid unit?
-            if unit_id != 0 and unit_type != 0:
+            if uid != 0 and utype != 0:
                 # if yes, then lets collect its data, if we haven't already
-                if unit_type not in ob_ids_to_units:
-                    ob_ids_to_units[unit_type] = []
-                a_unit = Unit(unit_id, unit_name, unit_type, unit_nat)
+                if utype not in ob_ids_to_units:
+                    ob_ids_to_units[utype] = []
+                a_unit = Unit(uid, uname, utype, unit_nat)
                 # since we have a non-zero unit type, this unit
                 # thinks it has an associated TOE(OB)
                 # let's go with that for now...
-                ob_ids_to_units[unit_type].append(a_unit)
+                ob_ids_to_units[utype].append(a_unit)
 
-                ob_ids_ref_by_unit.add(unit_type)
-                current_upgrade = unit_type
+                ob_ids_ref_by_unit.add(utype)
+                current_upgrade = utype
                 while current_upgrade in ob_id_upgrade:
                     next_upgrade = ob_id_upgrade[current_upgrade]
 
@@ -189,7 +190,7 @@ def find_orphaned_ob_ids(ob_file_path: str, unit_file_path: str,
                     current_upgrade = next_upgrade
 
                 # Trace the full upgrade chain
-                current_upgrade = unit_type
+                current_upgrade = utype
                 while current_upgrade in ob_id_upgrade:
                     next_upgrade = ob_id_upgrade[current_upgrade]
 
@@ -200,7 +201,7 @@ def find_orphaned_ob_ids(ob_file_path: str, unit_file_path: str,
                     ref_upgraded_id_count += 1
                     log.debug(
                         "New Upgrade Ref mapped from '%s': %d -> %d",
-                        unit_name,
+                        uname,
                         current_upgrade,
                         next_upgrade
                     )
@@ -260,7 +261,7 @@ def find_orphaned_ob_ids(ob_file_path: str, unit_file_path: str,
                             " exist! "
                             "Used by unit: %d %s",
                             inv_ob_id,
-                            orphan_unit.unit_id,
+                            orphan_unit.uid,
                             orphan_unit.name)
 
             print(f"CRITICAL: {len(inv_ref_ob_ids)} units point to "

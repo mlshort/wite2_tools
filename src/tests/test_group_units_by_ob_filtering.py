@@ -1,7 +1,7 @@
 import pytest
 
 from wite2_tools.config import ENCODING_TYPE
-from wite2_tools.core.group_units_by_ob import group_units_by_ob, Unit
+from wite2_tools.core.group_units_by_ob import group_units_by_ob
 
 
 @pytest.fixture(autouse=True)
@@ -29,7 +29,7 @@ def mock_nat_unit_csv(tmp_path):
 def test_group_units_with_single_nat_filter(mock_nat_unit_csv):
     """Verifies filtering for a single nationality (Germany)."""
     # Act: Filter for Nat 1
-    result = group_units_by_ob(mock_nat_unit_csv, nation_id=1)
+    result = group_units_by_ob(mock_nat_unit_csv, nat_codes=1)
 
     # Assert: Only IDs 1 and 2 should be present
     assert 10 in result
@@ -42,13 +42,13 @@ def test_group_units_with_single_nat_filter(mock_nat_unit_csv):
 def test_group_units_with_multiple_nat_filter(mock_nat_unit_csv):
     """Verifies filtering for multiple nationalities (Germany and Italy)."""
     # FIX: Pass a tuple (1, 3) instead of a list [1, 3]
-    result = group_units_by_ob(mock_nat_unit_csv, nation_id=(1, 3))
+    result = group_units_by_ob(mock_nat_unit_csv, nat_codes=(1, 3))
 
     # Assert: German units (Type 10) and Italian units (Type 20) present
     assert 10 in result
     assert 20 in result
     # Finnish unit (ID 3) should be excluded
-    assert not any(u.unit_id == 3 for u in result[10])
+    assert not any(u.uid == 3 for u in result[10])
 
 
 def test_group_units_no_filter(mock_nat_unit_csv):

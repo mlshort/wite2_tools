@@ -1,55 +1,31 @@
 
 """
-Data Validation and Consistency Checkers
-========================================
+Unit Placement and Integrity Audit Utility
+==========================================
 
 This module provides robust validation routines to ensure the structural
-integrity and logical consistency of War in the East 2 (WiTE2) data files.
+and logical consistency of War in the East 2 (WiTE2) `_unit.csv` files.
+
 It is designed to detect common data corruption issues, manual editing errors,
 and referential integrity breaks before they cause runtime crashes in the
-game engine.
+game engine. It also features automated repair tools to fix broken command
+chains and clean up invalid squad data.
 
 Key Validation Logic
 --------------------
-* Referential Integrity: Verifies that all Ground Element WIDs
-  referenced in squad slots (0-31) actually exist in the master
-  `_ground` file.
-* Ghost/Orphan Detection: Scans for "Ghost Squads" (slots with a
-  quantity but no valid Element ID) which cause game instability.
+* Referential Integrity: Verifies that Ground Element WIDs referenced in
+  squad slots (0-31) actually exist in the master `_ground` file.
+* Ghost Squad Detection: Scans for and optionally fixes slots that have
+  a quantity assigned but no valid Element ID (which causes game instability).
+* Command Chain Verification: Identifies "orphaned" units assigned to an HQ
+  that does not exist or has been deleted, with optional auto-relinking.
 * Coordinate Bounds: Ensures unit X/Y coordinates fall within the valid
-  game map dimensions (0-378, 0-354).
-* Structural Checks: Detects duplicate Primary Key IDs and column count
-  mismatches.
-
-Functions
----------
-* `audit_ob_csv`: detailed audit of Order of Battle TOE(OB) files.
-* `audit_unit_csv`: Detailed audit of Unit placement files,
-                including HQ attachment logic and map positioning.
+  game map dimensions (0-378, 0-354), safely ignoring (0,0) for the pool.
 
 Command Line Usage:
-    python -m wite2_tools.cli audit-unit [-h] [-d DATA_DIR] [active_only] \
-        [fix_ghosts]
-
-    python -m wite2_tools.cli audit-ob [-h] [-d DATA_DIR]
-
-Arguments:
-    active_only (bool, optional): Skips inactive units (type=0) if
-                                  True. Defaults to True.
-    fix_ghosts (bool, optional): Automatically repairs ghost squads if
-                                 True. Defaults to False.
-
-Example:
-    $ python -m wite2_tools.cli audit-unit True True
-
-    Scans the default unit file, evaluating only active units, and
-    automatically fixes any ghost squads found.
-
-    $ python -m wite2_tools.cli audit-ob
-
-    Scans the default TOE(OB) file for structural and logical errors.
+    python -m wite2_tools.cli audit-unit [-h] [-d DATA_DIR] [--fix-ghosts] \\
+        [--relink-orphans] [--fallback-hq HQ_ID]
 """
-
 import csv
 import os
 from tempfile import NamedTemporaryFile
@@ -87,7 +63,7 @@ def is_greater_than_zero(value) -> bool:
         return False
 
 
-def _check_coords(unit_id: int, unit_name: str, row: dict) -> int:
+def _check_coords(uid: int, uname: str, row: dict) -> int:
     """Helper to validate all coordinate sets (x, y, tx, ty, etc.)."""
     issues = 0
     coord_pairs = [('x', 'y'), ('tx', 'ty'), ('ax', 'ay'), ('ptx', 'pty')]
@@ -102,13 +78,16 @@ def _check_coords(unit_id: int, unit_name: str, row: dict) -> int:
 
         if not (MIN_X <= x <= MAX_X and MIN_Y <= y <= MAX_Y):
             log.warning("ID %d (%s): Invalid (%s,%s) coords (%d, %d)",
-                        unit_id, unit_name, cx, cy, x, y)
+                        uid, uname, cx, cy, x, y)
             issues += 1
     return issues
 
 
-def _check_squads(unit_id: int, unit_name: str, row: dict,
-                  valid_elem_ids: set, fix_ghosts: bool) -> tuple[int, int]:
+def _check_squads(uid: int,
+                  uname: str,
+                  row: dict,
+                  valid_elem_ids: set,
+                  fix_ghosts: bool) -> tuple[int, int]:
     """Helper to validate squad integrity and detect ghost squads."""
     issues = 0
     fixed = 0
@@ -119,12 +98,12 @@ def _check_squads(unit_id: int, unit_name: str, row: dict,
 
         if sqd_id != 0 and sqd_id not in valid_elem_ids:
             log.error("ID %d (%s): Slot %d has invalid Elem ID %d.",
-                      unit_id, unit_name, i, sqd_id)
+                      uid, uname, i, sqd_id)
             issues += 1
 
         if qty != 0 and sqd_id == 0:
             log.error("ID %d (%s): Ghost Squad detected in Slot %d (Qty: %d).",
-                      unit_id, unit_name, i, qty)
+                      uid, uname, i, qty)
             issues += 1
             if fix_ghosts:
                 row[sqd_num_col] = "0"
@@ -132,19 +111,22 @@ def _check_squads(unit_id: int, unit_name: str, row: dict,
     return issues, fixed
 
 
-def _check_hq_and_delay(unit_id: int, unit_name: str, row: dict,
-                        valid_active_unit_ids: set, relink_orphans: bool,
+def _check_hq_and_delay(uid: int,
+                        uname: str,
+                        row: dict,
+                        valid_active_unit_ids: set,
+                        relink_orphans: bool,
                         fallback_hq: int) -> tuple[int, int]:
     """Helper to validate HQ attachment logic and deployment delays."""
     issues = 0
     fixed = 0
     unit_hhq = parse_int(row.get('hhq'), 0)
 
-    if unit_hhq == unit_id:
+    if unit_hhq == uid:
         hq_type = parse_int(row.get('hq'), 0)
         if hq_type not in (0, 1):
             log.warning("ID %d (%s): Self-reporting as HQ with Type(%d).",
-                        unit_id, unit_name, hq_type)
+                        uid, uname, hq_type)
             issues += 1
 
     if unit_hhq != 0:
@@ -152,19 +134,19 @@ def _check_hq_and_delay(unit_id: int, unit_name: str, row: dict,
         if unit_hhq not in valid_active_unit_ids:
             log.error("ID %d (%s): Unit reports to an invalid or "
                       "inactive HQ (%d).",
-                      unit_id, unit_name, unit_hhq)
+                      uid, uname, unit_hhq)
             issues += 1
 
             # NEW: Auto-repair orphaned units
             if relink_orphans and fallback_hq > 0:
                 log.info(" -> FIXING: Relinking Unit %d to Fallback HQ %d",
-                         unit_id, fallback_hq)
+                         uid, fallback_hq)
                 row['hhq'] = str(fallback_hq)
                 fixed += 1
     unit_delay = parse_int(row.get("delay"), 0)
     if unit_delay > MAX_GAME_TURNS:
         log.warning("ID %d (%s): Delay(%d) exceeds MAX_GAME_TURNS(%d).",
-                    unit_id, unit_name, unit_delay, MAX_GAME_TURNS)
+                    uid, uname, unit_delay, MAX_GAME_TURNS)
         issues += 1
 
     return issues, fixed

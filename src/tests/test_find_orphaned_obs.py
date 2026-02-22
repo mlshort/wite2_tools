@@ -94,7 +94,7 @@ def test_find_unreferenced_ob_ids_with_nat_filter(mock_ob_csv, mock_unit_csv):
     """
     # Execute: Filter ONLY for Nationality 1 (Germany)
     orphans_ger = find_orphaned_ob_ids(mock_ob_csv, mock_unit_csv,
-                                       nation_id={1})
+                                       nat_codes={1})
 
     # TOE(OB) 70 is Nat 3, so it shouldn't even be evaluated. Only TOE(OB) 30
     # should remain.
@@ -102,7 +102,7 @@ def test_find_unreferenced_ob_ids_with_nat_filter(mock_ob_csv, mock_unit_csv):
 
     # Execute: Filter ONLY for Nationality 3 (Italy)
     orphans_ita = find_orphaned_ob_ids(mock_ob_csv, mock_unit_csv,
-                                       nation_id={3})
+                                       nat_codes={3})
 
     # TOE(OB) 70 is never referenced by any Nat 3 units, so it is an orphan.
     assert orphans_ita == {70}

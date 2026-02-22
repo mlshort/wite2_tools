@@ -4,27 +4,27 @@ import pytest
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.constants import MAX_SQUAD_SLOTS
-from wite2_tools.modifiers.update_unit_num_squads import update_unit_num_squads
+from wite2_tools.modifiers.modify_unit_num_squads import modify_unit_num_squads
 
 
-@pytest.fixture(name="mock_update_unit_csv")
-def mock_update_unit_csv(tmp_path):
+@pytest.fixture(name="mock_modify_unit_csv")
+def mock_modify_unit_csv(tmp_path):
     """Generates a 4-row truth table to test all conditional updating paths."""
-    file_path = tmp_path / "mock_update_unit.csv"
+    file_path = tmp_path / "mock_modify_unit.csv"
 
     headers = ["id", "name", "type", "nat"]
     for i in range(MAX_SQUAD_SLOTS):
         headers.append(f"sqd.u{i}")
         headers.append(f"sqd.num{i}")
 
-    def create_row(uid, u_name, utype, elem_id, qty):
+    def create_row(uid, uname, utype, elem_id, qty):
         # Initialize all columns to "0"
         row = {h: "0" for h in headers}
         # 'type' is the referenced TOE(OB) ID in _unit files
         # that maps to the 'id' column of the _ob file
         row.update({
             "id": uid,
-            "name": u_name,
+            "name": uname,
             "type": utype,
             "nat": "1",
             "sqd.u0": elem_id,
@@ -51,14 +51,14 @@ def mock_update_unit_csv(tmp_path):
     return str(file_path)
 
 
-def test_update_unit_num_squads_success_and_filters(mock_update_unit_csv):
+def test_modify_unit_num_squads_success_and_filters(mock_modify_unit_csv):
     """
     Verifies that the strict multi-level conditions are applied correctly.
     """
 
     # Execute: In TOE(OB) 50, if Elem 105 has qty 10, change it to 99
-    updates = update_unit_num_squads(
-        mock_update_unit_csv,
+    updates = modify_unit_num_squads(
+        mock_modify_unit_csv,
         target_ob_id=50,
         target_wid=105,
         old_num_squads=10,
@@ -68,7 +68,7 @@ def test_update_unit_num_squads_success_and_filters(mock_update_unit_csv):
     # Assert ONLY Row 1 was updated by the script
     assert updates == 1
 
-    with open(mock_update_unit_csv, 'r', encoding=ENCODING_TYPE) as f:
+    with open(mock_modify_unit_csv, 'r', encoding=ENCODING_TYPE) as f:
         rows = list(csv.DictReader(f))
 
         # Assert data integrity using the 4-Row Truth Table

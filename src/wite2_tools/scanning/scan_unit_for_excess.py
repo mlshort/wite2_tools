@@ -77,17 +77,17 @@ def _scan_excess_resource(unit_file_path: str, resource_col: str,
             # 1. Convert to numbers (int) for math comparison
             resource = parse_int(row.get(resource_col), 0)
             resource_need = parse_int(row.get(need_col), 0)
-            unit_type = parse_int(row.get('type'), 0)
+            utype = parse_int(row.get('type'), 0)
 
-            if unit_type == 0:
+            if utype == 0:
                 continue
 
             # 2. Apply the Logic: Is resource greater than 5 times need?
             if resource > (EXCESS_RESOURCE_MULTIPLIER * resource_need):
 
                 # 3. Extract ID, Name, and NAT
-                unit_id = parse_int(row.get('id'), 0)
-                unit_name = parse_str(row.get('name'), 'Unk')
+                uid = parse_int(row.get('id'), 0)
+                uname = parse_str(row.get('name'), 'Unk')
                 unit_nation_id = parse_int(row.get('nat'), 0)
                 unit_nat_abbr = get_nat_abbr(unit_nation_id)
 
@@ -97,7 +97,7 @@ def _scan_excess_resource(unit_file_path: str, resource_col: str,
                     ratio = float('inf')
 
                 # 4. Print the row
-                print(f"{row_idx:<6} | {unit_id:<6} | {unit_name:20.20s} |"
+                print(f"{row_idx:<6} | {uid:<6} | {uname:20.20s} |"
                       f" {unit_nat_abbr:^5} | {resource:>10} |"
                       f" {resource_need:>10} | {ratio:>8.2f}")
                 matches_found += 1

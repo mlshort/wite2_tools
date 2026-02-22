@@ -58,14 +58,14 @@ def test_group_units_by_ob_success(mock_unit_csv):
     result = group_units_by_ob(mock_unit_csv)
 
     # TOE(OB) 10 should contain two units
-    assert result[45] == [Unit(unit_id=10, name="1st Panzer",
-                               unit_type=45, nat=1),
-                          Unit(unit_id=21, name="2nd Panzer",
-                               unit_type=45, nat=1)]
+    assert result[45] == [Unit(uid=10, name="1st Panzer",
+                               utype=45, nat=1),
+                          Unit(uid=21, name="2nd Panzer",
+                               utype=45, nat=1)]
 
     # TOE(OB) 30 should contain one unit
-    assert result[30] == [Unit(unit_id=33, name="3rd Infantry",
-                               unit_type=30, nat=2)]
+    assert result[30] == [Unit(uid=33, name="3rd Infantry",
+                               utype=30, nat=2)]
 
 
 def test_group_units_by_ob_skips_type_zero(mock_unit_csv):
@@ -94,8 +94,8 @@ def test_group_units_by_ob_aborts_on_malformed_data(mock_corrupted_unit_csv):
     # The 1st Panzer should be captured
     assert 10 in result
 
-    assert result[10] == [Unit(unit_id=1, name="1st Panzer",
-                               unit_type=10, nat=1)]
+    assert result[10] == [Unit(uid=1, name="1st Panzer",
+                               utype=10, nat=1)]
 
     # The 'Bad Unit' shouldn't be returned
     assert 2 not in result

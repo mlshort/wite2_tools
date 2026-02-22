@@ -14,9 +14,9 @@ class Unit:
     Immutable data structure representing a key WiTE2 Unit.
 
     Attributes:
-        unit_id (int):   The unique identifier of the unit (Primary Key).
+        uid (int):   The unique identifier of the unit (Primary Key).
         name (str):      The localized or designated name of the unit.
-        unit_type (int): The TOE(OB) ID that this unit is currently assigned.
+        utype (int): The TOE(OB) ID that this unit is currently assigned.
         nat (int):       The nationality code of the unit
             (e.g., 1 for Germany, 12 for SU).
 
@@ -26,9 +26,9 @@ class Unit:
         are managed by the `@cache` decorator to prevent accidental state
         mutation.
     """
-    unit_id: int
+    uid: int
     name: str
-    unit_type: int
+    utype: int
     nat: int
 
 
@@ -39,10 +39,10 @@ if __name__ == "__main__":
     from wite2_tools.utils.lookups import get_nat_abbr
 
     # Example: Creating a new German Panzer Division
-    my_unit = Unit(unit_id=1054, name="1st Panzer Div", unit_type=33, nat=1)
+    my_unit = Unit(uid=1054, name="1st Panzer Div", utype=33, nat=1)
 
-    print(f"Created Unit: {my_unit.name} (ID: {my_unit.unit_id})")
-    print(f"Assigned TOE(OB): {my_unit.unit_type}")
+    print(f"Created Unit: {my_unit.name} (ID: {my_unit.uid})")
+    print(f"Assigned TOE(OB): {my_unit.utype}")
     print(f"Nationality: {get_nat_abbr(my_unit.nat)}")
 
     # Because frozen=True, attempting to change a value will raise a

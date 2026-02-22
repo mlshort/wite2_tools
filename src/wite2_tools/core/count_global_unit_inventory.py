@@ -50,7 +50,7 @@ log = get_logger(__name__)
 def count_global_unit_inventory(
     unit_file_path: str,
     ground_file_path: str,
-    nation_id: Optional[Union[int, str, Iterable[Union[int, str]]]] = None
+    nat_codes: Optional[Union[int, str, Iterable[Union[int, str]]]] = None
 ) -> dict[int, int]:
     """
     Scans _unit.csv using a generator to count the total number of every
@@ -60,11 +60,11 @@ def count_global_unit_inventory(
     inventory: dict[int, int] = defaultdict(int)
 
     # Standardize nation_id to a set for efficient lookup
-    if nation_id is not None:
-        if isinstance(nation_id, (int, str)):
-            nat_filter = {int(nation_id)}
+    if nat_codes is not None:
+        if isinstance(nat_codes, (int, str)):
+            nat_filter = {int(nat_codes)}
         else:
-            nat_filter = {int(n) for n in nation_id}
+            nat_filter = {int(n) for n in nat_codes}
     else:
         nat_filter = None
 
@@ -83,12 +83,12 @@ def count_global_unit_inventory(
             # Cast the yielded item to satisfy static type checkers
             row_idx, row = cast(tuple[int, dict], item)
 
-            unit_type = parse_int(row.get('type'), 0)
+            utype = parse_int(row.get('type'), 0)
             unit_nation_id = parse_int(row.get('nat'), 0)
 
             if nat_filter is not None and unit_nation_id not in nat_filter:
                 continue
-            if unit_type == 0:
+            if utype == 0:
                 continue
 
             # Iterate through the MAX_SQUAD_SLOTS potential squad slots (sqd.u0

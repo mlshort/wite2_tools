@@ -4,17 +4,17 @@ import pytest
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.constants import MAX_SQUAD_SLOTS
-from wite2_tools.modifiers.replace_unit_ground_element import (
-    replace_unit_ground_element,
+from wite2_tools.modifiers.modify_unit_ground_element import (
+    modify_unit_ground_element,
 )
 
 
-@pytest.fixture(name="mock_replace_unit_csv")
-def mock_replace_unit_csv(tmp_path):
+@pytest.fixture(name="mock_modify_unit_csv")
+def mock_modify_unit_csv(tmp_path):
     """
     Generates a mock _unit.csv to test global Ground Element replacements.
     """
-    file_path = tmp_path / "mock_replace_unit.csv"
+    file_path = tmp_path / "mock_modify_unit.csv"
 
     headers = ["id", "name", "type", "nat"]
     for i in range(MAX_SQUAD_SLOTS):
@@ -60,15 +60,15 @@ def mock_replace_unit_csv(tmp_path):
     return str(file_path)
 
 
-def test_replace_unit_ground_element_success(mock_replace_unit_csv):
+def test_modify_unit_ground_element_success(mock_modify_unit_csv):
     """
     Verifies that the target Ground Element is replaced globally across
     all valid slots.
     """
 
     # Execute: Globally replace all instances of Ground Element 105 with 999
-    updates = replace_unit_ground_element(
-        unit_file_path=mock_replace_unit_csv,
+    updates = modify_unit_ground_element(
+        unit_file_path=mock_modify_unit_csv,
         old_wid=105,
         new_wid=999
     )
@@ -76,7 +76,7 @@ def test_replace_unit_ground_element_success(mock_replace_unit_csv):
     # Assert exactly 3 rows were updated (Rows 1, 2, and 4)
     assert updates == 3
 
-    with open(mock_replace_unit_csv, 'r', encoding=ENCODING_TYPE) as f:
+    with open(mock_modify_unit_csv, 'r', encoding=ENCODING_TYPE) as f:
         rows = list(csv.DictReader(f))
 
         # Row 1: Slot 0 updated, quantity unchanged

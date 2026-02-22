@@ -1,5 +1,5 @@
 """
-Unit Ground Element Replacement Modifier
+Unit Ground Element Modifier
 ========================================
 This module provides functionality to parse a War in the East 2 (WiTE2) _unit
 CSV file and globally replace all instances of a specific Ground Element WID
@@ -13,7 +13,7 @@ atomically replaces the original file only upon successful completion.
 
 Command Line Usage:
     python -m wite2_tools.cli mod-replace-elem [-h] [-d DATA_DIR] \
-        old_ge_id new_ge_id
+        old_wid new_wid
 
 Arguments:
     old_wid (int): The existing Ground Element WID to be replaced.
@@ -31,23 +31,23 @@ from wite2_tools.utils.parsing import parse_int
 log = get_logger(__name__)
 
 
-def replace_unit_ground_element(unit_file_path: str,
-                                old_wid: int,
-                                new_wid: int) -> int:
+def modify_unit_ground_element(unit_file_path: str,
+                               old_wid: int,
+                               new_wid: int) -> int:
     """
     Replaces a specific Ground Element WID with a new one across all
     units in a WiTE2 _unit CSV file using integer-based comparison.
 
     Args:
         unit_file_path (str): The path to the WiTE2 _unit CSV file.
-        old_ge_id (int): The existing Ground Element WID to be replaced.
-        new_ge_id (int): The new Ground Element WID value.
+        old_wid (int): The existing Ground Element WID to be replaced.
+        new_wid (int): The new Ground Element WID value.
 
     Returns:
         int: The total number of rows (units) successfully updated.
     """
 
-    log.info("Task Start: Replace GE WID %d with %d in '%s'",
+    log.info("Task Start: Replace WID %d with %d in '%s'",
              old_wid, new_wid, os.path.basename(unit_file_path))
 
     # Define the specific logic for processing a Unit row

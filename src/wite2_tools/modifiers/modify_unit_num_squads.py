@@ -1,5 +1,5 @@
 """
-Module for conditionally updating the number of squads in WiTE2 _unit CSV
+Module for conditionally modifying the number of squads in WiTE2 _unit CSV
 files. This module safely handles file updates by writing to a temporary file
 first via the `process_csv_in_place` base wrapper.
 
@@ -42,18 +42,18 @@ from wite2_tools.utils.parsing import parse_int
 log = get_logger(__name__)
 
 
-def update_unit_num_squads(unit_file_path: str,
+def modify_unit_num_squads(unit_file_path: str,
                            target_ob_id: int,
                            target_wid: int,
                            old_num_squads: int,
                            new_num_squads: int) -> int:
     """
-    Updates the number of specific Ground Element squads within a WiTE2 _unit
+    Modifies the number of specific Ground Element squads within a WiTE2 _unit
     CSV file.
 
     Args:
         unit_file_path (str): The path to the WiTE2 _unit CSV file.
-        target_unit_id (int): The identifier ('id' column) of the UNIT to
+        target_uid (int): The identifier ('id' column) of the UNIT to
                 modify.
         target_wid (int): The WID of the Ground Element to update.
         old_num_squads (int):
@@ -76,12 +76,12 @@ def update_unit_num_squads(unit_file_path: str,
     # Define the specific logic for processing a Unit row
     def process_row(row: dict, _: int) -> tuple[dict, bool]:
         was_modified = False
-        unit_id: int = parse_int(row.get('id'), 0)
+        uid: int = parse_int(row.get('id'), 0)
         # _unit.'type' maps to _ob.id
-        unit_type: int = parse_int(row.get('type'), 0)
+        utype: int = parse_int(row.get('type'), 0)
 
         # 1. Check ob_id
-        if unit_type == target_ob_id:
+        if utype == target_ob_id:
             # 2. Check sqd.u0 through sqd.u31
             for i in range(MAX_SQUAD_SLOTS):
                 sqd_id_col: str = f"sqd.u{i}"
@@ -98,12 +98,12 @@ def update_unit_num_squads(unit_file_path: str,
                         row[sqd_num_col] = str(new_num_squads)
                         was_modified = True
                         log.info("Unit ID %d: Updated WID %s from %d to %d",
-                                 unit_id, sqd_num_col,
+                                 uid, sqd_num_col,
                                  old_num_squads, new_num_squads)
                     else:
                         log.debug("Unit ID %d: WID match at %s, but %s was "
                                   "%d (Expected '%d')",
-                                  unit_id, sqd_id_col, sqd_num_col,
+                                  uid, sqd_id_col, sqd_num_col,
                                   num_squads, old_num_squads)
 
         return row, was_modified

@@ -24,12 +24,12 @@ CLI Usage
 This module can be executed directly from the command line:
 
     $ python -m wite2_tools.cli mod-reorder-unit [-d DATA_DIR] \\
-        target_unit_id target_wid target_slot
+        target_uid target_wid target_slot
 
 Arguments:
     unit_file_path : The absolute or relative path to the WiTE2
                      _unit CSV file.
-    target_unit_id : The ID of the unit to modify.
+    target_uid     : The ID of the unit to modify.
     target_wid     : The ID of the ground element to search for and move.
     target_slot    : The target slot index (0-31) to place the element.
 
@@ -81,25 +81,25 @@ def reorder_unit_elems(row: dict, source_slot: int, target_slot: int) -> dict:
 
 
 def reorder_unit_squads(unit_file_path: str,
-                        target_unit_id: int,
+                        target_uid: int,
                         target_wid: int,
                         target_slot: int) -> int:
     """
     Reorders specific Ground Element squads within a WiTE2 _unit CSV file.
 
-    This function scans a large _unit CSV for a specific target_unit_id,
+    This function scans a large _unit CSV for a specific target_uid,
     searches its squad slots (sqd 0 through sqd 31) for a target wid, and moves
     that squad to a new slot index using a temporary file stream to maintain
     memory efficiency.
 
     Args:
         unit_file_path (str): The absolute or relative path to the WiTE2 _unit
-        CSV file.
-        target_unit_id (int): The unique identifier ('id' column) of the UNIT
-                to be modified.
+                              CSV file.
+        target_uid (int): The unique identifier ('id' column) of the UNIT
+                           to be modified.
         target_wid (int):  The WID of the Ground Element to be moved.
-        target_slot (int): The target slot index (0-31) where the element
-                should be relocated.
+        target_slot (int): The target slot (0-31) where the element
+                           should be relocated.
 
     Returns:
         int: The total number of rows (OBs) successfully updated. Returns 0 if
@@ -120,11 +120,11 @@ def reorder_unit_squads(unit_file_path: str,
 
     file_name = os.path.basename(unit_file_path)
     log.info("Reordering squads in '%s' | UNIT ID: %d | WID: %d | To Loc: %d",
-             file_name, target_unit_id, target_wid, target_slot)
+             file_name, target_uid, target_wid, target_slot)
 
     def process_row(row: dict, row_idx: int) -> tuple[dict, bool]:
-        unit_id = parse_int(row.get("id"), 0)
-        if target_unit_id == unit_id:
+        uid = parse_int(row.get("id"), 0)
+        if target_uid == uid:
             for i in range(MAX_SQUAD_SLOTS):
                 current_sqd_col = f"sqd.u{i}"
                 if current_sqd_col in row:
