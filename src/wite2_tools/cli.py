@@ -41,6 +41,12 @@ import os
 import sys
 import configparser
 
+from wite2_tools.paths import (
+    _MOD_UNIT_FILENAME,
+    _MOD_GROUND_FILENAME,
+    _MOD_OB_FILENAME
+)
+
 from wite2_tools.auditing.audit_ground_element import (
     audit_ground_element_csv
 )
@@ -105,9 +111,9 @@ def resolve_paths(data_dir: str) -> dict[str, str]:
                         'ground') to their absolute or relative paths.
     """
     return {
-        "unit": os.path.join(data_dir, "_unit.csv"),
-        "ob": os.path.join(data_dir, "_ob.csv"),
-        "ground": os.path.join(data_dir, "_ground.csv")
+        "unit": os.path.join(data_dir, _MOD_UNIT_FILENAME),
+        "ob": os.path.join(data_dir, _MOD_OB_FILENAME),
+        "ground": os.path.join(data_dir, _MOD_GROUND_FILENAME)
     }
 
 

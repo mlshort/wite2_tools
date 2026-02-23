@@ -11,6 +11,12 @@ from wite2_tools.cli import (
     main
 )
 
+from wite2_tools.paths import (
+    _MOD_UNIT_FILENAME,
+    _MOD_GROUND_FILENAME,
+    _MOD_OB_FILENAME
+)
+
 
 
 @patch("os.path.exists")
@@ -37,7 +43,6 @@ def test_parser_config_command():
 # ==========================================
 
 
-
 def test_resolve_paths():
     """Verifies that paths are correctly joined to the data directory."""
     data_dir = "C:/TestMods"
@@ -45,8 +50,10 @@ def test_resolve_paths():
 
     # Normalize both sides to ensure backslash vs forward slash doesn't
     # break tests
-    assert os.path.normpath(paths["unit"]) == os.path.normpath("C:/TestMods/_unit.csv")
-    assert os.path.normpath(paths["ob"]) == os.path.normpath("C:/TestMods/_ob.csv")
+    assert os.path.normpath(paths["unit"]) == os.path.normpath(
+        os.path.join(data_dir, _MOD_UNIT_FILENAME))
+    assert os.path.normpath(paths["ob"]) == os.path.normpath(
+        os.path.join(data_dir, _MOD_OB_FILENAME))
 
 
 # ==========================================
@@ -77,7 +84,7 @@ def test_main_routing_audit_ground(mock_audit):
     with patch.object(sys, 'argv', test_args):
         main()
         mock_audit.assert_called_once_with(os.path.join('test_dir',
-                                                        '_ground.csv'))
+                                                        _MOD_GROUND_FILENAME))
 
 
 @patch('wite2_tools.cli._scan_excess_resource')
@@ -89,7 +96,8 @@ def test_main_routing_scan_excess(mock_scan):
     with patch.object(sys, 'argv', test_args):
         main()
         mock_scan.assert_called_once_with(
-            os.path.join('test_dir', '_unit.csv'), 'fuel', 'fNeed', 'Fuel'
+            os.path.join('test_dir', _MOD_UNIT_FILENAME),
+            'fuel', 'fNeed', 'Fuel'
         )
 
 
@@ -102,7 +110,7 @@ def test_main_routing_mod_reorder_ob(mock_reorder):
     with patch.object(sys, 'argv', test_args):
         main()
         mock_reorder.assert_called_once_with(
-            os.path.join('test_dir', '_ob.csv'), 150, 42, 5
+            os.path.join('test_dir', _MOD_OB_FILENAME), 150, 42, 5
         )
 
 
@@ -118,9 +126,10 @@ def test_main_routing_gen_groups(mock_group, mock_config):
 
         # Capture the actual path used in the call to normalize it
         called_path = mock_group.call_args[0][0]
-        assert os.path.normpath(called_path) == os.path.normpath("./_unit.csv")
+        assert os.path.normpath(called_path) == \
+            os.path.normpath(_MOD_UNIT_FILENAME)
         assert mock_group.call_args[0][1] is True  # active_only
-        assert mock_group.call_args[0][2] == [1, 3] # nat_codes
+        assert mock_group.call_args[0][2] == [1, 3]  # nat_codes
 
 
 # ==========================================

@@ -73,9 +73,12 @@ def find_orphaned_ob_ids(ob_file_path: str,
     """
     verbose_orphans: bool = True
 
-    if not os.path.exists(ob_file_path) or not os.path.exists(unit_file_path):
-        log.error("File error: One or both of the specified CSV files do not "
-                  "exist.")
+    if not os.path.exists(ob_file_path):
+        log.error("Error: The file '%s' was not found.", ob_file_path)
+        return set()
+
+    if not os.path.exists(unit_file_path):
+        log.error("Error: The file '%s' was not found.", unit_file_path)
         return set()
 
     # complete set of TOE(OB) IDs
