@@ -111,6 +111,22 @@ def get_ob_full_name(ob_file_path: str, ob_id_to_find: int) -> str:
         return f"Unk ({ob_id_to_find})"
 
 
+def get_ob_suffix(ob_file_path: str, ob_id_to_find: int) -> str:
+    """
+    Public API: Resolves an TOE(OB) ID to a full name.
+    """
+    # 1. Retrieve the cached dictionary
+    cached_dict = _build_ob_lookup(ob_file_path)
+
+    # 2. Perform instant O(1) lookup
+    result = cached_dict.get(ob_id_to_find)
+
+    if result is not None:
+        return result.suffix
+    else:
+        return f"Unk ({ob_id_to_find})"
+
+
 def get_unit_type_name(ob_file_path: str, unit_id_to_find: int) -> str:
     """
     A convenience wrapper. In WiTE2, a unit's type name is derived
