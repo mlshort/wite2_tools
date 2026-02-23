@@ -23,13 +23,12 @@ The framework is divided into five main sub-packages based on functionality:
 * **Modifiers:** Safely perform bulk data mutations on `_unit`, `_ob`, and
   `_ground` CSVs. Uses an atomic file-replacement wrapper to ensure
   original files are only overwritten if the script completes successfully.
-* **Analyzers (Core):** Generate scenario insights, map global equipment
-  inventories, trace TOE (Table of Organization and Equipment) upgrade chains,
-  and identify unreferenced "orphan" templates.
-* **Validators (Auditing):** Batch evaluate data files for structural
-  integrity, logical consistency, and duplicate IDs. Automatically
-  detects "Ghost Squads" and out-of-bounds map coordinates to prevent game
-  crashes.
+* **Data Generation & Reporting:** Generate scenario insights, map global
+  equipment inventories, trace TOE (Table of Organization and Equipment)
+  upgrade chains, and identify unreferenced "orphan" templates.
+* **Auditing:** Batch evaluate data files for structural integrity, logical
+  consistency, and duplicate IDs. Automatically detects "Ghost Squads" and
+  out-of-bounds map coordinates to prevent game crashes.
 * **Scanners:** High-performance queries to locate specific ground elements,
   units, or excess logistical stores (e.g., ammo, fuel > 5x need) without
   modifying the source files.
@@ -48,19 +47,27 @@ The framework is divided into five main sub-packages based on functionality:
    pip install -r requirements.txt
    ```
 3. **Set Game Data Paths:** By default, the toolset expects the standard Steam
-   installation path for WiTE2.
-   * Open `src\wite2_tools\paths.py`.
-   * Update the `GAME_DATA_PATH` variable if your game is installed on a
-     different drive or directory.
-   * Set your target filenames (e.g., `_GC41_OB_FILENAME` or
-     `_MOD_OB_FILENAME`).
+   installation path for WiTE2. The toolkit must resolve the location of your
+   WiTE2 CSV files (e.g., _unit.csv, _ob.csv, _ground.csv). You can configure
+   this in two ways:
+
+   * Option A: CLI Configuration (Recommended): Use the config command to save
+   your target directory to a local settings.ini file. This avoids manual code
+   changes.
+
+    ```cmd
+    python -m wite2_tools.cli config --set-path "C:\Path\To\Your\WiTE2\CSV"
+    ```
+
+   * Option B: Manual Path Update: Open src\wite2_tools\paths.py and update the
+   GAME_DATA_PATH variable to your specific installation directory.
 
 ---
 ## 💡 Best Practices & Recommendations
 
 **Always Test on Exported Data First!**
-Before executing any modifiers against your active game data or live mod
-files, it is highly recommended to experiment in a safe environment:
+Before executing any modifiers against your active game data or live mod files,
+it is highly recommended to experiment in a safe environment:
 
 1. Open the **WiTE2 Editor**.
 2. Navigate to the **CSV Tab** and export a fresh copy of your scenario's
@@ -82,33 +89,48 @@ unless explicitly overridden via optional arguments.
 *(Note: Depending on your Windows Python installation, you may need to use `py`
 instead of `python` in your Command Prompt or PowerShell).*
 
-### 1. Modifiers
-* **`replace-elem`**: Replaces a Ground Element WID across the unit dataset.
-* **`update-num`**: Updates squad counts for a specific Ground Element WID within a TOE(OB).
-* **`reorder-unit`**: Moves a Ground Element to a new slot for a Unit.
-* **`reorder-ob`**: Moves a Ground Element to a new slot for a TOE(OB).
-* **`compact-weapons`**: Removes empty weapon slots in `_ground.csv`.
+Once installed, you can access the toolkit from your terminal via the unified
+command-line interface `wite2-tools` (or by running the module directly with
+`python -m wite2_tools.cli`).
 
-### 2. Auditing
-* **`audit-ground`**: Scans `_ground.csv` to ensure type IDs are valid.
-* **`batch-eval`**: Batch runs consistency checks on CSV folders.
-* **`audit-unit`**: Runs consistency checks on a single `_unit.csv`.
-* **`audit-ob`**: Runs consistency checks on a single `_ob.csv`.
+### 1. Generation Tools (`gen-*`)
+Tools for generating reports and cross-referencing data.
+* **`gen-orphans`**: Identifies unreferenced (orphaned) TOE(OB) templates and
+  finds units pointing to invalid TOE(OB) IDs. Includes full upgrade-chain
+  tracing.
+  * *Example:* `python -m wite2-tools.cli gen-orphans --nat-codes 1 3`
+  (Filters the scan to Germany(1) and Italy(3) nationality codes).
+* **`gen-inventory`**: Generates a comprehensive inventory report of elements.
+* **`gen-groups`**: Analyzes and maps organizational groups.
+* **`gen-chains`**: Maps and validates unit/OB upgrade chains.
 
-### 3. Core Analytics
-* **`count-inventory`**: Counts global unit equipment inventory.
-* **`find-orphans`**: Identifies unreferenced TOE(OB) templates.
-* **`gen-chains`**: Generates chronological TOE(OB) upgrade chains.
-* **`group-units`**: Groups active units by their assigned TOE(OB) ID.
+### 2. Auditing Tools (`audit-*`)
+Tools for verifying the integrity of your WiTE2 database files.
+* **`audit-ground`**: Scans `_ground.csv` for errors.
+* **`audit-unit`**: Scans `_unit.csv` for broken dependencies or invalid stats.
+* **`audit-ob`**: Scans `_ob.csv` for malformed templates.
+* **`audit-batch`**: Runs a comprehensive audit across multiple target files.
 
-### 4. Scanning & Utilities
-* **`scan-ob-elem`**: Locates a specific Ground Element WID within OBs.
-* **`scan-unit-elem`**: Locates a specific Ground Element WID within Units.
+### 3. Modding & Manipulation Tools (`mod-*`)
+* **`mod-compact-wpn`**: Compacts weapon data arrays.
+* **`mod-reorder-ob`**: Moves a Ground Element to a new slot for a TOE(OB).
+* **`mod-reorder-unit`**: Moves a Ground Element to a new slot for a Unit.
+* **`mod-replace-elem`**: Batch replaces specific elements within templates.
+* **`mod-update-num`**: Updates numerical stats across specified datasets.
+
+### 4. Scanning Tools (`scan-*`)
+Tools for quickly finding specific data points or anomalies.
+* **`scan-ob`**: Locates all Ground Elements matching a WID within OBs.
+* **`scan-unit`**: Locates all Ground Elements matching a WID within Units.
 * **`scan-excess`**: Locates units with excessive logistical stores.
-* **`detect-encoding`**: Detects the character encoding of a specific file.
+
+### 5. Configuration
+* **`config`**: Manage default data directories and settings for the CLI tools.
 
 **CLI Examples:**
 ```cmd
+python -m wite2_tools.cli config
+python -m wite2-tools.cli config --set-path "C:\DevProjects\wite2_tools\TestMods"
 python -m wite2_tools.cli scan-excess --operation fuel
 python -m wite2_tools.cli gen-chains --nat-codes 1 3
 ```
@@ -117,7 +139,7 @@ python -m wite2_tools.cli gen-chains --nat-codes 1 3
 If you provide a custom file path that contains spaces, you **must** wrap it in
 double quotes for the Windows command line to read it properly:
 ```cmd
-python -m wite2_tools.cli compact-weapons --ground-file "C:\My WiTE2 Mods\_ground.csv"
+python -m wite2_tools.cli compact-weapons --ground-file "C:\My WiTE2 Mods\MyCustomMod_ground.csv"
 ```
 
 ---

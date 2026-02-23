@@ -205,13 +205,13 @@ def create_parser() -> argparse.ArgumentParser:
     # 2. SCAN COMMANDS
     scan_ob = subparsers.add_parser(
         "scan-ob", parents=[base_parser],
-        help="Find a specific Ground Element in _ob.csv"
+        help="Find all Ground Elements matching a WID in _ob.csv"
     )
     scan_ob.add_argument("target_wid", type=int)
 
     scan_unit = subparsers.add_parser(
         "scan-unit", parents=[base_parser],
-        help="Find a specific Ground Element in _unit.csv"
+        help="Find all Ground Elements matching a WID in _unit.csv"
     )
     scan_unit.add_argument("target_wid", type=int)
     scan_unit.add_argument("--num-squads", type=int, default=-1)
@@ -249,7 +249,7 @@ def create_parser() -> argparse.ArgumentParser:
 
     mod_rep = subparsers.add_parser(
         "mod-replace-elem", parents=[base_parser],
-        help="Globally replace a Ground Element ID"
+        help="Globally replace a Ground Element WID"
     )
     mod_rep.add_argument("old_wid_id", type=int)
     mod_rep.add_argument("new_wid_id", type=int)

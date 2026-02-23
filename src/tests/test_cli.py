@@ -18,7 +18,6 @@ from wite2_tools.paths import (
 )
 
 
-
 @patch("os.path.exists")
 @patch("configparser.ConfigParser.read")
 @patch("configparser.ConfigParser.get")
