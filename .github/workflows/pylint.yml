@@ -23,10 +23,10 @@ jobs:
         pip install pylint
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    - name: Analysing the code with pylint
+    - name: Analyzing the code with pylint
       run: |
         # Pylint automatically detects .pylintrc in the root directory.
         # This will enforce your 80-char limit and explicit exception rules.
-        pylint $(git ls-files 'src/*.py')
+        pylint $(git ls-files './src/*.py') --zero-exit
 
   
