@@ -43,8 +43,8 @@ from wite2_tools.generator import (
     read_csv_list_generator,
     read_csv_dict_generator
 )
-from wite2_tools.utils.logger import get_logger
-from wite2_tools.utils.parsing import parse_int
+from wite2_tools.utils import get_logger
+from wite2_tools.utils import parse_int
 
 # Initialize the log for this specific module
 logger = get_logger(__name__)

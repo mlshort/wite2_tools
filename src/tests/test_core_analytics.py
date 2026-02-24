@@ -47,7 +47,7 @@ def mock_ground_csv(tmp_path) -> str:
 
 def test_group_units_by_ob(mock_unit_csv):
     """
-    Verifies that units are correctly grouped by TOE(OB) ID
+    Verifies that units are correctly grouped by TOE(OB)
     and placeholders are skipped.
     """
     result = group_units_by_ob(mock_unit_csv)

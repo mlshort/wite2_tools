@@ -49,8 +49,8 @@ from typing import Optional, Union, Iterable, cast
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.generator import read_csv_dict_generator
-from wite2_tools.utils.logger import get_logger
-from wite2_tools.utils.parsing import (
+from wite2_tools.utils import (
+    get_logger,
     parse_int,
     parse_str
 )
@@ -94,17 +94,17 @@ def generate_ob_chains(
              os.path.basename(ob_file_path))
 
     # 1. Read the input _ob CSV and build mappings
-    data_gen = read_csv_dict_generator(ob_file_path)
-    next(data_gen)  # Skip DictReader object
+    ob_gen = read_csv_dict_generator(ob_file_path)
+    next(ob_gen)  # Skip DictReader object
 
-    for item in data_gen:
+    for item in ob_gen:
         # Cast the yielded item to satisfy static type checkers
         _, row = cast(tuple[int, dict], item)
 
         try:
             # Early Exit: Filter by nationality
-            ob_nation_id = parse_int(row.get('nat'), 0)
-            if nat_filter is not None and ob_nation_id not in nat_filter:
+            ob_nat = parse_int(row.get('nat'), 0)
+            if nat_filter is not None and ob_nat not in nat_filter:
                 continue
 
             ob_type = parse_int(row.get('type'), 0)
@@ -150,7 +150,7 @@ def generate_ob_chains(
             if curr in visited:
                 chain.append(f"{curr} (LOOP)")
                 log.warning("Infinite loop detected in upgrade "
-                            "chain at TOE(OB) ID %d", curr)
+                            "chain at TOE(OB) ID[%d]", curr)
                 break
 
             chain.append(curr)

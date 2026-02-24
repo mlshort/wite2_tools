@@ -1,5 +1,5 @@
 """
-Orphaned Order of Battle (OB) Identifier
+Orphaned Order of Battle (TOE(OB)) Identifier
 ========================================
 
 This module cross-references War in the East 2 (WiTE2) `_ob.csv` and
@@ -8,7 +8,7 @@ This module cross-references War in the East 2 (WiTE2) `_ob.csv` and
 An TOE(OB) is considered an "orphan" if it exists in the TOE(OB) database but
 is never actively assigned to a unit on the map, nor is it part of a valid
 upgrade chain for an active unit. Conversely, this script also identifies
-"invalid references," which occur when an active unit is assigned an OB ID
+"invalid references," which occur when an active unit is assigned an TOE(OB) ID
 that does not exist in the database.
 
 Core Features:
@@ -49,12 +49,13 @@ from typing import Set
 # Internal package imports
 from wite2_tools.core.unit import Unit
 from wite2_tools.generator import read_csv_dict_generator
-from wite2_tools.utils.logger import get_logger
-from wite2_tools.utils.get_type_name import (
+from wite2_tools.utils import get_logger
+from wite2_tools.utils import format_header, format_list_item
+from wite2_tools.utils import (
     get_ob_full_name,
     get_ob_suffix
 )
-from wite2_tools.utils.parsing import (
+from wite2_tools.utils import (
     parse_int,
     parse_str
 )
@@ -117,9 +118,9 @@ def find_orphaned_ob_ids(ob_file_path: str,
 #
 #    Table: _ob.csv
 #    - id (int): Primary Key
-#    - type (int): OB type
-#    - name (str): OB name
-#    - upgrade (int): OB upgrade
+#    - type (int): TOE(OB) type
+#    - name (str): TOE(OB) name
+#    - upgrade (int): TOE(OB) upgrade
 #    ....
 #
 #    Table: _unit.csv
@@ -132,23 +133,23 @@ def find_orphaned_ob_ids(ob_file_path: str,
         next(ob_gen)  # Skip DictReader header yield
 
         for _, row in ob_gen:
-            ob_nation_id: int = parse_int(row.get('nat'), 0)
+            ob_nat: int = parse_int(row.get('nat'))
 
-            if nat_filter is not None and ob_nation_id not in nat_filter:
+            if nat_filter is not None and ob_nat not in nat_filter:
                 continue
 
-            ob_id: int = parse_int(row.get('id'), 0)
-            ob_type: int = parse_int(row.get('type'), 0)
-            ob_upgrade: int = parse_int(row.get('upgrade'), 0)
+            ob_id: int = parse_int(row.get('id'))
+            ob_type: int = parse_int(row.get('type'))
+            ob_upgrade: int = parse_int(row.get('upgrade'))
             # Combine ob_name and ob_suffix
-            ob_name = parse_str(row.get('name'), '')
-            ob_suffix = parse_str(row.get('suffix'), '')
+            ob_name = parse_str(row.get('name'))
+            ob_suffix = parse_str(row.get('suffix'))
             ob_full_name = f"{ob_name} {ob_suffix}"
 
             if ob_id != 0:
                 all_obs.add(ob_id)
                 ob_id_to_name[ob_id] = ob_full_name
-                # the following are the valid OB IDs
+                # the following are the valid TOE(OB) IDs
                 if ob_type != 0:
                     active_obs.add(ob_id)
                     if ob_upgrade != 0:
@@ -160,9 +161,9 @@ def find_orphaned_ob_ids(ob_file_path: str,
         ref_upgraded_id_count = 0
 
         for _, row in unit_gen:
-            unit_nat: int = parse_int(row.get('nat'), 0)
+            u_nat: int = parse_int(row.get('nat'), 0)
 
-            if nat_filter is not None and unit_nat not in nat_filter:
+            if nat_filter is not None and u_nat not in nat_filter:
                 continue
 
             uid: int = parse_int(row.get('id'), 0)
@@ -178,7 +179,7 @@ def find_orphaned_ob_ids(ob_file_path: str,
                 # if yes, then lets collect its data, if we haven't already
                 if utype not in ob_to_units:
                     ob_to_units[utype] = set()
-                a_unit = Unit(uid, ufull_name, utype, unit_nat)
+                a_unit = Unit(uid, ufull_name, utype, u_nat)
                 # since we have a non-zero unit type, this unit
                 # thinks it has an associated TOE(OB)
                 # let's go with that for now...
@@ -218,17 +219,14 @@ def find_orphaned_ob_ids(ob_file_path: str,
         # 3. Find IDs in the TOE(OB) set that are NOT in the Referenced set
         orphaned_ob_ids = active_obs - obs_ref_by_unit
         # 3. Find IDs that are Referenced, but are NOT active or valid
-        # The result is the set of Invalid OB IDs that are being referenced
+        # The result is the set of Invalid TOE(OB) IDs that are being referenced
         inv_ref_ob_ids = obs_ref_by_unit - active_obs
 
         # 4. Logging Results
         if orphaned_ob_ids:
+            print(format_header("Unused TOE(OB) Report"))
             sorted_orphans = sorted(list(orphaned_ob_ids), key=int)
 
-            # Print a clean, formatted report to the console
-            print("\n" + "="*40)
-            print(" UNUSED TOE(OB) REPORT: Orphaned IDs")
-            print("="*40)
             print(f"Total Orphaned TOE(OB)s Found: {len(orphaned_ob_ids)}\n")
 
             # verbose logging ?
@@ -239,7 +237,7 @@ def find_orphaned_ob_ids(ob_file_path: str,
                         orphan_id
                     )
                     # Print cleanly to console instead of logging every line
-                    print(f"   • [{orphan_id}] {ob_full_name}")
+                    print(format_list_item(f"[{orphan_id}] {ob_full_name}"))
             else:
                 chunk_size = 20
                 for i in range(0, len(sorted_orphans), chunk_size):
@@ -263,15 +261,16 @@ def find_orphaned_ob_ids(ob_file_path: str,
 
                 if units_with_inv_ob_id:
                     num_units_with_inv_ob_ids += len(units_with_inv_ob_id)
-                    print(f"\n❌ Ref to Bad TOE(OB):{inv_ob_id}")
+                    print(f"\n❌ Ref to Bad TOE(OB):[{inv_ob_id}]")
                     print(f"   Affected Units: ({len(units_with_inv_ob_id)}):")
 
                     for orphan_unit in units_with_inv_ob_id:
                         print(f"   • [{orphan_unit.uid}] {orphan_unit.name}")
 
             # Keep a single summary line for the actual log file
-            log.error("CRITICAL: %d Units are using Invalid TOE(OB) IDs.",
-                      num_units_with_inv_ob_ids)
+            if num_units_with_inv_ob_ids > 0:
+                log.error("CRITICAL: %d Units are using Invalid TOE(OB) IDs.",
+                          num_units_with_inv_ob_ids)
 
         if not orphaned_ob_ids and not inv_ref_ob_ids:
             log.info(
@@ -285,7 +284,7 @@ def find_orphaned_ob_ids(ob_file_path: str,
                 "   All OBs:                   %d\n"
                 "   Valid OBs:                 %d\n"
                 "   Orphan OBs (Unused):       %d\n"
-                "   Invalid OB IDs Referenced: %d\n"
+                "   Invalid TOE(OB) IDs Referenced: %d\n"
                 "   Total Units Affected:      %d"
             )
 

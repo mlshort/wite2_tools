@@ -72,9 +72,9 @@ def mock_files(tmp_path):
 # ==========================================
 
 
-# Base headers for OB
+# Base headers for TOE(OB)
 def write_ob_csv(ob_path, rows):
-    """Helper function to quickly write OB scenarios for tests."""
+    """Helper function to quickly write TOE(OB) scenarios for tests."""
     ob_headers = [
             "id", "type", "name", "firstYear", "firstMonth",
             "lastYear", "lastMonth", "upgrade"
@@ -117,7 +117,7 @@ def test_audit_ob_handles_key_error(tmp_path):
 
 
 def test_clean_ob_passes(mock_files):
-    """A perfectly valid OB should return 0 issues."""
+    """A perfectly valid TOE(OB) should return 0 issues."""
     ground_path, ob_path = mock_files
     write_ob_csv(ob_path, [
             # id, type, name, fY, fM, lY, lM, upgrade, u0, num0, u1, num1

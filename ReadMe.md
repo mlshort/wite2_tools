@@ -4,7 +4,7 @@
 [![Pylint](https://github.com/mlshort/wite2_tools/actions/workflows/pylint.yml/badge.svg?event=push)](https://github.com/mlshort/wite2_tools/actions/workflows/pylint.yml)
 
 
-**Version:** 0.3.0
+**Version:** 0.3.1
 **Author:** Mark L. Short
 
 A specialized, Python-based toolkit for managing, modifying, and analyzing
@@ -102,7 +102,7 @@ Tools for generating reports and cross-referencing data.
   (Filters the scan to Germany(1) and Italy(3) nationality codes).
 * **`gen-inventory`**: Generates a comprehensive inventory report of elements.
 * **`gen-groups`**: Analyzes and maps organizational groups.
-* **`gen-chains`**: Maps and validates unit/OB upgrade chains.
+* **`gen-chains`**: Maps and validates unit/TOE(OB) upgrade chains.
 
 ### 2. Auditing Tools (`audit-*`)
 Tools for verifying the integrity of your WiTE2 database files.

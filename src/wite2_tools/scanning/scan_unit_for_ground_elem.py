@@ -38,12 +38,10 @@ from typing import cast
 # Internal package imports
 from wite2_tools.constants import MAX_SQUAD_SLOTS
 from wite2_tools.generator import read_csv_dict_generator
-from wite2_tools.utils.get_type_name import (
+from wite2_tools.utils import (
+    get_logger,
     get_unit_type_name,
     get_ground_elem_type_name,
-)
-from wite2_tools.utils.logger import get_logger
-from wite2_tools.utils.parsing import (
     parse_int,
     parse_str
 )

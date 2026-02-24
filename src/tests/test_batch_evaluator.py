@@ -40,7 +40,7 @@ def test_scan_and_evaluate_logic(tmp_path):
 
 @patch('wite2_tools.auditing.batch_evaluator.audit_ob_csv')
 def test_scan_and_evaluate_ob_logic(mock_ob_val, tmp_path):
-    """Verifies the scanner correctly picks up and evaluates OB files."""
+    """Verifies the scanner correctly picks up and evaluates TOE(OB) files."""
     scenario_dir = tmp_path / "OB_Test"
     scenario_dir.mkdir()
 

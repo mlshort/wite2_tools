@@ -35,9 +35,9 @@ from typing import cast
 # Internal package imports
 from wite2_tools.constants import EXCESS_RESOURCE_MULTIPLIER
 from wite2_tools.generator import read_csv_dict_generator
-from wite2_tools.utils.lookups import get_nat_abbr
-from wite2_tools.utils.logger import get_logger
-from wite2_tools.utils.parsing import (
+from wite2_tools.utils import (
+    get_nat_abbr,
+    get_logger,
     parse_int,
     parse_str
 )
@@ -88,8 +88,8 @@ def _scan_excess_resource(unit_file_path: str, resource_col: str,
                 # 3. Extract ID, Name, and NAT
                 uid = parse_int(row.get('id'), 0)
                 uname = parse_str(row.get('name'), 'Unk')
-                unit_nation_id = parse_int(row.get('nat'), 0)
-                unit_nat_abbr = get_nat_abbr(unit_nation_id)
+                u_nat = parse_int(row.get('nat'), 0)
+                u_nat_abbr = get_nat_abbr(u_nat)
 
                 try:
                     ratio = resource / resource_need
@@ -98,7 +98,7 @@ def _scan_excess_resource(unit_file_path: str, resource_col: str,
 
                 # 4. Print the row
                 print(f"{row_idx:<6} | {uid:<6} | {uname:20.20s} |"
-                      f" {unit_nat_abbr:^5} | {resource:>10} |"
+                      f" {u_nat_abbr:^5} | {resource:>10} |"
                       f" {resource_need:>10} | {ratio:>8.2f}")
                 matches_found += 1
 

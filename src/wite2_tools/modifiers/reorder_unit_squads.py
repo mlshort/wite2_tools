@@ -48,9 +48,11 @@ from wite2_tools.constants import (
     MIN_SQUAD_SLOTS,
     UNIT_SQUAD_PREFIXES
 )
-from wite2_tools.utils.logger import get_logger
-from wite2_tools.modifiers.base import process_csv_in_place
-from wite2_tools.utils.parsing import parse_int
+from wite2_tools.utils import (
+    get_logger,
+    parse_int
+)
+from wite2_tools.modifiers import process_csv_in_place
 
 # Initialize the logger for this specific module
 log = get_logger(__name__)

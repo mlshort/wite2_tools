@@ -15,13 +15,13 @@ Available Commands:
 * audit-batch      : Scans a folder for CSV files and runs consistency checks.
 
 [Scanning]
-* scan-ob          : Scans OBs for a specific Ground Element WID.
+* scan-ob          : Scans TOE(OB)s for a specific Ground Element WID.
 * scan-unit        : Scans Units for a specific Ground Element WID.
 * scan-excess      : Scans units for excess supplies (ammo, fuel, etc.).
 
 [Modifiers]
 * mod-compact-wpn  : Removes empty weapon slots and shifts remaining up.
-* mod-reorder-ob   : Moves a Ground Element to a new slot index for an OB.
+* mod-reorder-ob   : Moves a Ground Element to a new slot index for an TOE(OB).
 * mod-reorder-unit : Moves a Ground Element to a new slot index for a Unit.
 * mod-replace-elem : Globally replaces a specific Ground Element WID.
 * mod-update-num   : Conditionally updates unit squad counts.
@@ -41,62 +41,89 @@ import os
 import sys
 import configparser
 
-from wite2_tools.paths import (
-    _MOD_UNIT_FILENAME,
-    _MOD_GROUND_FILENAME,
-    _MOD_OB_FILENAME
-)
-
-from wite2_tools.auditing.audit_ground_element import (
-    audit_ground_element_csv
-)
-from wite2_tools.auditing.audit_unit import (
-    audit_unit_csv
-)
-from wite2_tools.auditing.audit_ob import (
-    audit_ob_csv
-)
-from wite2_tools.auditing.batch_evaluator import (
+from wite2_tools.auditing import (
+    audit_ground_element_csv,
+    audit_ob_csv,
+    audit_unit_csv,
+#    scan_and_evaluate_ob_files,
     scan_and_evaluate_unit_files
 )
-from wite2_tools.core.group_units_by_ob import group_units_by_ob
-from wite2_tools.core.count_global_unit_inventory import (
-    count_global_unit_inventory
+
+from wite2_tools.core import (
+    group_units_by_ob,
+    count_global_unit_inventory,
+    identify_unused_devices,
+    find_orphaned_ob_ids,
+    generate_ob_chains
 )
-from wite2_tools.core.find_orphaned_obs import find_orphaned_ob_ids
-from wite2_tools.core.generate_ob_chains import generate_ob_chains
-from wite2_tools.modifiers.remove_ground_weapon_gaps import (
-    remove_ground_weapon_gaps
+
+from wite2_tools.modifiers import (
+    remove_ground_weapon_gaps,
+    modify_unit_ground_element,
+    modify_unit_num_squads,
+    reorder_ob_squads,
+    reorder_unit_squads
 )
-from wite2_tools.modifiers.modify_unit_ground_element import (
-    modify_unit_ground_element
-)
-from wite2_tools.modifiers.modify_unit_num_squads import (
-    modify_unit_num_squads
-)
-from wite2_tools.modifiers.reorder_ob_squads import reorder_ob_squads
-from wite2_tools.modifiers.reorder_unit_squads import reorder_unit_squads
-from wite2_tools.scanning.scan_unit_for_excess import _scan_excess_resource
-from wite2_tools.scanning.scan_ob_for_ground_elem import (
-    scan_ob_for_ground_elem
-)
-from wite2_tools.scanning.scan_unit_for_ground_elem import (
+
+from wite2_tools.scanning import (
+    scan_ob_for_ground_elem,
     scan_unit_for_ground_elem
 )
-from wite2_tools.utils.logger import get_logger
+
+from wite2_tools.scanning.scan_unit_for_excess import _scan_excess_resource
+
+from wite2_tools.utils import get_logger
 
 log = get_logger(__name__)
 
 CONFIG_FILE = "settings.ini"
 
 
-def get_config_default() -> str:
-    """Reads the data_dir from a local settings.ini file."""
+def get_config_defaults() -> dict[str, str]:
+    """
+    Reads data_dir and scenario_name from settings.ini.
+    Returns a dictionary of defaults.
+    """
+    config = configparser.ConfigParser()
+    defaults = {"data_dir": ".", "scenario_name": ""}
+    if os.path.exists(CONFIG_FILE):
+        config.read(CONFIG_FILE)
+        # Ensure we check for the section to avoid falling back to defaults
+        # when the file exists but the section is missing.
+        if config.has_section("Paths"):
+            defaults["data_dir"] = config.get("Paths", "data_dir", fallback=".")
+            defaults["scenario_name"] = config.get("Paths", "scenario_name", fallback="")
+    return defaults
+
+def get_config_scenario_name():
+    scen_name = ""
     config = configparser.ConfigParser()
     if os.path.exists(CONFIG_FILE):
         config.read(CONFIG_FILE)
-        return config.get("Paths", "data_dir", fallback=".")
-    return "."
+        # Ensure we check for the section to avoid falling back to defaults
+        # when the file exists but the section is missing.
+        if config.has_section("Paths"):
+            scen_name = config.get("Paths", "scenario_name", fallback="")
+    return scen_name
+
+def save_config(data_dir: str | None = None, scenario: str | None = None):
+    """Encapsulated helper to prevent redundant logic in main()."""
+    config = configparser.ConfigParser()
+
+    if os.path.exists(CONFIG_FILE):
+        config.read(CONFIG_FILE)
+
+    if "Paths" not in config:
+        config["Paths"] = {}
+
+    if data_dir:
+        config["Paths"]["data_dir"] = data_dir
+
+    if scenario:
+        config["Paths"]["scenario_name"] = scenario
+
+    with open(CONFIG_FILE, "w") as f:
+        config.write(f)
 
 
 def resolve_paths(data_dir: str) -> dict[str, str]:
@@ -109,11 +136,16 @@ def resolve_paths(data_dir: str) -> dict[str, str]:
     Returns:
         dict[str, str]: A dictionary mapping file keys ('unit', 'ob',
                         'ground') to their absolute or relative paths.
+
     """
+    defaults = get_config_defaults()
+    scen_name = defaults.get("scenario_name", "")
     return {
-        "unit": os.path.join(data_dir, _MOD_UNIT_FILENAME),
-        "ob": os.path.join(data_dir, _MOD_OB_FILENAME),
-        "ground": os.path.join(data_dir, _MOD_GROUND_FILENAME)
+        "unit": os.path.join(data_dir, scen_name + "_unit.csv"),
+        "ob": os.path.join(data_dir, scen_name + "_ob.csv"),
+        "ground": os.path.join(data_dir, scen_name + "_ground.csv"),
+        "device": os.path.join(data_dir, scen_name + "_device.csv"),
+        "aircraft": os.path.join(data_dir, scen_name + "_aircraft.csv")
     }
 
 
@@ -122,7 +154,8 @@ def create_parser() -> argparse.ArgumentParser:
     Constructs the CLI argument parser with inherited parent parsers.
     """
     # Load the default path from config for the help text and default value
-    default_path = get_config_default()
+    defaults = get_config_defaults()
+    default_path = defaults.get("data_dir", ".")
 
     # --- PARENT PARSERS ---
     base_parser = argparse.ArgumentParser(add_help=False)
@@ -164,6 +197,10 @@ def create_parser() -> argparse.ArgumentParser:
     config_parser.add_argument(
         "--set-path", type=str,
         help="Save a new default data directory to settings.ini."
+    )
+    config_parser.add_argument(
+        "--set-scenario", type=str,
+        help="Save a new default scenario name to settings.ini."
     )
 
     # 1. AUDIT COMMANDS
@@ -223,6 +260,15 @@ def create_parser() -> argparse.ArgumentParser:
     scan_ex.add_argument(
         "--operation", default="ammo",
         choices=["ammo", "supplies", "fuel", "vehicles"]
+    )
+
+    scan_unused = subparsers.add_parser(
+        "scan-unused", parents=[base_parser],
+        help="Identify devices of a specific type not used in any Ground Element."
+    )
+    scan_unused.add_argument(
+        "device_type", type=int,
+        help="The integer ID of the device type (e.g., 7 for Hvy Gun, 25 for DP Gun)."
     )
 
     # 3. MODIFIER COMMANDS
@@ -297,15 +343,25 @@ def main():
 
     # Handle Config command before path resolution
     if args.command == "config":
+        config = configparser.ConfigParser()
+        if os.path.exists(CONFIG_FILE):
+            config.read(CONFIG_FILE)
+
+        if "Paths" not in config:
+            config["Paths"] = {}
+
         if args.set_path:
-            config = configparser.ConfigParser()
-            config["Paths"] = {"data_dir": args.set_path}
-            with open(CONFIG_FILE, "w") as configfile:
-                config.write(configfile)
+            save_config(args.set_path)
             print(f"Default data directory saved: {args.set_path}")
-        else:
-            current = get_config_default()
-            print(f"Current default data directory: {current}")
+
+        if args.set_scenario:
+            save_config(None, args.set_scenario)
+            print(f"Scenario name saved: {args.set_scenario}")
+
+        if not args.set_path and not args.set_scenario:
+            defaults = get_config_defaults()
+            print(f"Current default data directory: {defaults['data_dir']}")
+            print(f"Current scenario name: {defaults['scenario_name']}")
         sys.exit(0)
 
     paths = resolve_paths(args.data_dir)
@@ -340,8 +396,17 @@ def main():
 
         elif args.command == "scan-unit":
             scan_unit_for_ground_elem(
-                paths["unit"], paths["ob"], paths["ground"],
+                paths["unit"],
+                paths["ob"],
+                paths["ground"],
                 args.target_wid, args.num_squads
+            )
+        elif args.command == "scan-unused":
+            identify_unused_devices(
+                paths["ground"],
+                paths["aircraft"],
+                paths["device"],
+                args.device_type
             )
 
         elif args.command == "scan-excess":

@@ -4,7 +4,7 @@ import pytest
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.constants import MAX_SQUAD_SLOTS
-from wite2_tools.modifiers.modify_unit_num_squads import modify_unit_num_squads
+from wite2_tools.modifiers import modify_unit_num_squads
 
 
 @pytest.fixture(name="mock_modify_unit_csv")

@@ -3,8 +3,8 @@ from typing import List, Dict, Any
 
 from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.constants import DeviceCol
-from wite2_tools.utils.logger import get_logger
-from wite2_tools.utils.parsing import parse_int
+from wite2_tools.utils import get_logger
+from wite2_tools.utils import parse_int
 
 log = get_logger(__name__)
 

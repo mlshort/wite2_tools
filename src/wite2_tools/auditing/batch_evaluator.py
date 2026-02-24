@@ -31,9 +31,9 @@ Example:
 import os
 
 # Internal package imports
-from wite2_tools.auditing.audit_unit import audit_unit_csv
-from wite2_tools.auditing.audit_ob import audit_ob_csv
-from wite2_tools.utils.logger import get_logger
+from wite2_tools.auditing import audit_unit_csv
+from wite2_tools.auditing import audit_ob_csv
+from wite2_tools.utils import get_logger
 
 # Initialize the logger for this specific module
 log = get_logger(__name__)

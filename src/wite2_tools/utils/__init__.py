@@ -20,12 +20,15 @@ Core Capabilities:
   ID-to-string lookup caching.
 """
 
-__version__ = "0.3.0"
-__date__ = "2026-02-19"
+__version__ = "0.3.1"
+__date__ = "2026-02-22"
 
 # Expose common configuration so other modules can access it easily
 from .logger import get_logger
-from .parsing import parse_int
+from .parsing import (
+    parse_int,
+    parse_str
+)
 from .lookups import (
     get_nat_abbr,
     get_ob_type_code_name,
@@ -39,6 +42,7 @@ from .lookups import (
 )
 from .get_type_name import (
     get_ob_full_name,
+    get_ob_suffix,
     get_unit_type_name,
     get_ground_elem_type_name
 )
@@ -48,15 +52,28 @@ from .get_valid_ids import (
     get_valid_ob_upgrade_ids,
     get_valid_unit_ids
 )
+from .formatting import (
+    format_ref,
+    format_header,
+    format_coords,
+    format_critical,
+    format_error,
+    format_list_item,
+    format_status,
+    audit_msg,
+    completion_msg
+)
 
 __all__ = [
     "get_logger",
     "parse_int",
+    "parse_str",
     "get_nat_abbr",
     "get_ob_type_code_name",
     "get_device_type_name",
     "get_country_name",
     "get_ob_full_name",
+    "get_ob_suffix",
     "get_unit_type_name",
     "get_ground_elem_type_name",
     "get_ground_elem_class_name",
@@ -68,5 +85,14 @@ __all__ = [
     "get_valid_ground_elem_ids",
     "get_valid_ob_ids",
     "get_valid_ob_upgrade_ids",
-    "get_valid_unit_ids"
+    "get_valid_unit_ids",
+    "format_ref",
+    "format_header",
+    "format_coords",
+    "format_critical",
+    "format_error",
+    "format_list_item",
+    "format_status",
+    "audit_msg",
+    "completion_msg"
 ]

@@ -23,9 +23,9 @@ import os
 
 # Internal package imports
 from wite2_tools.constants import MAX_SQUAD_SLOTS
-from wite2_tools.modifiers.base import process_csv_in_place
-from wite2_tools.utils.logger import get_logger
-from wite2_tools.utils.parsing import parse_int
+from wite2_tools.modifiers import process_csv_in_place
+from wite2_tools.utils import get_logger
+from wite2_tools.utils import parse_int
 
 # Initialize the log for this specific module
 log = get_logger(__name__)
@@ -47,7 +47,7 @@ def modify_unit_ground_element(unit_file_path: str,
         int: The total number of rows (units) successfully updated.
     """
 
-    log.info("Task Start: Replace WID %d with %d in '%s'",
+    log.info("Task Start: Replace WID[%d] with %d in '%s'",
              old_wid, new_wid, os.path.basename(unit_file_path))
 
     # Define the specific logic for processing a Unit row
@@ -73,7 +73,7 @@ def modify_unit_ground_element(unit_file_path: str,
 
     # Execute via the shared wrapper
     total_updates = process_csv_in_place(unit_file_path, process_row)
-    log.info("Task Complete: Modified %d rows containing the old WID %d to "
-             "the new WID %d.",
+    log.info("Task Complete: Modified %d rows containing the old WID[%d] to "
+             "the new WID[%d].",
              total_updates, old_wid, new_wid)
     return total_updates

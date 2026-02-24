@@ -57,12 +57,19 @@ class GroundColumn(IntEnum):
     YEAR = 8
     LAST = 9
     LAST_MONTH = 10
-    RANGE = 11
-    SPEED = 12
+    RANGE = 11  # max effective range
+    SPEED = 12  # the speed of the device in miles per hour
     DUR = 13
     SIZE = 14
-    RELIB = 15
-    ARMOR = 16
+    RELIB = 15  # Reliability and Survivabiliy
+# The first digit represents the reliability of the AFV when
+# moving (if only 1 digit is shown the 1st digit is assumed to be 0).
+# The higher the number, the less likely the AFV will become damaged during
+# movement.
+# The second digit is survivability, and the higher the survivability the less
+# likely the AFV will be destroyed in combat during a special survival check as
+# opposed to just being damaged.
+    ARMOR = 16  # front armour thickness in millimetres
     SIDE_ARMOR = 17
     TOP_ARMOR = 18
     MONTH = 19
@@ -108,7 +115,9 @@ class GroundColumn(IntEnum):
     WPN_AMMO_7 = 59
     WPN_AMMO_8 = 60
     WPN_AMMO_9 = 61
-    WPN_ROF_0 = 62
+    WPN_ROF_0 = 62  # ROF is a negative modifier that is applied to vehicle
+    # mounted devices to reflect the restrictions of operating the device
+    # inside the vehicle
     WPN_ROF_1 = 63
     WPN_ROF_2 = 64
     WPN_ROF_3 = 65
@@ -776,19 +785,29 @@ class DeviceCol(IntEnum):
     NAME = 1
     TYPE = 2
     SYM = 3
-    LOAD_COST = 4
-    RANGE = 5
+    LOAD_COST = 4  # number of pounds the device weighs
+    RANGE = 5  # no idea how this is used
     EFFECT = 6
     PEN = 7  # Penetration
+    # number of millimetres of armour plate the weapon can penetrate
+    # appears to be 0-degree (vertical) penetration at 100 meters
     ACC = 8  # Accuracy
-    CEILING = 9  # Max Ceiling
+    CEILING = 9  # Max Ceiling (in feet)
     ANTI_ARMOR = 10
     ANTI_SOFT = 11
-    WARHEAD = 12  # Not displayed in the Editor
+    WARHEAD = 12  # Not displayed in the Editor (see below)
     ANTI_AIR = 13
-    RG = 14  # Range
-    ROF = 15  # Rate of Fire
+    RG = 14  # Maximum Effective Range (meters for ground units)
+    # the range is "feet" for aircraft
+    ROF = 15  # Rate of Fire (can be negative)
+    # a negative value would be scaled as RoF of 1 / x minutes, instead of
+    # x / 1 minute.
+    # Rate of Fire (ROF) is not used in the conventional military sense.
+    # It indicates how many times a device will be allowed to fire during
+    # the combat phase. The higher the number entered the better the ROF.
     HEAT = 16  # HEAT Pen
+    # number of millimetres of armour plate the HEAT weapon can penetrate
+    # at x range
     HVAP = 17  # HVAP Pen
     BLAST = 18
     DUD_RATE = 19  # Not displayed in the Editor
@@ -798,6 +817,36 @@ class DeviceCol(IntEnum):
     COUNTER_T_VAL = 23
     EFF_CEILING = 24
 
+# 1. Warhead: The Caliber Scale
+#
+# The warhead value is the primary driver of explosive power and is calculated
+# based on the internal volume/caliber of the projectile.
+#
+#    Linear Scaling for Anti-Tank (AT) Guns: For most standard tank and AT
+# guns, the warhead value is almost always roughly Caliber ÷ 15.
+# (e.g., 75mm = 4; 88mm = 5; 50mm = 3).
+#
+#    Artillery & Large Bore: As caliber increases, the scale jumps to reflect
+# the non-linear increase in explosive filler. A 150mm howitzer (ID 416) is a
+# ssigned an 8, and the massive 600mm Karl-Gerät (ID 441) jumps to 30.
+#
+#    Small Arms: Machine guns and rifles generally have a warhead of 0,
+# indicating they do not rely on chemical energy (explosives) to deal damage.
+
+# 2. Blast: Explosive Radius and Suppression
+#
+# The blast value correlates strongly with warhead (correlation coefficient of
+# 0.30, but nearly 1:1 in behavior for high-caliber weapons) and represents
+# the "footprint" of the explosion.
+#
+#    Formulaic Consistency: For field guns and howitzers, blast is typically
+# warhead + 2. (e.g., the 88mm has a warhead of 5 and a blast of 5; the 150mm
+# has a warhead of 8 and a blast of 10).
+#
+#    Rockets vs. Shells: Rockets like the 150mm NbW 41 (ID 430) have a higher
+# blast (13) than shells of the same caliber (10), likely to simulate the
+# thinner walls of rocket casings which allowed for more explosive filler and
+# a larger burst radius at the expense of penetration.
 
 # pylint: disable=invalid-name
 class DeviceType(IntEnum):
@@ -863,20 +912,21 @@ class AircraftCol(IntEnum):
     NAT = 3
     SYM = 4
     MAX_SPEED = 5
-    MAX_SPEED_ALT = 6
-    ZERO_ALT_SPEED = 7
-    MAX_ALT_SPEED = 8
-    CRU_SPEED = 9
-    CLIMB = 10
-    MAX_LOAD = 11
-    ENDURANCE = 12
+    MAX_SPEED_ALT = 6   # the optimum altitude to achieve Max Speed
+    ZERO_ALT_SPEED = 7  # max speed at sea level
+    MAX_ALT_SPEED = 8   # max speed at highest altitude
+    CRU_SPEED = 9  # Cruise Speed
+    CLIMB = 10  # climb rate in terms of feet per minute
+    MAX_LOAD = 11  # pounds
+    ENDURANCE = 12  # minutes
     RANGE = 13
     YEAR = 14
     MVR = 15
     ARMOR = 16
-    DURAB = 17
+    DURAB = 17  # Aircraft damage points are measured against the aircraft
+# durability rating to determine if the aircraft is destroyed or just damaged
     MONTH = 18
-    TYPE = 19
+    TYPE = 19  # mapped to AirCraftType (below)
     BLANK = 20
     UPGRADE = 21
     CREW = 22
@@ -884,12 +934,15 @@ class AircraftCol(IntEnum):
     SORTIE_FUEL = 24
     BUILD_COST = 25
     POOL = 26
-    BUILD_LIMIT = 27
+    BUILD_LIMIT = 27  # How many frames are converted each turn
     MAX_IMPORT = 28
     IMPORT_FROM = 29
     LAST_YEAR = 30
     LAST_MONTH = 31
-    RELIB = 32
+    RELIB = 32  # All aircraft have a reliability rating which ranges from
+# “really good” (lower numbers) to “really bad” (higher numbers). These
+# reliability ratings are checked when aircraft conduct a mission with those
+# that fail the reliability check becoming damaged.
     PHOTO = 33
     EXP_RATE = 34
     ENGINE_NUM = 35

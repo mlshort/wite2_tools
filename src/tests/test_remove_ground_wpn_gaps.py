@@ -4,7 +4,7 @@ import pytest
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.constants import GROUND_WPN_PREFIXES
-from wite2_tools.modifiers.remove_ground_weapon_gaps import (
+from wite2_tools.modifiers import (
     remove_ground_weapon_gaps,
 )
 

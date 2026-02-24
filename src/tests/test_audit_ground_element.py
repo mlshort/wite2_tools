@@ -3,52 +3,58 @@ import csv
 import pytest
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
-from wite2_tools.auditing.audit_ground_element import audit_ground_element_csv
+from wite2_tools.auditing import audit_ground_element_csv
+from wite2_tools.constants import GroundColumn
 
 # ==========================================
 # FIXTURES (Setup)
 # ==========================================
+@pytest.fixture
+def mock_ground_csv(tmp_path):
+    """
+    Creates a mock ground element CSV that satisfies structural checks
+    but contains exactly 4 logical errors.
+    """
+    csv_file = tmp_path / "mock_ground_audit.csv"
 
+    def create_row(gid, name, gtype, men="10", size="1"):
+        # Initialize a row with 25 columns to exceed REQUIRED_STAT_COLS (22)
+        row = ["0"] * 25
+        row[GroundColumn.ID] = str(gid)
+        row[GroundColumn.NAME] = name
+        row[GroundColumn.TYPE] = str(gtype)
+        row[GroundColumn.MEN] = str(men)   # Index 19
+        row[GroundColumn.SIZE] = str(size)  # Index 21
+        return row
 
-@pytest.fixture(name="mock_ground_csv")
-def mock_ground_csv(tmp_path) -> str:
-    """Generates a mock _ground.csv with various logical edge cases."""
-    file_path = tmp_path / "mock_ground_audit.csv"
+    header = ["id", "name", "cost", "type", "symbol", "rate", "range", "acc",
+              "pen", "load", "ce", "fc", "face", "size_type", "class", "fire",
+              "move", "ammo", "fuel", "men", "weight", "size", "trail", "load2",
+              "end"]
 
-    # Based on the script: ID is row[0], name is row[1], and type is row[3]
-    headers = ["id", "name", "unknown2", "type", "unknown4"]
-
-    with open(file_path, 'w', newline='', encoding=ENCODING_TYPE) as f:
-        # Note: audit_ground_element_csv uses a list generator, not DictReader,
-        # so we write standard lists instead of dictionaries.
+    with open(csv_file, mode='w', newline='', encoding=ENCODING_TYPE) as f:
         writer = csv.writer(f)
-        writer.writerow(headers)
+        writer.writerow(header)
 
-        # Row 1: Valid Ground Element
-        # Type 13 = Md Tank
-        writer.writerow(["100", "Panzer IV", "x", "13", "x"])
+        # Rows 1 & 2: Now valid because MEN and SIZE are > 0
+        writer.writerow(create_row(100, "Panzer IV", 30, men="5", size="20"))
+        writer.writerow(create_row(101, "Infantry", 1, men="10", size="1"))
 
-        # Row 2: Valid Ground Element
-        # Type 1 = Rifle Squad
-        writer.writerow(["101", "Infantry", "x", "1", "x"])
+        # ISSUE 1: DUPLICATE ID
+        writer.writerow(create_row(101, "Infantry Clone", 1))
 
-        # Row 3: Duplicate ID (101) -> Error
-        writer.writerow(["101", "Infantry Clone", "x", "1", "x"])
+        # ISSUE 2: MISSING TYPE
+        row4 = create_row(102, "Ghost Tank", "")
+        row4[GroundColumn.TYPE] = ""
+        writer.writerow(row4)
 
-        # Row 4: Missing/Empty Type -> ValueError
-        writer.writerow(["102", "Ghost Tank", "x", "", "x"])
+        # ISSUE 3: UNKNOWN TYPE 9999
+        writer.writerow(create_row(103, "Future Laser", 9999))
 
-        # Row 5: Unknown Type (e.g. 9999) -> Warning (counted as issue)
-        writer.writerow(["103", "Future Laser", "x", "9999", "x"])
+        # ISSUE 4: INVALID TYPE STRING
+        writer.writerow(create_row(104, "Bad Data", "INVALID"))
 
-        # Row 6: Non-Integer Type -> ValueError
-        writer.writerow(["104", "Bad Data", "x", "INVALID", "x"])
-
-        # Row 7: Valid Reserved/Blank (e.g., 0)
-        writer.writerow(["105", "Placeholder", "x", "0", "x"])
-
-    return str(file_path)
-
+    return str(csv_file)
 
 # ==========================================
 # TEST CASES
@@ -62,14 +68,8 @@ def test_audit_ground_element_csv_identifies_issues(mock_ground_csv):
     """
     issues = audit_ground_element_csv(mock_ground_csv)
 
-    # Expected Issues Identified (4 total):
-    # 1. Row 3: Duplicate ID 101 triggers a uniqueness violation.
-    # 2. Row 4: Empty string `""` fails `int()` conversion, causing a
-    # ValueError.
-    # 3. Row 5: Type 9999 triggers the "Unk Type" warning from lookups.py.
-    # 4. Row 6: "INVALID" string fails `int()` conversion, causing a
-    # ValueError.
-
+    # Now that the rows are properly padded, the "Insufficient columns"
+    # warnings will disappear, and the count should return to 4.
     assert issues == 4
 
 

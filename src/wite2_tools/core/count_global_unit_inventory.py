@@ -39,9 +39,9 @@ from typing import Optional, Union, Iterable, cast
 # Internal package imports
 from wite2_tools.constants import MAX_SQUAD_SLOTS
 from wite2_tools.generator import read_csv_dict_generator
-from wite2_tools.utils.logger import get_logger
-from wite2_tools.utils.get_type_name import get_ground_elem_type_name
-from wite2_tools.utils.parsing import parse_int
+from wite2_tools.utils import get_logger
+from wite2_tools.utils import get_ground_elem_type_name
+from wite2_tools.utils import parse_int
 
 # Initialize the logger for this specific module
 log = get_logger(__name__)
@@ -68,6 +68,14 @@ def count_global_unit_inventory(
     else:
         nat_filter = None
 
+    if not os.path.exists(unit_file_path):
+        log.error("Error: The file '%s' was not found.", unit_file_path)
+        return inventory
+
+    if not os.path.exists(ground_file_path):
+        log.error("Error: The file '%s' was not found.", ground_file_path)
+        return inventory
+
     log.info("Starting global inventory count for: '%s'",
              os.path.basename(unit_file_path))
 
@@ -81,12 +89,12 @@ def count_global_unit_inventory(
         # 3. Iterate through the generator items safely
         for item in unit_gen:
             # Cast the yielded item to satisfy static type checkers
-            row_idx, row = cast(tuple[int, dict], item)
-
+            _, row = cast(tuple[int, dict], item)
+            uid = parse_int(row.get('id'), 0)
             utype = parse_int(row.get('type'), 0)
-            unit_nation_id = parse_int(row.get('nat'), 0)
+            u_nat = parse_int(row.get('nat'), 0)
 
-            if nat_filter is not None and unit_nation_id not in nat_filter:
+            if nat_filter is not None and u_nat not in nat_filter:
                 continue
             if utype == 0:
                 continue
@@ -94,11 +102,11 @@ def count_global_unit_inventory(
             # Iterate through the MAX_SQUAD_SLOTS potential squad slots (sqd.u0
             # to sqd.u31)
             for i in range(MAX_SQUAD_SLOTS):
-                ge_id = parse_int(row.get(f'sqd.u{i}', 0))
+                wid = parse_int(row.get(f'sqd.u{i}', 0))
                 squad_quantity = parse_int(row.get(f'sqd.num{i}', 0))
 
-                # Check if the slot is occupied (ID is not None, empty, or '0')
-                if ge_id != 0:
+                # Check if the slot is occupied (WID is not '0')
+                if wid != 0:
                     try:
                         # Default to 0 if the count string is missing or
                         # malformed
@@ -106,12 +114,12 @@ def count_global_unit_inventory(
 
                         # Accumulate the total using defaultdict's auto-
                         # initialization
-                        inventory[ge_id] += count
+                        inventory[wid] += count
                     except ValueError:
-                        log.warning("Row %s: Malformed data in slot %d "
-                                    "(ID: %d, Num: %d)",
-                                    row_idx, i,
-                                    ge_id, squad_quantity)
+                        log.warning("UID[%d]: Malformed data in slot %d "
+                                    "(WID[%d], Num: %d)",
+                                    uid, i,
+                                    wid, squad_quantity)
 
         # 4. Log the Final Results
         log.info("--- Inventory Audit Complete ---")
@@ -119,12 +127,12 @@ def count_global_unit_inventory(
         sorted_inventory = sorted(inventory.items(), key=lambda x: x[1],
                                   reverse=True)
 
-        for ge_id, total in sorted_inventory:
+        for wid, total in sorted_inventory:
             if total > 0:
                 ge_name = get_ground_elem_type_name(ground_file_path,
-                                                    ge_id)
-                log.info("%s(%d): Total Count = %d",
-                         ge_name, ge_id, total)
+                                                    wid)
+                log.info("WID [%d] %s: Total Count = %d",
+                         wid, ge_name, total)
 
     except StopIteration:
         log.error("The _unit file appears to be empty.")

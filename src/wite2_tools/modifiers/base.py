@@ -29,7 +29,7 @@ from typing import Callable, Tuple, cast
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.generator import read_csv_dict_generator
-from wite2_tools.utils.logger import get_logger
+from wite2_tools.utils import get_logger
 
 log = get_logger(__name__)
 

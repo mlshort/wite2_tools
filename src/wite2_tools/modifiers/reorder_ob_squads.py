@@ -35,9 +35,11 @@ Example:
 
 # Internal package imports
 from wite2_tools.constants import MAX_SQUAD_SLOTS
-from wite2_tools.utils.logger import get_logger
-from wite2_tools.modifiers.base import process_csv_in_place
-from wite2_tools.utils.parsing import parse_int
+from wite2_tools.modifiers import process_csv_in_place
+from wite2_tools.utils import (
+    get_logger,
+    parse_int
+)
 
 # Initialize the log for this specific module
 log = get_logger(__name__)
@@ -133,7 +135,7 @@ def reorder_ob_squads(ob_file_path: str,
                             row = reorder_ob_elems(row, "sqd ",
                                                    "sqdNum ", i,
                                                    target_slot)
-                            log.debug("TOE(OB) ID %d: Moved squad from"
+                            log.debug("TOE(OB) ID[%d]: Moved squad from"
                                       " slot %d to %d", ob_id, i, target_slot)
                             return row, True  # Row was modified
                         break

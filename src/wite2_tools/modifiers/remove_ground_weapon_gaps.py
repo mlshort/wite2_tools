@@ -35,9 +35,9 @@ import os
 
 # Internal package imports
 from wite2_tools.constants import GROUND_WPN_PREFIXES, MAX_WPN_SLOTS
-from wite2_tools.modifiers.base import process_csv_in_place
-from wite2_tools.utils.logger import get_logger
-from wite2_tools.utils.parsing import parse_int
+from wite2_tools.modifiers import process_csv_in_place
+from wite2_tools.utils import get_logger
+from wite2_tools.utils import parse_int
 
 # Initialize the log for this specific module
 log = get_logger(__name__)
@@ -99,7 +99,7 @@ def remove_ground_weapon_gaps(ground_file_path: str) -> int:
         # 4. VERIFY: Compare original layout to new layout
         if original_wpn_ids != new_wpn_ids:
             was_modified = True
-            log.debug("Row %d (ID %s): Shifted weapons."
+            log.debug("Row %d ID[%s]: Shifted weapons."
                       " Old Layout: %s -> New Layout: %s",
                       row_idx, row.get("id", "0"), original_wpn_ids,
                       new_wpn_ids)

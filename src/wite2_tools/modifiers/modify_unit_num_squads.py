@@ -34,9 +34,9 @@ import os
 
 # Internal package imports
 from wite2_tools.constants import MAX_SQUAD_SLOTS
-from wite2_tools.modifiers.base import process_csv_in_place
-from wite2_tools.utils.logger import get_logger
-from wite2_tools.utils.parsing import parse_int
+from wite2_tools.modifiers import process_csv_in_place
+from wite2_tools.utils import get_logger
+from wite2_tools.utils import parse_int
 
 # Initialize the logger for this specific module
 log = get_logger(__name__)
@@ -97,11 +97,11 @@ def modify_unit_num_squads(unit_file_path: str,
                         # 5. UPDATE VALUE
                         row[sqd_num_col] = str(new_num_squads)
                         was_modified = True
-                        log.info("Unit ID %d: Updated WID %s from %d to %d",
+                        log.info("Unit ID[%d]: Updated WID %s from %d to %d",
                                  uid, sqd_num_col,
                                  old_num_squads, new_num_squads)
                     else:
-                        log.debug("Unit ID %d: WID match at %s, but %s was "
+                        log.debug("Unit ID[%d]: WID match at %s, but %s was "
                                   "%d (Expected '%d')",
                                   uid, sqd_id_col, sqd_num_col,
                                   num_squads, old_num_squads)

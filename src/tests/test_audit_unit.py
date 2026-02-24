@@ -73,9 +73,9 @@ def mock_files(tmp_path):
 # ==========================================
 
 
-# Base headers for OB
+# Base headers for TOE(OB)
 def write_ob_csv(ob_path, rows):
-    """Helper function to quickly write OB scenarios for tests."""
+    """Helper function to quickly write TOE(OB) scenarios for tests."""
     ob_headers = [
             "id", "type", "name", "firstYear", "firstMonth",
             "lastYear", "lastMonth", "upgrade"

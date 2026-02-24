@@ -43,9 +43,9 @@ from functools import cache
 # Internal package imports
 from wite2_tools.core.unit import Unit
 from wite2_tools.generator import read_csv_dict_generator
-from wite2_tools.utils.logger import get_logger
-from wite2_tools.utils.lookups import get_nat_abbr
-from wite2_tools.utils.parsing import (
+from wite2_tools.utils import (
+    get_logger,
+    get_nat_abbr,
     parse_int,
     parse_str
 )

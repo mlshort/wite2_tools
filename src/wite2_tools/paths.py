@@ -54,16 +54,22 @@ GAME_DATA_PATH = os.getenv(
 _GC41_OB_FILENAME = "1941 Campaign_ob.csv"
 _GC41_UNIT_FILENAME = "1941 Campaign_unit.csv"
 _GC41_GROUND_FILENAME = "1941 Campaign_ground.csv"
+_GC41_DEVICE_FILENAME = "1941 Campaign_device.csv"
+_GC41_AIRCRAFT_FILENAME = "1941 Campaign_aircraft.csv"
 
 _GENERIC_OB_FILENAME = "_ob.csv"
 _GENERIC_UNIT_FILENAME = "_unit.csv"
 _GENERIC_GROUND_FILENAME = "_ground.csv"
+_GENERIC_DEVICE_FILENAME = "_device.csv"
+_GENERIC_AIRCRAFT_FILENAME = "_aircraft.csv"
 
 # Names used for modded CSV files
 # Users are expected to replace these with their own custom scenario filenames
 _MOD_OB_FILENAME = "MyCustomMod_ob.csv"
 _MOD_UNIT_FILENAME = "MyCustomMod_unit.csv"
 _MOD_GROUND_FILENAME = "MyCustomMod_ground.csv"
+_MOD_DEVICE_FILENAME = "MyCustomMod_device.csv"
+_MOD_AIRCRAFT_FILENAME = "MyCustomMod_aircraft.csv"
 
 # ==========================================
 # 4. CONSTRUCTED FULL PATHS (Safe Joins)
@@ -71,28 +77,44 @@ _MOD_GROUND_FILENAME = "MyCustomMod_ground.csv"
 _GC41_OB_FULL_PATH = os.path.join(GAME_DATA_PATH, _GC41_OB_FILENAME)
 _GC41_UNIT_FULL_PATH = os.path.join(GAME_DATA_PATH, _GC41_UNIT_FILENAME)
 _GC41_GROUND_FULL_PATH = os.path.join(GAME_DATA_PATH, _GC41_GROUND_FILENAME)
+_GC41_DEVICE_FULL_PATH = os.path.join(GAME_DATA_PATH, _GC41_DEVICE_FILENAME)
+_GC41_AIRCRAFT_FULL_PATH = os.path.join(GAME_DATA_PATH, _GC41_AIRCRAFT_FILENAME)
 
 _OB_FULL_PATH = os.path.join(GAME_DATA_PATH, _MOD_OB_FILENAME)
 _UNIT_FULL_PATH = os.path.join(GAME_DATA_PATH, _MOD_UNIT_FILENAME)
 _GROUND_FULL_PATH = os.path.join(GAME_DATA_PATH, _MOD_GROUND_FILENAME)
+_DEVICE_FULL_PATH = os.path.join(GAME_DATA_PATH, _MOD_DEVICE_FILENAME)
+_DEVICE_AIRCRAFT_PATH = os.path.join(GAME_DATA_PATH, _MOD_AIRCRAFT_FILENAME)
 
 # LOCAL Paths are for testing
 _LOCAL_OB_FULL_PATH = os.path.join(LOCAL_DATA_PATH, _MOD_OB_FILENAME)
 _LOCAL_UNIT_FULL_PATH = os.path.join(LOCAL_DATA_PATH, _MOD_UNIT_FILENAME)
 _LOCAL_GROUND_FULL_PATH = os.path.join(LOCAL_DATA_PATH, _MOD_GROUND_FILENAME)
+_LOCAL_DEVICE_FULL_PATH = os.path.join(LOCAL_DATA_PATH, _MOD_DEVICE_FILENAME)
+_LOCAL_AIRCRAFT_FULL_PATH = os.path.join(LOCAL_DATA_PATH, _MOD_AIRCRAFT_FILENAME)
 
 _LOCAL_GEN_OB_FULL_PATH = os.path.join(LOCAL_DATA_PATH, _GENERIC_OB_FILENAME)
 _LOCAL_GEN_UNIT_FULL_PATH = os.path.join(LOCAL_DATA_PATH,
                                          _GENERIC_UNIT_FILENAME)
 _LOCAL_GEN_GROUND_FULL_PATH = os.path.join(LOCAL_DATA_PATH,
                                            _GENERIC_GROUND_FILENAME)
+_LOCAL_GEN_DEVICE_FULL_PATH = os.path.join(LOCAL_DATA_PATH,
+                                           _GENERIC_DEVICE_FILENAME)
+_LOCAL_GEN_AIRCRAFT_FULL_PATH = os.path.join(LOCAL_DATA_PATH,
+                                             _GENERIC_AIRCRAFT_FILENAME)
 
 _LOCAL_GC41_OB_FULL_PATH = os.path.join(LOCAL_DATA_PATH, _GC41_OB_FILENAME)
 _LOCAL_GC41_UNIT_FULL_PATH = os.path.join(LOCAL_DATA_PATH, _GC41_UNIT_FILENAME)
 _LOCAL_GC41_GROUND_FULL_PATH = os.path.join(LOCAL_DATA_PATH,
                                             _GC41_GROUND_FILENAME)
+_LOCAL_GC41_DEVICE_FULL_PATH = os.path.join(LOCAL_DATA_PATH,
+                                            _GC41_DEVICE_FILENAME)
+_LOCAL_GC41_AIRCRAFT_FULL_PATH = os.path.join(LOCAL_DATA_PATH,
+                                            _GC41_AIRCRAFT_FILENAME)
 
 # The configured filenames used throughout Wite2_tools
 CONF_OB_FULL_PATH = _LOCAL_OB_FULL_PATH
 CONF_UNIT_FULL_PATH = _LOCAL_UNIT_FULL_PATH
 CONF_GROUND_FULL_PATH = _LOCAL_GROUND_FULL_PATH
+CONF_DEVICE_FULL_PATH = _LOCAL_DEVICE_FULL_PATH
+CONF_AIRCRAFT_FULL_PATH = _LOCAL_AIRCRAFT_FULL_PATH
