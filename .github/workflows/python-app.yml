@@ -30,12 +30,6 @@ jobs:
         pip install pylint pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    - name: Lint with pylint
-      run: |
-        # Pylint automatically detects your checked-in .pylintrc in the root.
-        # It will enforce the 80-char limit and explicit exception standards.
-        pylint $(git ls-files './src/*.py') --exit-zero
-
     - name: Test with pytest
       run: |
         pytest -m "not integration"
