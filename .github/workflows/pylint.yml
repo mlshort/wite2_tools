@@ -27,6 +27,6 @@ jobs:
       run: |
         # Pylint automatically detects .pylintrc in the root directory.
         # This will enforce your 80-char limit and explicit exception rules.
-        pylint $(git ls-files 'src/*.py'
+        pylint $(git ls-files 'src/*.py')
 
   
