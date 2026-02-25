@@ -1,10 +1,10 @@
 import csv
+import pytest
 
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.auditing.audit_ob import audit_ob_csv
 from wite2_tools.constants import MAX_SQUAD_SLOTS
-import pytest
 
 
 # ==========================================

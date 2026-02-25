@@ -4,7 +4,7 @@ import pytest
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.constants import MAX_SQUAD_SLOTS
-from wite2_tools.core.find_orphaned_obs import find_orphaned_ob_ids
+from wite2_tools.core.find_orphaned_obs import find_orphaned_obs
 
 # ==========================================
 # FIXTURES (Setup)
@@ -77,7 +77,7 @@ def test_find_unreferenced_ob_ids_success(mock_ob_csv, mock_unit_csv):
     ignoring OBs that exist inside a valid upgrade chain.
     """
     # Execute with no nationality filter
-    orphans = find_orphaned_ob_ids(mock_ob_csv, mock_unit_csv)
+    orphans = find_orphaned_obs(mock_ob_csv, mock_unit_csv)
 
     # Assertions:
     # 10, 40: Referenced directly by units.
@@ -93,16 +93,16 @@ def test_find_unreferenced_ob_ids_with_nat_filter(mock_ob_csv, mock_unit_csv):
     to a specific faction.
     """
     # Execute: Filter ONLY for Nationality 1 (Germany)
-    orphans_ger = find_orphaned_ob_ids(mock_ob_csv, mock_unit_csv,
-                                       nat_codes={1})
+    orphans_ger = find_orphaned_obs(mock_ob_csv, mock_unit_csv,
+                                    nat_codes={1})
 
     # TOE(OB) 70 is Nat 3, so it shouldn't even be evaluated. Only TOE(OB) 30
     # should remain.
     assert orphans_ger == {30}
 
     # Execute: Filter ONLY for Nationality 3 (Italy)
-    orphans_ita = find_orphaned_ob_ids(mock_ob_csv, mock_unit_csv,
-                                       nat_codes={3})
+    orphans_ita = find_orphaned_obs(mock_ob_csv, mock_unit_csv,
+                                    nat_codes={3})
 
     # TOE(OB) 70 is never referenced by any Nat 3 units, so it is an orphan.
     assert orphans_ita == {70}
@@ -112,7 +112,7 @@ def test_find_unreferenced_ob_ids_missing_files():
     """
     Verifies graceful failure if the provided file paths are invalid.
     """
-    orphans = find_orphaned_ob_ids("does_not_exist.csv",
+    orphans = find_orphaned_obs("does_not_exist.csv",
                                    "also_missing.csv")
 
     # Should safely return an empty set without crashing

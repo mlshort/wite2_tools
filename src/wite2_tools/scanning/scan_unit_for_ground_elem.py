@@ -42,6 +42,7 @@ from wite2_tools.utils import (
     get_logger,
     get_unit_type_name,
     get_ground_elem_type_name,
+    format_ref,
     parse_int,
     parse_str
 )
@@ -82,7 +83,7 @@ def _check_squad_match(
                         if squad_quantity == num_squads_filter:
                             print(f"{uid:>6} | {uname:<15.15s} | "
                                   f"{unit_type_name:<25.25s} | "
-                                  f"{sqd_id_col:<6} | "
+                                  f"{sqd_id_col:<7} | "
                                   f"'{sqd_num_col}': {squad_quantity}")
                             matches_found += 1
                     except ValueError:
@@ -90,7 +91,7 @@ def _check_squad_match(
                 else:
                     # Print all matches regardless of quantity
                     print(f"{uid:>6} | {uname:<15.15s} | "
-                          f"{unit_type_name:<25.25s} | {sqd_id_col:<6} | "
+                          f"{unit_type_name:<25.25s} | {sqd_id_col:<7} | "
                           f"'{sqd_num_col}': {squad_quantity}")
                     matches_found += 1
 
@@ -124,13 +125,14 @@ def scan_unit_for_ground_elem(
         ground_elem_name = get_ground_elem_type_name(ground_file_path,
                                                      target_wid)
 
+        ref = format_ref("WID", target_wid, ground_elem_name)
         print(f"\nScanning '{os.path.basename(unit_file_path)}' for "
-              f"'{ground_elem_name}' (WID '{target_wid}') where "
+              f"{ref} where "
               f"quantity == '{scan_str}'")
 
         # Print Header for the Console Output
         print(f"\n{'ID':^6} | {'Name':<15} | {'Type':<25} | "
-              f"{'Squad':<6} | {'Value':<10}")
+              f"{'Squad':<7} | {'Value':<10}")
         print("-" * 80)
 
         # Iterate through every row

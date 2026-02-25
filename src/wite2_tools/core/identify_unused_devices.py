@@ -1,5 +1,5 @@
 import os
-from typing import cast, Optional, Union, Iterable
+from typing import cast
 
 from wite2_tools.generator import read_csv_dict_generator
 from wite2_tools.utils import (

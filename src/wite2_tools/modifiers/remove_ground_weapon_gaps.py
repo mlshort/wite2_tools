@@ -35,9 +35,9 @@ import os
 
 # Internal package imports
 from wite2_tools.constants import GROUND_WPN_PREFIXES, MAX_WPN_SLOTS
-from wite2_tools.modifiers import process_csv_in_place
 from wite2_tools.utils import get_logger
 from wite2_tools.utils import parse_int
+from wite2_tools.modifiers.base import process_csv_in_place
 
 # Initialize the log for this specific module
 log = get_logger(__name__)

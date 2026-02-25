@@ -27,6 +27,7 @@ Functions
 """
 
 import os
+from typing import Dict
 from functools import cache
 from dataclasses import dataclass
 
@@ -36,11 +37,9 @@ from wite2_tools.generator import (
     read_csv_dict_generator,
     read_csv_list_generator,
 )
-from wite2_tools.utils import get_logger
-from wite2_tools.utils import (
-    parse_int,
-    parse_str
-)
+from wite2_tools.utils.logger import get_logger
+from wite2_tools.utils.parsing import parse_int, parse_str
+
 
 # Initialize the log for this specific module
 logger = get_logger(__name__)
@@ -61,13 +60,13 @@ class OBName:
 
 
 @cache
-def _build_ob_lookup(ob_file_path: str) -> dict[int, OBName]:
+def _build_ob_lookup(ob_file_path: str) -> Dict[int, OBName]:
     """
     Private Helper: Scans the _ob CSV, builds the TOE(ID)-to-Name dictionary,
     and caches it.
     The @cache decorator ensures this only runs once per unique file path.
     """
-    lookup: dict[int, OBName] = {}
+    lookup: Dict[int, OBName] = {}
 
     if not os.path.exists(ob_file_path):
         logger.error("TOE(OB) file not found: %s", ob_file_path)
@@ -107,8 +106,8 @@ def get_ob_full_name(ob_file_path: str, ob_id_to_find: int) -> str:
 
     if result is not None:
         return result.full_name
-    else:
-        return f"Unk ({ob_id_to_find})"
+
+    return f"Unk ({ob_id_to_find})"
 
 
 def get_ob_suffix(ob_file_path: str, ob_id_to_find: int) -> str:
@@ -123,8 +122,8 @@ def get_ob_suffix(ob_file_path: str, ob_id_to_find: int) -> str:
 
     if result is not None:
         return result.suffix
-    else:
-        return f"Unk ({ob_id_to_find})"
+
+    return f"Unk ({ob_id_to_find})"
 
 
 def get_unit_type_name(ob_file_path: str, unit_id_to_find: int) -> str:
@@ -143,30 +142,36 @@ def get_unit_type_name(ob_file_path: str, unit_id_to_find: int) -> str:
 
 
 @cache
-def _build_ground_elem_lookup(ground_file_path: str) -> dict[int, str]:
+def _build_ground_elem_lookup(ground_file_path: str) -> Dict[int, str]:
     """
-    Private Helper: Scans the _ground CSV, builds the ID-to-Name dictionary,
-    and caches it.
-    The @cache decorator ensures this only runs once per unique file path.
+    Private Helper: Scans the _ground CSV using list-based indexing.
+    Cached to ensure O(1) lookups after the first I/O pass.
     """
-    lookup: dict[int, str] = {}
+    lookup: Dict[int, str] = {}
 
     if not os.path.exists(ground_file_path):
         logger.error("Ground file not found: %s", ground_file_path)
         return lookup
 
     try:
+        # Use list generator to handle duplicate 'id' column names safely
         ground_gen = read_csv_list_generator(ground_file_path)
-        next(ground_gen)  # Skip Header
+
+        # Safely skip header; next(gen, None) prevents StopIteration on empty files
+        header = next(ground_gen, None)
+        if header is None:
+            return lookup
 
         for _, row in ground_gen:
             try:
+                # Ensure GroundColumn values are integers for list indexing
                 g_id = parse_int(row[GroundColumn.ID], 0)
                 if g_id != 0:
-                    # 'name' column
+                    # Capture the name based on the specific column index
                     g_name = parse_str(row[GroundColumn.NAME], "")
                     lookup[g_id] = g_name
             except (ValueError, IndexError):
+                # ValueError: parse_int failed; IndexError: row is too short
                 continue
 
     except (OSError, IOError) as e:
@@ -176,12 +181,12 @@ def _build_ground_elem_lookup(ground_file_path: str) -> dict[int, str]:
 
 
 def get_ground_elem_type_name(ground_file_path: str,
-                              ground_id_to_find: int) -> str:
+                              wid_to_find: int) -> str:
     """
-    Public API: Resolves a Ground Element WID to its name.
+    Public API: Resolves a Ground Element WID to its name via O(1) lookup.
     """
     # 1. Retrieve the cached dictionary
     cached_dict = _build_ground_elem_lookup(ground_file_path)
 
     # 2. Perform instant O(1) lookup
-    return cached_dict.get(ground_id_to_find, f"Unk ({ground_id_to_find})")
+    return cached_dict.get(wid_to_find, f"Unk ({wid_to_find})")

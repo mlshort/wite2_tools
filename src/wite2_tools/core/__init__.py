@@ -10,7 +10,7 @@ __date__ = "2026-02-22"
 
 from .generate_ob_chains import generate_ob_chains
 from .find_orphaned_obs import (
-    find_orphaned_ob_ids,
+    find_orphaned_obs,
     is_ob_orphaned
 )
 from .count_global_unit_inventory import count_global_unit_inventory
@@ -20,7 +20,7 @@ from .group_units_by_ob import group_units_by_ob, Unit
 # Accessible via "from wite2_tools.core import *"
 __all__ = [
     "generate_ob_chains",
-    "find_orphaned_ob_ids",
+    "find_orphaned_obs",
     "is_ob_orphaned",
     "count_global_unit_inventory",
     "group_units_by_ob",

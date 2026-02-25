@@ -1,12 +1,11 @@
 import csv
 from unittest.mock import patch
+import pytest
 
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.auditing.audit_unit import audit_unit_csv
 from wite2_tools.constants import MAX_SQUAD_SLOTS
-import pytest
-
 
 # ==========================================
 # FIXTURES (Setup)

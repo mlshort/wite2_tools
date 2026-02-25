@@ -53,7 +53,7 @@ from wite2_tools.core import (
     group_units_by_ob,
     count_global_unit_inventory,
     identify_unused_devices,
-    find_orphaned_ob_ids,
+    find_orphaned_obs,
     generate_ob_chains
 )
 
@@ -384,7 +384,8 @@ def main():
             )
 
         elif args.command == "audit-ob":
-            audit_ob_csv(paths["ob"], paths["ground"])
+            audit_ob_csv(paths["ob"],
+                         paths["ground"])
 
         elif args.command == "audit-batch":
             scan_and_evaluate_unit_files(
@@ -397,8 +398,8 @@ def main():
         elif args.command == "scan-unit":
             scan_unit_for_ground_elem(
                 paths["unit"],
-                paths["ob"],
                 paths["ground"],
+                paths["ob"],
                 args.target_wid, args.num_squads
             )
         elif args.command == "scan-unused":
@@ -455,7 +456,7 @@ def main():
             )
 
         elif args.command == "gen-orphans":
-            find_orphaned_ob_ids(paths["ob"], paths["unit"], args.nat_codes)
+            find_orphaned_obs(paths["ob"], paths["unit"], args.nat_codes)
 
         elif args.command == "gen-groups":
             group_units_by_ob(paths["unit"], args.active_only, args.nat_codes)

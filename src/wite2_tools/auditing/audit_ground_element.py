@@ -133,7 +133,7 @@ def audit_ground_element_csv(ground_file_path: str) -> int:
     try:
         file_name = os.path.basename(ground_file_path)
         log.info("--- Starting Ground Element Audit: '%s' ---", file_name)
-
+        # Use list generator to handle duplicate 'id' column names safely
         ground_gen = read_csv_list_generator(ground_file_path)
         next(ground_gen)  # Skip Header
 

@@ -43,8 +43,8 @@ from wite2_tools.generator import (
     read_csv_list_generator,
     read_csv_dict_generator
 )
-from wite2_tools.utils import get_logger
-from wite2_tools.utils import parse_int
+from wite2_tools.utils.logger import get_logger
+from wite2_tools.utils.parsing import parse_int
 
 # Initialize the log for this specific module
 logger = get_logger(__name__)
@@ -133,6 +133,7 @@ def get_valid_ground_elem_ids(ground_file_path: str) -> Set[int]:
                 file_name)
 
     try:
+        # Use list generator to handle duplicate 'id' column names safely
         ground_gen = read_csv_list_generator(ground_file_path)
         # Skip header
         next(ground_gen)
@@ -140,12 +141,12 @@ def get_valid_ground_elem_ids(ground_file_path: str) -> Set[int]:
         for _, row in ground_gen:
             try:
                 # Access by index to avoid duplicate header issues
-                ground_elem_id = parse_int(row[GroundColumn.ID], 0)
-                if ground_elem_id == 0:
+                wid = parse_int(row[GroundColumn.ID], 0)
+                if wid == 0:
                     continue
                 ground_type = parse_int(row[GroundColumn.TYPE], 0)
                 if ground_type != 0:
-                    valid_elem_ids.add(ground_elem_id)
+                    valid_elem_ids.add(wid)
             except (ValueError, IndexError):
                 # Skip malformed rows or empty lines
                 continue
