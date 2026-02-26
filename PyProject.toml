@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wite2_tools"
-version = "0.3.1"
+version = "0.4.0"
 description = "A specialized toolkit for analyzing and modifying War in the East 2 data files."
 readme = "ReadMe.md"
 requires-python = ">=3.9"

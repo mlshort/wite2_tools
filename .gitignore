@@ -50,3 +50,4 @@ bundle_project.py
 project_dump.*
 src/sync_data_files.bat
 src/audit_toe.txt
+diff.txt

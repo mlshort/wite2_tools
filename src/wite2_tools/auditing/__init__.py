@@ -6,8 +6,8 @@ errors, duplicate IDs, and logical inconsistencies within and between
 the _ob, _unit, and _ground CSV files.
 """
 
-__version__ = "0.3.1"
-__date__ = "2026-02-22"
+__version__ = "0.4.0"
+__date__ = "2026-02-26"
 
 from .audit_unit import audit_unit_csv
 from .audit_ob import audit_ob_csv
