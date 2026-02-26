@@ -43,7 +43,8 @@ from wite2_tools.utils import (
 log = get_logger(__name__)
 
 
-def scan_ob_for_ground_elem(ob_file_path: str, target_wid: int) -> int:
+def scan_ob_for_ground_elem(ob_file_path: str,
+                            target_wid: int) -> int:
     """
     1. Scans 'sqd' columns for ground_elem_id (WID).
     2. If found, finds the corresponding 'sqdNum' column.

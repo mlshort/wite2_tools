@@ -79,9 +79,9 @@ def _check_ground_stats(g_id: int,
     ref = format_ref("WID", g_id, g_name)
 
     try:
-        ground_type = parse_int(row[GroundColumn.TYPE], 0)
-        ground_size = parse_int(row[GroundColumn.SIZE], 0)
-        ground_men = parse_int(row[GroundColumn.MEN], 0)
+        ground_type = parse_int(row[GroundColumn.TYPE])
+        ground_size = parse_int(row[GroundColumn.SIZE])
+        ground_men = parse_int(row[GroundColumn.MEN])
 
         elem = GroundElementType(ground_type)
         if elem.is_combat_element:
@@ -148,7 +148,7 @@ def audit_ground_element_csv(ground_file_path: str) -> int:
                 continue
 
             try:
-                g_id = parse_int(row[idx_id], 0)
+                g_id = parse_int(row[idx_id])
                 g_name = parse_str(row[idx_name], "Unk")
                 ref = format_ref("WID", g_id, g_name)
 

@@ -21,20 +21,21 @@ Core Features:
 """
 import logging
 import os
+import sys
+import io
 from datetime import datetime
 
 # Internal package imports
-from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.paths import LOCAL_LOG_PATH
+
 
 # 1. Generate the timestamp (e.g., 20260217_1330)
 timestamp = datetime.now().strftime("%Y%m%d_%H%M")
 LOG_FILENAME = f"wite2_{timestamp}.log"
 
-# 2. Define the exact path using os.path.join and your dynamic directory
+# 2. Define the exact path
 LOG_PATH = os.path.join(LOCAL_LOG_PATH, LOG_FILENAME)
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
-
 CLEAN_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
 # Modified format to include clickable source code references
 DETAILED_FORMAT = '%(asctime)s - %(levelname)s - File "%(pathname)s", ' \
@@ -44,52 +45,50 @@ JSON_FORMAT = '{"timestamp": "%(asctime)s", "level": "%(levelname)s", "msg": \
 CSV_FORMAT = "%(asctime)s,%(levelname)s,%(message)s"
 MIN_FORMAT = "%(message)s"
 
+# --- NEW: Global UTF-8 Stream Wrapper ---
+# This ensures that both basicConfig and get_logger use a UTF-8 capable stream
+UTF8_CONSOLE = sys.stdout
+if hasattr(sys.stdout, 'buffer'):
+    UTF8_CONSOLE = io.TextIOWrapper(sys.stdout.buffer,
+                                    encoding='utf-8',
+                                    errors='replace')
+
 # 3. Configure logging immediately on import
 logging.basicConfig(
     level=logging.INFO,
     format=CLEAN_FORMAT,
     handlers=[
-        logging.FileHandler(LOG_PATH, encoding=ENCODING_TYPE),
-        logging.StreamHandler()  # Keep printing to console for real-time
-                                 # feedback
+        logging.FileHandler(LOG_PATH, encoding='utf-8'),
+        # Use the wrapped stream here to prevent UnicodeEncodeError
+        logging.StreamHandler(UTF8_CONSOLE)
     ]
 )
-
 
 def get_logger(name):
     """
     Creates or retrieves a logger instance.
     """
     logger = logging.getLogger(name)
-
-    # 1. Prevent double logging by disabling propagation to the root logger
     logger.propagate = False
 
-    # 2. Prevent double-logging by checking if handlers already exist
     if not logger.handlers:
         logger.setLevel(logging.INFO)
         formatter = logging.Formatter(CLEAN_FORMAT)
 
         # File Handler
-        file_handler = logging.FileHandler(LOG_PATH, encoding=ENCODING_TYPE)
+        file_handler = logging.FileHandler(LOG_PATH, encoding='utf-8')
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
 
-        # Console Handler (Keeps terminal output formatted properly)
-        console_handler = logging.StreamHandler()
+        # Console Handler using the global UTF8_CONSOLE stream
+        console_handler = logging.StreamHandler(UTF8_CONSOLE)
         console_handler.setFormatter(formatter)
         logger.addHandler(console_handler)
 
     return logger
 
-
 def set_formatter(msg_format: str):
-
     new_formatter = logging.Formatter(msg_format, datefmt=DATE_FORMAT)
-
-    # 1. Access the root logger (or your specific tool logger)
     root_logger = logging.getLogger()
-
-    # 2. Update all existing handlers at runtime
     for handler in root_logger.handlers:
         handler.setFormatter(new_formatter)

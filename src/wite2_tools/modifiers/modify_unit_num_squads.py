@@ -76,9 +76,9 @@ def modify_unit_num_squads(unit_file_path: str,
     # Define the specific logic for processing a Unit row
     def process_row(row: dict, _: int) -> tuple[dict, bool]:
         was_modified = False
-        uid: int = parse_int(row.get('id'), 0)
+        uid: int = parse_int(row.get("id"))
         # _unit.'type' maps to _ob.id
-        utype: int = parse_int(row.get('type'), 0)
+        utype: int = parse_int(row.get("type"))
 
         # 1. Check ob_id
         if utype == target_ob_id:

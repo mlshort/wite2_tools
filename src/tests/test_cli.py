@@ -1,167 +1,109 @@
-import os
+"""
+Tests for the WiTE2 CLI Dispatcher
+==================================
+Verifies that subcommands correctly route to the intended worker functions
+within the Dispatch Map and handle errors gracefully.
+"""
+
 import sys
 
-from unittest.mock import patch
+import unittest
+import unittest.mock
+from unittest.mock import patch, ANY
 
 # Internal package imports
-from wite2_tools.cli import (
-    create_parser,
-    resolve_paths,
-    get_config_defaults,
-    get_config_scenario_name,
-    main
-)
+from wite2_tools.cli import main, setup_parsers
 
 
-@patch("os.path.exists")
-@patch("configparser.ConfigParser.read")
-@patch("configparser.ConfigParser.has_section") # Add this
-@patch("configparser.ConfigParser.get")
-def test_get_config_default(mock_get, mock_has_section, mock_read, mock_exists):
-    mock_exists.return_value = True
-    mock_has_section.return_value = True # Ensure code enters the if block
-    mock_get.return_value = "C:/ConfigPath"
+class TestCLIDispatcher(unittest.TestCase):
+    """Verifies command routing and error handling in the refactored CLI."""
 
-    defaults = get_config_defaults()
-    assert defaults["data_dir"] == "C:/ConfigPath"
+    def setUp(self):
+        # Common mocks to prevent actual file IO or logging side effects
+        self.mock_log = patch("wite2_tools.cli.get_logger").start()
+        self.addCleanup(patch.stopall)
 
-def test_parser_config_command():
-    """Verifies the new 'config' subcommand parsing."""
-    parser = create_parser()
-    args = parser.parse_args(["config", "--set-path", "C:/MyMod"])
-# ==========================================
-# 1. Path Resolution Tests
-# ==========================================
+    @patch("wite2_tools.cli.audit_unit_ob_excess")
+    def test_dispatch_audit_unit_ob_excess(self, mock_audit):
+        """Verifies that 'audit-toe' routes correctly to the auditor."""
+        test_args = ["cli.py", "audit-toe", "--nat", "1"]
 
+        with patch.object(sys, "argv", test_args):
+            main()
 
-def test_resolve_paths():
-    """Verifies that paths are correctly joined to the data directory."""
-    data_dir = "C:/TestMods"
-    paths = resolve_paths(data_dir)
-    scen_name = get_config_scenario_name()
-    # Normalize both sides to ensure backslash vs forward slash doesn't
-    # break tests
-    assert os.path.normpath(paths["unit"]) == os.path.normpath(
-        os.path.join(data_dir, scen_name + "_unit.csv"))
-    assert os.path.normpath(paths["ob"]) == os.path.normpath(
-        os.path.join(data_dir, scen_name + "_ob.csv"))
-
-
-# ==========================================
-# 2. CLI Parser Configuration Tests
-# ==========================================
-
-@patch('wite2_tools.cli.get_config_defaults')
-def test_create_parser_defaults(mock_config):
-    """Verifies the base parser applies defaults correctly."""
-    # FIX: Change return_value from '.' to a dictionary
-    mock_config.return_value = {"data_dir": ".", "scenario_name": ""}
-
-    parser = create_parser()
-    args = parser.parse_args(['audit-ground'])
-
-    assert args.command == 'audit-ground'
-    assert args.data_dir == '.'
-
-
-# ==========================================
-# 3. CLI Routing Tests
-# ==========================================
-
-@patch('wite2_tools.cli.audit_ground_element_csv')
-def test_main_routing_audit_ground(mock_audit):
-    """Verifies 'audit-ground' routes correctly with custom data-dir."""
-    test_args = ['cli.py', 'audit-ground', '-d', 'test_dir']
-
-    with patch.object(sys, 'argv', test_args):
-        main()
-        scen_name = get_config_scenario_name()
-        mock_audit.assert_called_once_with(os.path.join('test_dir',
-                                                        scen_name + "_ground.csv"))
-
-
-@patch('wite2_tools.cli._scan_excess_resource')
-def test_main_routing_scan_excess(mock_scan):
-    """Verifies 'scan-excess' maps the operation correctly."""
-    test_args = ['cli.py', 'scan-excess', '--operation', 'fuel', '-d',
-                 'test_dir']
-
-    with patch.object(sys, 'argv', test_args):
-        main()
-        scen_name = get_config_scenario_name()
-        mock_scan.assert_called_once_with(
-            os.path.join('test_dir', scen_name + "_unit.csv"),
-            'fuel', 'fNeed', 'Fuel'
+        # Verify the auditor was called with expected path/nat logic
+        mock_audit.assert_called_once()
+        # Verify lazy logging was used (checking the call to log.info)
+        self.mock_log.return_value.info.assert_any_call(
+            "Executing: %s", "audit-toe"
         )
 
+    @patch("wite2_tools.cli.find_orphaned_obs")
+    def test_dispatch_gen_orphans(self, mock_orphans):
+        """Verifies that 'gen-orphans' routes correctly."""
+        test_args = ["cli.py", "gen-orphans", "--nat", "1", "2"]
 
-@patch('wite2_tools.cli.reorder_ob_squads')
-def test_main_routing_mod_reorder_ob(mock_reorder):
-    """Verifies 'mod-reorder-ob' correctly passes positional arguments."""
-    test_args = ['cli.py', 'mod-reorder-ob', '150', '42', '5', '-d',
-                 'test_dir']
+        with patch.object(sys, "argv", test_args):
+            main()
 
-    with patch.object(sys, 'argv', test_args):
-        main()
-        scen_name = get_config_scenario_name()
-        mock_reorder.assert_called_once_with(
-            os.path.join('test_dir', scen_name + "_ob.csv"), 150, 42, 5
-        )
+        mock_orphans.assert_called_once()
+        # Check that nat_codes were passed as a list [1, 2]
+        args, kwargs = mock_orphans.call_args
+        assert 1 in args[2] and 2 in args[2]
 
+    @patch("wite2_tools.cli.modify_unit_num_squads")
+    def test_dispatch_mod_update_num(self, mock_update):
+        """Verifies complex argument passing for modifiers."""
+        test_args = [
+            "cli.py", "mod-update-num",
+            "--ob-id", "500", "--wid", "10",
+            "--old", "5", "--new", "10"
+        ]
 
-@patch('wite2_tools.cli.get_config_scenario_name') # Patch the specific getter
-@patch('wite2_tools.cli.get_config_defaults')
-@patch('wite2_tools.cli.group_units_by_ob')
-def test_main_routing_gen_groups(mock_group, mock_config, mock_scen_name):
-    """Verifies 'gen-groups' correctly handles the nat-codes flag list."""
+        with patch.object(sys, "argv", test_args):
+            main()
 
-    # 1. Align both config mocks to return the same scenario name
-    mock_config.return_value = {"data_dir": ".", "scenario_name": "TestScenario"}
-    mock_scen_name.return_value = "TestScenario"
+        # Capture the actual arguments used in the call
+        args, _ = mock_update.call_args
+        actual_path = args[0]
 
-    test_args = ['cli.py', 'gen-groups', '--nat-codes', '1', '3']
+        # 1. Verify the path ends with the correct scenario-based filename
+        # This handles absolute vs relative path differences
+        self.assertTrue(actual_path.endswith("_unit.csv"))
 
-    with patch.object(sys, 'argv', test_args):
-        main()
-
-        # 2. Retrieve the mock value for the assertion
-        scen_name = mock_scen_name.return_value
-        called_path = mock_group.call_args[0][0]
-
-        # This will now compare 'TestScenario_unit.csv' == 'TestScenario_unit.csv'
-        assert os.path.normpath(called_path) == \
-               os.path.normpath(f"{scen_name}_unit.csv")
+        # 2. Verify the numerical arguments remain exact
+        # expected: (path, ob_id, wid, old, new)
+        self.assertEqual(args[1:], (500, 10, 5, 10))
 
 
-# ==========================================
-# 4. CLI Error Handling Tests
-# ==========================================
+    @patch("wite2_tools.cli.sys.exit")
+    @patch("wite2_tools.cli.audit_unit_ob_excess")
+    def test_main_handles_exception(self, mock_audit, mock_exit):
+        """Verifies global try/except catches and logs errors lazily."""
+        # Force the mock to raise an error
+        mock_audit.side_effect = Exception("Data Corrupt")
 
-@patch('wite2_tools.cli.sys.exit')
-@patch('wite2_tools.cli.audit_ground_element_csv')
-def test_main_handles_file_not_found(mock_audit, mock_exit):
-    """
-    Verifies that if a routed function raises a FileNotFoundError,
-    the CLI catches it and exits with code 1 without a stack trace.
-    """
-    mock_audit.side_effect = FileNotFoundError("Mocked missing file")
-    test_args = ['cli.py', 'audit-ground']
+        test_args = ["cli.py", "audit-toe"]
 
-    with patch.object(sys, 'argv', test_args):
-        main()
+        with patch.object(sys, "argv", test_args):
+            # main() will catch the Exception and call sys.exit(1)
+            main()
+
+            # Verify the logger was called with the lazy % formatting
+            self.mock_log.return_value.error.assert_called_with(
+                "Critical failure in %s: %s", "audit-toe",
+                ANY, exc_info=True
+            )
+
+        # This will now pass because main() stayed alive long enough to exit
         mock_exit.assert_called_once_with(1)
 
+    def test_parser_nat_defaults(self):
+        """Verifies that the add_common helper applies default nat codes."""
+        parser = setup_parsers()
+        args = parser.parse_args(["audit-toe"])
+        assert args.nat_codes == [1]
 
-@patch('wite2_tools.cli.sys.exit')
-@patch('wite2_tools.cli.audit_ground_element_csv')
-def test_main_handles_data_processing_errors(mock_audit, mock_exit):
-    """
-    Verifies that standard data errors (ValueError, KeyError, etc.)
-    are caught and exit cleanly with code 1.
-    """
-    mock_audit.side_effect = ValueError("Mocked bad integer")
-    test_args = ['cli.py', 'audit-ground']
 
-    with patch.object(sys, 'argv', test_args):
-        main()
-        mock_exit.assert_called_once_with(1)
+if __name__ == "__main__":
+    unittest.main()

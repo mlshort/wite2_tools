@@ -59,7 +59,7 @@ def identify_unused_devices(ground_file_path: str,
         for item in device_gen:
             # Cast the yielded item to satisfy static type checkers
             _, row = cast(tuple[int, dict], item)
-            d_type = parse_int(row.get('type'), 0)
+            d_type = parse_int(row.get("type"))
             if d_type == device_type:
                 d_name = parse_str(row.get('name', "Unk"))
                 d_id = parse_int(row.get('id', 0))

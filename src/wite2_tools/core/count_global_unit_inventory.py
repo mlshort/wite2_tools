@@ -42,6 +42,7 @@ from wite2_tools.generator import read_csv_dict_generator
 from wite2_tools.utils import get_logger
 from wite2_tools.utils import get_ground_elem_type_name
 from wite2_tools.utils import parse_int
+from wite2_tools.utils import format_ref
 
 # Initialize the logger for this specific module
 log = get_logger(__name__)
@@ -90,9 +91,9 @@ def count_global_unit_inventory(
         for item in unit_gen:
             # Cast the yielded item to satisfy static type checkers
             _, row = cast(tuple[int, dict], item)
-            uid = parse_int(row.get('id'), 0)
-            utype = parse_int(row.get('type'), 0)
-            u_nat = parse_int(row.get('nat'), 0)
+            uid = parse_int(row.get("id"))
+            utype = parse_int(row.get("type"))
+            u_nat = parse_int(row.get("nat"))
 
             if nat_filter is not None and u_nat not in nat_filter:
                 continue
@@ -131,8 +132,10 @@ def count_global_unit_inventory(
             if total > 0:
                 ge_name = get_ground_elem_type_name(ground_file_path,
                                                     wid)
-                log.info("WID [%d] %s: Total Count = %d",
-                         wid, ge_name, total)
+
+                ref = format_ref("WID", wid, ge_name)
+                log.info("%s: Total Count = %d",
+                         ref, total)
 
     except StopIteration:
         log.error("The _unit file appears to be empty.")

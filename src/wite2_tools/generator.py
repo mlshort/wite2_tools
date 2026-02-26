@@ -25,16 +25,38 @@ Functions
     (for metadata access), followed by enumerated tuples of (index, row_dict).
 """
 import csv
-from typing import Generator, Union
+from typing import Generator, Union, List, Dict
+from collections.abc import Iterator
+from dataclasses import dataclass
 
 # Internal package imports
 from .config import ENCODING_TYPE
 
+@dataclass
+class CSVStream:
+    fieldnames: list[str]
+    rows: Iterator[tuple[int, dict[str, str]]]
+
+def get_csv_dict_stream(filename: str,
+                        enum_start: int = 1) -> CSVStream:
+
+    file = open(filename, mode='r', newline='', encoding=ENCODING_TYPE)
+    reader = csv.DictReader(file)
+    fieldnames = reader.fieldnames or []
+
+    def row_gen() -> Iterator[tuple[int, dict[str, str]]]:
+        try:
+            for index, row in enumerate(reader, start=enum_start):
+                yield index, row
+        finally:
+            file.close()
+
+    return CSVStream(fieldnames=list(fieldnames), rows=row_gen())
 
 def read_csv_list_generator(
     filename: str,
     enum_start: int = 1
-) -> Generator[Union[list[str], tuple[int, list[str]]], None, None]:
+) -> Generator[Union[List[str], tuple[int, List[str]]], None, None]:
     """
     Yields the header list first, then index and row lists.
     """
@@ -43,7 +65,7 @@ def read_csv_list_generator(
 
         # Manually extract the first row as the header
         try:
-            header: list[str] = next(reader)
+            header: List[str] = next(reader)
         except StopIteration:
             return  # Handle empty file
 
@@ -59,7 +81,7 @@ def read_csv_list_generator(
 def read_csv_dict_generator(
     filename: str,
     enum_start: int = 1
-) -> Generator[Union[csv.DictReader, tuple[int, dict[str, str]]], None, None]:
+) -> Generator[Union[csv.DictReader, tuple[int, Dict[str, str]]], None, None]:
     """
     Yields the DictReader object first, then index, row dictionaries.
     """

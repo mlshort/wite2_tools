@@ -46,8 +46,10 @@ from wite2_tools.utils import (
 log = get_logger(__name__)
 
 
-def _scan_excess_resource(unit_file_path: str, resource_col: str,
-                          need_col: str, display_name: str) -> int:
+def _scan_excess_resource(unit_file_path: str,
+                          resource_col: str,
+                          need_col: str,
+                          display_name: str) -> int:
     """
     Generic helper to scan for excess logistical stores.
     Logic: If resource > (EXCESS_RESOURCE_MULTIPLIER * need),
@@ -77,7 +79,7 @@ def _scan_excess_resource(unit_file_path: str, resource_col: str,
             # 1. Convert to numbers (int) for math comparison
             resource = parse_int(row.get(resource_col), 0)
             resource_need = parse_int(row.get(need_col), 0)
-            utype = parse_int(row.get('type'), 0)
+            utype = parse_int(row.get("type"))
 
             if utype == 0:
                 continue
@@ -86,9 +88,9 @@ def _scan_excess_resource(unit_file_path: str, resource_col: str,
             if resource > (EXCESS_RESOURCE_MULTIPLIER * resource_need):
 
                 # 3. Extract ID, Name, and NAT
-                uid = parse_int(row.get('id'), 0)
+                uid = parse_int(row.get("id"))
                 uname = parse_str(row.get('name'), 'Unk')
-                u_nat = parse_int(row.get('nat'), 0)
+                u_nat = parse_int(row.get("nat"))
                 u_nat_abbr = get_nat_abbr(u_nat)
 
                 try:

@@ -1,1 +1,2 @@
 ENCODING_TYPE = "ISO-8859-1"
+CONFIG_FILE_NAME = "settings.ini"

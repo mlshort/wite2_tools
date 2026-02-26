@@ -37,7 +37,7 @@ Example:
 
 import os
 from collections import defaultdict
-from typing import cast, Optional, Union, Iterable
+from typing import cast, Optional, Union, Iterable, Dict, List
 from functools import cache
 
 # Internal package imports
@@ -59,7 +59,7 @@ def group_units_by_ob(
     unit_file_path: str,
     active_only: bool = True,
     nat_codes: Optional[Union[int, str, Iterable[Union[int, str]]]] = None
-) -> dict[int, list[Unit]]:
+) -> Dict[int, list[Unit]]:
     """
     Groups units by TOE(OB) ID with optional nationality filtering.
 
@@ -76,7 +76,7 @@ def group_units_by_ob(
         dict[int, list[Unit]]: A dictionary mapping the TOE(OB) ID to a list of
                 matching Unit objects.
     """
-    ob_ids_to_units = defaultdict(list)
+    ob_ids_to_units: Dict[int, List[Unit]] = defaultdict(list)
 
     # Standardize nation_id to a set for efficient lookup
     if nat_codes is not None:
@@ -98,8 +98,8 @@ def group_units_by_ob(
         for item in unit_gen:
             _, row = cast(tuple[int, dict], item)
 
-            utype = parse_int(row.get('type'), 0)
-            u_nat = parse_int(row.get('nat'), 0)
+            utype = parse_int(row.get("type"))
+            u_nat = parse_int(row.get("nat"))
 
             # Apply filters: Activity and Nationality
             if active_only and utype == 0:
@@ -107,7 +107,7 @@ def group_units_by_ob(
             if nat_filter is not None and u_nat not in nat_filter:
                 continue
 
-            uid = parse_int(row.get('id'), 0)
+            uid = parse_int(row.get("id"))
             uname = parse_str(row.get('name'), 'Unk')
 
             unit = Unit(uid=uid, name=uname, utype=utype, nat=u_nat)

@@ -33,7 +33,7 @@ from typing import Set
 
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
-from wite2_tools.generator import read_csv_dict_generator
+from wite2_tools.generator import get_csv_dict_stream
 from wite2_tools.utils import (
      parse_int,
      parse_str
@@ -189,11 +189,11 @@ def audit_unit_csv(unit_file_path: str,
     try:
         log.info("Task Start: Evaluating Unit file integrity: '%s'", file_base)
         # get the set of valid ground element ids
-        valid_elem_ids = get_valid_ground_elem_ids(ground_file_path)
-        valid_unit_ids = get_valid_unit_ids(unit_file_path, active_only)
+        valid_elem_ids: Set[int] = get_valid_ground_elem_ids(ground_file_path)
+        valid_unit_ids: Set[int] = get_valid_unit_ids(unit_file_path, active_only)
 
-        unit_gen = read_csv_dict_generator(unit_file_path, 2)
-        reader = next(unit_gen)
+        unit_gen = get_csv_dict_stream(unit_file_path, 2)
+     #   reader = next(unit_gen)
 
         # Initialize temp file if fix mode is enabled
         writer = None
@@ -201,17 +201,17 @@ def audit_unit_csv(unit_file_path: str,
             temp_file = NamedTemporaryFile(mode='w', delete=False,
                                            dir=os.path.dirname(unit_file_path),
                                            newline='', encoding=ENCODING_TYPE)
-            header = reader.fieldnames  # type: ignore
+            header = unit_gen.fieldnames
             writer = csv.DictWriter(temp_file,
-                                    fieldnames=header)  # type: ignore
+                                    fieldnames=header)
             writer.writeheader()
 
         log.info("Evaluating Unit file consistency:'%s' (Active Only:%s) (Fix Mode:%s)",
                  file_base, active_only, (fix_ghosts or relink_orphans))
 
-        for _, row in unit_gen:
-            uid = parse_int(row.get("id"), 0)
-            utype = parse_int(row.get("type"), 0)
+        for _, row in unit_gen.rows:
+            uid = parse_int(row.get("id"))
+            utype = parse_int(row.get("type"))
 
             if active_only and (uid == 0 or utype == 0):
                 if writer:

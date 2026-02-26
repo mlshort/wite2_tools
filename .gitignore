@@ -23,12 +23,14 @@ env/
 .project
 .settings/
 
+
 # =========================
 # Local Configuration
 # =========================
 .env
 .env.local
 settings.ini
+src/_local/
 
 # =========================
 # WiTE2 Tool Outputs & Data
@@ -46,3 +48,5 @@ logs/
 # Ignore project bundling tools and text dumps
 bundle_project.py
 project_dump.*
+src/sync_data_files.bat
+src/audit_toe.txt

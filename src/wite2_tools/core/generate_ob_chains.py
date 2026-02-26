@@ -44,7 +44,7 @@ Example:
 """
 import csv
 import os
-from typing import Optional, Union, Iterable, cast
+from typing import Optional, Union, Iterable, cast, List
 
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
@@ -103,15 +103,15 @@ def generate_ob_chains(
 
         try:
             # Early Exit: Filter by nationality
-            ob_nat = parse_int(row.get('nat'), 0)
+            ob_nat = parse_int(row.get("nat"))
             if nat_filter is not None and ob_nat not in nat_filter:
                 continue
 
-            ob_type = parse_int(row.get('type'), 0)
+            ob_type = parse_int(row.get("type"))
             if ob_type == 0:
                 continue
 
-            ob_id = parse_int(row.get('id'), 0)
+            ob_id = parse_int(row.get("id"))
             ob_upgrade_id = parse_int(row.get('upgrade'), 0)
 
             # Combine ob_name and ob_suffix
@@ -132,7 +132,7 @@ def generate_ob_chains(
             continue
 
     # 2. Identify Roots (IDs that are not the destination of an upgrade)
-    roots: list[int] = sorted(list(all_ob_ids - ob_upgrade_ids))
+    roots: List[int] = sorted(list(all_ob_ids - ob_upgrade_ids))
 
     # 3. Trace the chains
     chains_list = []
@@ -142,7 +142,7 @@ def generate_ob_chains(
             if root not in ob_id_to_upgrade_map:
                 continue
 
-        chain = []
+        chain: List[int | str] = []
         curr = root
         visited: set[int] = set()  # Safety check for infinite loops in data
 

@@ -12,6 +12,7 @@ __date__ = "2026-02-22"
 from .audit_unit import audit_unit_csv
 from .audit_ob import audit_ob_csv
 from .audit_ground_element import audit_ground_element_csv
+from .audit_unit_ob_excess import audit_unit_ob_excess
 from .batch_evaluator import (
     scan_and_evaluate_unit_files,
     scan_and_evaluate_ob_files,
@@ -21,6 +22,7 @@ __all__ = [
     "audit_ob_csv",
     "audit_unit_csv",
     "audit_ground_element_csv",
+    "audit_unit_ob_excess",
     "scan_and_evaluate_unit_files",
     "scan_and_evaluate_ob_files"
 ]

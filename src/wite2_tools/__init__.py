@@ -17,7 +17,10 @@ from . import modifiers
 from . import scanning
 from . import utils
 
-from . config import ENCODING_TYPE
+from . config import (
+    ENCODING_TYPE,
+    CONFIG_FILE_NAME
+)
 from . constants import (
     MAX_SQUAD_SLOTS,
     MAX_WPN_SLOTS,
@@ -30,7 +33,11 @@ from . paths import (
     CONF_UNIT_FULL_PATH,
     CONF_GROUND_FULL_PATH,
 )
-from . generator import read_csv_dict_generator, read_csv_list_generator
+from . generator import (
+    read_csv_dict_generator,
+    read_csv_list_generator,
+    get_csv_dict_stream
+)
 
 __all__ = [
     'auditing',
@@ -39,6 +46,7 @@ __all__ = [
     'scanning',
     'utils',
     'ENCODING_TYPE',
+    'CONFIG_FILE_NAME',
     'MAX_SQUAD_SLOTS',
     'MAX_WPN_SLOTS',
     'GroundColumn',
@@ -48,5 +56,6 @@ __all__ = [
     'CONF_UNIT_FULL_PATH',
     'CONF_GROUND_FULL_PATH',
     'read_csv_dict_generator',
-    'read_csv_list_generator'
+    'read_csv_list_generator',
+    'get_csv_dict_stream'
 ]

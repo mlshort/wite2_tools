@@ -33,7 +33,8 @@ from wite2_tools.utils import (
     get_logger,
     parse_int,
     parse_str,
-    get_valid_ground_elem_ids
+    get_valid_ground_elem_ids,
+    format_ref
 )
 
 
@@ -48,21 +49,23 @@ def _check_chronology(ob_id: int, ob_name: str, row: dict) -> int:
     l_year = parse_int(row.get('lastYear'), 0)
     l_month = parse_int(row.get('lastMonth'), 0)
 
+    ref = format_ref("TOE(OB)", ob_id, ob_name)
+
     if f_year == 0:
-        log.warning("TOE(OB) ID[%d] (%s): Active but has First Year of 0.",
-                    ob_id, ob_name)
+        log.warning("%s: Active but has First Year of 0.",
+                    ref)
         issues += 1
 
     if l_year > 0:
         if l_year < f_year:
-            log.error("TOE(OB) ID[%d] (%s): Expires (%d) before intro "
+            log.error("%s: Expires (%d) before intro "
                       "year (%d).",
-                      ob_id, ob_name, l_year, f_year)
+                      ref, l_year, f_year)
             issues += 1
         elif l_year == f_year and l_month < f_month:
-            log.error("TOE(OB) ID[%d] (%s): Expires in month %d but introduced "
+            log.error("%s: Expires in month %d but introduced "
                       "in month %d of same year.",
-                      ob_id, ob_name, l_month, f_month)
+                      ref, l_month, f_month)
             issues += 1
 
     return issues
@@ -76,14 +79,16 @@ def _check_upgrade_path(ob_id: int,
     issues = 0
     upgrade_id = parse_int(row.get('upgrade'), 0)
 
+    ref = format_ref("TOE(OB)", ob_id, ob_name)
+
     if upgrade_id > 0:
         if upgrade_id == ob_id:
-            log.error("TOE(OB) ID[%d] (%s): Upgrades into itself "
-                      "(Infinite Loop).", ob_id, ob_name)
+            log.error("%s: Upgrades into itself "
+                      "(Infinite Loop).", ref)
             issues += 1
         elif upgrade_id not in valid_ob_ids:
-            log.error("TOE(OB) ID[%d] (%s): Upgrades to non-existent OB ID[%d].",
-                      ob_id, ob_name, upgrade_id)
+            log.error("%s: Upgrades to non-existent OB ID[%d].",
+                      ref, upgrade_id)
             issues += 1
 
     return issues
@@ -99,6 +104,7 @@ def _check_squad_slots(ob_id: int,
     """
     issues = 0
     seen_wids_in_row = set()
+    ref = format_ref("TOE(OB)", ob_id, ob_name)
 
     for i in range(MAX_SQUAD_SLOTS):
         sqd_id_col = f"sqd.u{i}"
@@ -108,28 +114,28 @@ def _check_squad_slots(ob_id: int,
         qty = parse_int(row.get(sqd_num_col), 0)
 
         if qty < 0:
-            log.error("TOE(OB) ID[%d] (%s): %s has negative quantity (%d).",
-                      ob_id, ob_name, sqd_num_col, qty)
+            log.error("%s: %s has negative quantity (%d).",
+                      ref, sqd_num_col, qty)
             issues += 1
 
         if sqd_id != 0 and sqd_id not in valid_elem_ids:
-            log.error("TOE(OB) ID[%d]: %s has WID[%d] but WID is not found "
+            log.error("%s: %s has WID[%d] but WID is not found "
                       "in _ground.csv.",
-                      ob_id, sqd_id_col, sqd_id)
+                      ref, sqd_id_col, sqd_id)
             issues += 1
 
         if qty != 0 and sqd_id == 0:
-            log.warning("TOE(OB) (ID[%d]): Ghost Squad! %s has quantity %d but %s "
+            log.warning("%s: Ghost Squad! %s has quantity %d but %s "
                         "is '0'",
-                        ob_id, sqd_num_col, qty, sqd_id_col)
+                        ref, sqd_num_col, qty, sqd_id_col)
             issues += 1
 
         # Intra-Template Duplicate Check
         if sqd_id != 0 and qty > 0:
             if sqd_id in seen_wids_in_row:
-                log.warning("TOE(OB) ID[%d] (%s): WID[%d] is assigned to "
+                log.warning("%s: WID[%d] is assigned to "
                             "multiple slots.",
-                            ob_id, ob_name, sqd_id)
+                            ref, sqd_id)
                 issues += 1
             seen_wids_in_row.add(sqd_id)
 
@@ -173,8 +179,8 @@ def audit_ob_csv(ob_file_path: str, ground_file_path: str) -> int:
         log.info("Checking consistency on: '%s'", ob_file_base_name)
 
         for _, row in ob_gen:
-            ob_id = parse_int(row.get('id'), 0)
-            ob_type = parse_int(row.get('type'), 0)
+            ob_id = parse_int(row.get("id"))
+            ob_type = parse_int(row.get("type"))
             ob_name = parse_str(row.get('name'), 'Unk')
 
             # Duplicate ID Check

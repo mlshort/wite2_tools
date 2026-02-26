@@ -46,7 +46,7 @@ logger = get_logger(__name__)
 
 
 @dataclass(frozen=True)
-class OBName:
+class ObName:
     """
     Used when building a full ob name
     """
@@ -60,13 +60,13 @@ class OBName:
 
 
 @cache
-def _build_ob_lookup(ob_file_path: str) -> Dict[int, OBName]:
+def _build_ob_lookup(ob_file_path: str) -> Dict[int, ObName]:
     """
     Private Helper: Scans the _ob CSV, builds the TOE(ID)-to-Name dictionary,
     and caches it.
     The @cache decorator ensures this only runs once per unique file path.
     """
-    lookup: Dict[int, OBName] = {}
+    lookup: Dict[int, ObName] = {}
 
     if not os.path.exists(ob_file_path):
         logger.error("TOE(OB) file not found: %s", ob_file_path)
@@ -83,7 +83,7 @@ def _build_ob_lookup(ob_file_path: str) -> Dict[int, OBName]:
                 ob_suffix = parse_str(row.get('suffix'), '')
                 ob_full_name = f"{ob_name} {ob_suffix}"
 
-                lookup[ob_id] = OBName(
+                lookup[ob_id] = ObName(
                     full_name=ob_full_name,
                     suffix=ob_suffix
                 )
@@ -129,8 +129,8 @@ def get_ob_suffix(ob_file_path: str, ob_id_to_find: int) -> str:
 def get_unit_type_name(ob_file_path: str, unit_id_to_find: int) -> str:
     """
     A convenience wrapper. In WiTE2, a unit's type name is derived
-    from its assigned TOE(OB) name in the _ob.csv file and equates to its
-    TOE(OB)'s full name.
+    from its assigned TOE(OB)'s name + suffix in the _ob.csv file and equates
+    to its TOE(OB)'s full name.
     """
     # Simply route this through the TOE(OB) lookup to utilize the same cache
     return get_ob_full_name(ob_file_path, unit_id_to_find)
@@ -150,7 +150,7 @@ def _build_ground_elem_lookup(ground_file_path: str) -> Dict[int, str]:
     lookup: Dict[int, str] = {}
 
     if not os.path.exists(ground_file_path):
-        logger.error("Ground file not found: %s", ground_file_path)
+        logger.error("Ground file not found: '%s'", ground_file_path)
         return lookup
 
     try:
