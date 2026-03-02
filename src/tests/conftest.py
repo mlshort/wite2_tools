@@ -1,6 +1,7 @@
 import csv
 from typing import Dict
 import pytest
+from pathlib import Path
 
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
@@ -13,7 +14,7 @@ from wite2_tools.constants import MAX_SQUAD_SLOTS
 
 
 @pytest.fixture(name="mock_unit_csv")
-def mock_unit_csv(tmp_path) -> str:
+def mock_unit_csv(tmp_path:Path) -> str:
     """
     Generates a mock _unit.csv using DOT notation (sqd.u0, sqd.num0).
     Initializes all 8 unit attributes across all MAX_SQUAD_SLOTS slots.
@@ -30,7 +31,7 @@ def mock_unit_csv(tmp_path) -> str:
             fieldnames.append(f"{p}{i}")
 
     # 2. Mock Row Generator
-    def create_row(uid: str, name: str, utype: str, slots: Dict[str, str]):
+    def create_row(uid: str, name: str, utype: str, slots: Dict[str, str])->Dict[str,str]:
         row = {"id": uid, "name": name, "type": utype, "nat": "1",
                "aNeed": "100", "sNeed": "100"}
         for f in fieldnames:
@@ -77,7 +78,7 @@ def mock_unit_csv(tmp_path) -> str:
 
 
 @pytest.fixture(name="mock_ob_csv")
-def mock_ob_csv(tmp_path) -> str:
+def mock_ob_csv(tmp_path:Path) -> str:
     """
     Generates a mock _ob.csv using SPACE notation (sqd 0, sqdNum 0).
     Matches the 5-argument signature required by TOE(OB) modifiers.
@@ -89,7 +90,7 @@ def mock_ob_csv(tmp_path) -> str:
         fieldnames.append(f"sqd {i}")
         fieldnames.append(f"sqdNum {i}")
 
-    def create_row(ob_id: str, upgrade: str, slots: Dict[str, str]):
+    def create_row(ob_id: str, upgrade: str, slots: Dict[str, str])->Dict[str,str]:
         row = {"id": ob_id, "name": "TOE", "suffix": "41", "type": "1",
                "nat": "1", "upgrade": upgrade}
         for f in fieldnames:
@@ -117,7 +118,7 @@ def mock_ob_csv(tmp_path) -> str:
 
 
 @pytest.fixture(name="mock_ground_csv")
-def mock_ground_csv(tmp_path) -> str:
+def mock_ground_csv(tmp_path:Path) -> str:
     """Creates a minimal _ground.csv for lookup validation."""
     file_path = tmp_path / "mock_ground.csv"
 

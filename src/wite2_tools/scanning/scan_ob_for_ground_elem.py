@@ -32,7 +32,7 @@ from typing import cast
 
 # Internal package imports
 from wite2_tools.constants import MAX_SQUAD_SLOTS
-from wite2_tools.generator import read_csv_dict_generator
+from wite2_tools.generator import get_csv_dict_stream
 from wite2_tools.utils import (
     get_logger,
     get_ob_type_code_name,
@@ -40,6 +40,7 @@ from wite2_tools.utils import (
     parse_str
 )
 
+# Initialize the log for this specific module
 log = get_logger(__name__)
 
 
@@ -58,8 +59,7 @@ def scan_ob_for_ground_elem(ob_file_path: str,
     matches_found = 0
 
     try:
-        ob_gen = read_csv_dict_generator(ob_file_path)
-        next(ob_gen)  # Skip DictReader object
+        ob_stream = get_csv_dict_stream(ob_file_path)
 
         # Convert inputs to strings to ensure they match CSV text format
         ground_element_id_str = str(target_wid)
@@ -72,12 +72,12 @@ def scan_ob_for_ground_elem(ob_file_path: str,
         print("-" * 80)
 
         # Iterate through every row using explicit type casting
-        for item in ob_gen:
+        for item in ob_stream.rows:
             _, row = cast(tuple[int, dict], item)
 
             # Convert to numbers for math comparison
-            ob_type = parse_int(row.get("type"), 0)
-            ob_id = parse_int(row.get("id"), 0)
+            ob_type = parse_int(row.get("type"))
+            ob_id = parse_int(row.get("id"))
 
             if ob_id == 0 or ob_type == 0:
                 # Skip rows where type or id == 0
@@ -94,7 +94,7 @@ def scan_ob_for_ground_elem(ob_file_path: str,
                         ob_name = parse_str(row.get("name"), "")
                         ob_suffix = parse_str(row.get("suffix"), "")
                         ob_full_name = f"{ob_name} {ob_suffix}"
-                        sqd_num = parse_int(row.get(sqd_num_col), 0)
+                        sqd_num = parse_int(row.get(sqd_num_col))
 
                         ob_type_name = get_ob_type_code_name(ob_type)
 

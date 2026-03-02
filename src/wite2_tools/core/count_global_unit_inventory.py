@@ -38,7 +38,7 @@ from typing import Optional, Union, Iterable, cast
 
 # Internal package imports
 from wite2_tools.constants import MAX_SQUAD_SLOTS
-from wite2_tools.generator import read_csv_dict_generator
+from wite2_tools.generator import get_csv_dict_stream
 from wite2_tools.utils import get_logger
 from wite2_tools.utils import get_ground_elem_type_name
 from wite2_tools.utils import parse_int
@@ -81,14 +81,11 @@ def count_global_unit_inventory(
              os.path.basename(unit_file_path))
 
     # 1. Initialize the generator
-    unit_gen = read_csv_dict_generator(unit_file_path)
-
-    # 2. Skip the DictReader object yielded first
-    next(unit_gen)
+    unit_stream = get_csv_dict_stream(unit_file_path)
 
     try:
-        # 3. Iterate through the generator items safely
-        for item in unit_gen:
+        # 2. Iterate through the generator items safely
+        for item in unit_stream.rows:
             # Cast the yielded item to satisfy static type checkers
             _, row = cast(tuple[int, dict], item)
             uid = parse_int(row.get("id"))
@@ -103,8 +100,8 @@ def count_global_unit_inventory(
             # Iterate through the MAX_SQUAD_SLOTS potential squad slots (sqd.u0
             # to sqd.u31)
             for i in range(MAX_SQUAD_SLOTS):
-                wid = parse_int(row.get(f'sqd.u{i}', 0))
-                squad_quantity = parse_int(row.get(f'sqd.num{i}', 0))
+                wid = parse_int(row.get(f'sqd.u{i}'))
+                squad_quantity = parse_int(row.get(f'sqd.num{i}'))
 
                 # Check if the slot is occupied (WID is not '0')
                 if wid != 0:

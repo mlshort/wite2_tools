@@ -1,5 +1,6 @@
 import csv
 import pytest
+from pathlib import Path
 
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
@@ -11,7 +12,7 @@ from wite2_tools.core.generate_ob_chains import generate_ob_chains
 
 
 @pytest.fixture(name="mock_workspace")
-def mock_workspace(tmp_path) -> tuple[str, str, str]:
+def mock_workspace(tmp_path:Path) -> tuple[str, str, str]:
     """
     Creates a temporary workspace containing a mock _ob.csv file
     and returns the paths for the input and output files.

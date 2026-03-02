@@ -15,7 +15,7 @@ Core Features:
   were actually made, preventing data corruption. If no changes are made or
   an error occurs, the temporary file is cleanly discarded.
 * Memory Efficiency: Streams data row-by-row using the
-  `read_csv_dict_generator`, preventing out-of-memory errors when handling
+  `get_csv_dict_stream`, preventing out-of-memory errors when handling
   massive game files.
 * Callback-Driven Logic: Accepts a `row_processor` callback function. This
   cleanly separates the file handling boilerplate from the actual data
@@ -28,9 +28,10 @@ from typing import Callable, Tuple, cast
 
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
-from wite2_tools.generator import read_csv_dict_generator
+from wite2_tools.generator import get_csv_dict_stream
 from wite2_tools.utils import get_logger
 
+# Initialize the log for this specific module
 log = get_logger(__name__)
 
 
@@ -59,12 +60,10 @@ def process_csv_in_place(file_path: str,
                                    newline='', encoding=ENCODING_TYPE)
 
     try:
-        data_gen = read_csv_dict_generator(file_path)
+        stream = get_csv_dict_stream(file_path)
 
         # 1. Extract and cast the reader object (first yield)
-        reader_item = next(data_gen)
-        reader = cast(csv.DictReader, reader_item)
-        header = reader.fieldnames
+        header = stream.fieldnames
 
         with temp_file as outfile:
             writer = csv.DictWriter(outfile,
@@ -72,7 +71,7 @@ def process_csv_in_place(file_path: str,
             writer.writeheader()
 
             # 2. Catch the item rather than unpacking it directly in the loop
-            for item in data_gen:
+            for item in stream.rows:
 
                 # 3. Explicitly tell the type checker this is now the tuple
                 # yield

@@ -34,7 +34,7 @@ from typing import Tuple, List
 import os
 
 # Internal package imports
-from wite2_tools.constants import GROUND_WPN_PREFIXES, MAX_WPN_SLOTS
+from wite2_tools.constants import GROUND_WPN_PREFIXES, MAX_GND_WPN_SLOTS
 from wite2_tools.utils import get_logger
 from wite2_tools.utils import parse_int
 from wite2_tools.modifiers.base import process_csv_in_place
@@ -65,9 +65,9 @@ def remove_ground_weapon_gaps(ground_file_path: str) -> int:
         original_wpn_ids: List[int] = []
 
         # 1. EXTRACT: Gather all weapons and their associated stats
-        for i in range(MAX_WPN_SLOTS):
+        for i in range(MAX_GND_WPN_SLOTS):
             wpn_key: str = f"wpn {i}"
-            wpn_id: int = parse_int(row.get(wpn_key), 0)
+            wpn_id: int = parse_int(row.get(wpn_key))
             original_wpn_ids.append(wpn_id)
 
             # If the slot is NOT empty
@@ -83,7 +83,7 @@ def remove_ground_weapon_gaps(ground_file_path: str) -> int:
         new_wpn_ids: List[int] = []
 
         # 3. REWRITE: Write the compacted weapons back starting from index 0
-        for i in range(10):
+        for i in range(MAX_GND_WPN_SLOTS):
             if i < len(valid_weapons):
                 # Apply the valid weapon packet to slot i
                 for p in GROUND_WPN_PREFIXES:

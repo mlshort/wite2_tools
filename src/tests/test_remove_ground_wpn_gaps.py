@@ -1,16 +1,17 @@
 import csv
 import pytest
+from pathlib import Path
 
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
-from wite2_tools.constants import GROUND_WPN_PREFIXES
+from wite2_tools.constants import GROUND_WPN_PREFIXES, MAX_SQUAD_SLOTS
 from wite2_tools.modifiers import (
     remove_ground_weapon_gaps,
 )
 
 
 @pytest.fixture(name="mock_ground_csv")
-def mock_ground_csv(tmp_path) -> str:
+def mock_ground_csv(tmp_path:Path) -> str:
     """
     Generates a mock _ground.csv with intentional gaps in the weapon slots.
     """
@@ -19,7 +20,7 @@ def mock_ground_csv(tmp_path) -> str:
     # Core headers
     headers = ["id", "name", "type"]
 
-    for i in range(10):
+    for i in range(MAX_SQUAD_SLOTS):
         for p in GROUND_WPN_PREFIXES:
             headers.append(f"{p}{i}")
 

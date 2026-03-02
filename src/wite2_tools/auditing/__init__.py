@@ -1,13 +1,19 @@
 """
-Verification and validation tools for CSV data integrity.
+Data Auditing and Integrity Package
+===================================
+Contains validation logic to ensure Gary Grigsby's War in the East 2 (WiTE2)
+CSV files are structurally sound and logically consistent.
 
-This sub-package contains validators designed to catch structural
-errors, duplicate IDs, and logical inconsistencies within and between
-the _ob, _unit, and _ground CSV files.
+Key Capabilities:
+-----------------
+* CSV Structure Validation: Ensures required column counts and header formats.
+* Logical Integrity: Detects "Ghost Squads" (WID 0 with quantity > 0) and orphans.
+* Stat Boundary Checks: Validates ground element properties (men, size, types).
+* Batch Processing: Automated scanning of multiple target files.
 """
 
-__version__ = "0.4.0"
-__date__ = "2026-02-26"
+__version__ = "0.5.0"
+__date__ = "2026-03-02"
 
 from .audit_unit import audit_unit_csv
 from .audit_ob import audit_ob_csv

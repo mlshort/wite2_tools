@@ -11,7 +11,7 @@ from wite2_tools.utils import parse_int
 def apply_anti_armor_fix_with_validation(device_input_path: str,
                                          output_path: str,
                                          target_types: Set | None,
-                                         apply_fix: bool = False):
+                                         apply_fix: bool = False)->None:
     """
     Applies the antiArmor = pen * 0.8 fix and validates the results.
     """
@@ -22,8 +22,6 @@ def apply_anti_armor_fix_with_validation(device_input_path: str,
     dev_stream = get_csv_dict_stream(device_input_path)
 
     # 1. Grab the reader object first (the first yield in your generator)
-    # reader_obj = next(device_gen)
-    # reader = cast(csv.DictReader, reader_obj)
     fieldnames = dev_stream.fieldnames
 
     # 2. Open output file for writing
@@ -35,7 +33,7 @@ def apply_anti_armor_fix_with_validation(device_input_path: str,
         for _, row in dev_stream.rows:
             try:
                 dev_type = parse_int(row.get('type'), -1)
-                dev_pen = parse_int(row.get('pen'), 0)
+                dev_pen = parse_int(row.get('pen'))
 
                 # Apply fix for specified types
                 if target_types and dev_type in target_types and dev_pen > 0:

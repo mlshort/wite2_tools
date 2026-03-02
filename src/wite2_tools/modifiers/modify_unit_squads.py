@@ -42,11 +42,11 @@ from wite2_tools.modifiers.base import process_csv_in_place
 log = get_logger(__name__)
 
 
-def modify_unit_num_squads(unit_file_path: str,
-                           target_ob_id: int,
-                           target_wid: int,
-                           old_num_squads: int,
-                           new_num_squads: int) -> int:
+def modify_unit_squads(unit_file_path: str,
+                       target_ob_id: int,
+                       target_wid: int,
+                       old_num_squads: int,
+                       new_num_squads: int) -> int:
     """
     Modifies the number of specific Ground Element squads within a WiTE2 _unit
     CSV file.
@@ -88,9 +88,9 @@ def modify_unit_num_squads(unit_file_path: str,
                 sqd_num_col: str = f"sqd.num{i}"
 
                 # 3. If wid matches
-                wid: int = parse_int(row.get(sqd_id_col), 0)
+                wid: int = parse_int(row.get(sqd_id_col))
                 if wid == target_wid:
-                    num_squads: int = parse_int(row.get(sqd_num_col), 0)
+                    num_squads: int = parse_int(row.get(sqd_num_col))
 
                     # 4. CONDITIONAL CHECK: Does it equal the exact old amount?
                     if num_squads == old_num_squads:

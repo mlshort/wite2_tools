@@ -42,7 +42,7 @@ from functools import cache
 
 # Internal package imports
 from wite2_tools.core.unit import Unit
-from wite2_tools.generator import read_csv_dict_generator
+from wite2_tools.generator import get_csv_dict_stream
 from wite2_tools.utils import (
     get_logger,
     get_nat_abbr,
@@ -92,10 +92,9 @@ def group_units_by_ob(
         return dict(ob_ids_to_units)
 
     try:
-        unit_gen = read_csv_dict_generator(unit_file_path)
-        next(unit_gen)  # Skip DictReader header
+        unit_stream = get_csv_dict_stream(unit_file_path)
 
-        for item in unit_gen:
+        for item in unit_stream.rows:
             _, row = cast(tuple[int, dict], item)
 
             utype = parse_int(row.get("type"))
@@ -121,7 +120,7 @@ def group_units_by_ob(
     return dict(ob_ids_to_units)
 
 
-def print_unit_table(grouped_data: dict[int, list[Unit]]):
+def print_unit_table(grouped_data: Dict[int, List[Unit]]) -> None:
     """
     Prints a formatted table of all units organized by Type
     """

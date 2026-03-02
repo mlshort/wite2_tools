@@ -1,4 +1,5 @@
 import pytest
+from pathlib import Path
 
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
@@ -20,7 +21,7 @@ def clear_caches():
 
 
 @pytest.fixture(name="mock_unit_csv")
-def mock_unit_csv(tmp_path) -> str:
+def mock_unit_csv(tmp_path:Path) -> str:
     """Creates a mock _unit.csv file for testing the grouping logic."""
     content = (
         "id,name,type,nat\n"
@@ -36,7 +37,7 @@ def mock_unit_csv(tmp_path) -> str:
 
 
 @pytest.fixture(name="mock_corrupted_unit_csv")
-def mock_corrupted_unit_csv(tmp_path) -> str:
+def mock_corrupted_unit_csv(tmp_path:Path) -> str:
     """Creates a mock _unit.csv with a ValueError trap."""
     content = (
         "id,name,type,nat\n"

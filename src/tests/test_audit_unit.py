@@ -1,5 +1,6 @@
 import csv
 from unittest.mock import patch
+from pathlib import Path
 import pytest
 
 # Internal package imports
@@ -13,7 +14,7 @@ from wite2_tools.constants import MAX_SQUAD_SLOTS
 
 
 @pytest.fixture(name="mock_ground_csv")
-def mock_ground_csv(tmp_path) -> str:
+def mock_ground_csv(tmp_path:Path) -> str:
     content = "id,name,other,type\n105,Panzer IV,x,1\n"
     file_path = tmp_path / "mock_ground.csv"
     file_path.write_text(content, encoding=ENCODING_TYPE)
@@ -21,7 +22,7 @@ def mock_ground_csv(tmp_path) -> str:
 
 
 @pytest.fixture(name="mock_corrupted_unit_csv")
-def mock_corrupted_unit_csv(tmp_path) -> str:
+def mock_corrupted_unit_csv(tmp_path:Path) -> str:
     """
     Creates a unit file with multiple deliberate errors for
     the audit_unit to catch.
@@ -46,7 +47,7 @@ def mock_corrupted_unit_csv(tmp_path) -> str:
 
 
 @pytest.fixture
-def mock_files(tmp_path):
+def mock_files(tmp_path:Path):
     """
     A PyTest fixture that sets up mock _ground.csv and _ob.csv files
     in a temporary directory before each test, and yields their paths.
@@ -95,7 +96,7 @@ def write_ob_csv(ob_path, rows):
 
 
 # --- TEST CASES ---
-def test_coordinate_bounds_validation(tmp_path):
+def test_coordinate_bounds_validation(tmp_path:Path):
     """
     Targets lines 352-360: Verifies that out-of-bounds coordinates
     are flagged as issues.
@@ -115,7 +116,7 @@ def test_coordinate_bounds_validation(tmp_path):
         assert issues > 0
 
 
-def test_referential_integrity_failure(tmp_path):
+def test_referential_integrity_failure(tmp_path:Path):
     """
     Targets lines 91-172: Verifies that a squad referencing a
     non-existent WID is flagged.
@@ -135,7 +136,7 @@ def test_referential_integrity_failure(tmp_path):
         assert issues > 0
 
 
-def test_ghost_squad_detection(tmp_path):
+def test_ghost_squad_detection(tmp_path:Path):
     """
     Targets ghost squad logic: Quantity > 0 but WID == 0.
     """
@@ -151,7 +152,7 @@ def test_ghost_squad_detection(tmp_path):
     assert issues > 0
 
 
-def test_audit_unit_handles_value_error(tmp_path):
+def test_audit_unit_handles_value_error(tmp_path:Path):
     """
     Targets the general exception block at the end of
     audit_unit_csv.
@@ -168,7 +169,7 @@ def test_audit_unit_handles_value_error(tmp_path):
     assert issues == 0
 
 
-def test_audit_unit_handles_critical_io_error(tmp_path):
+def test_audit_unit_handles_critical_io_error(tmp_path:Path):
     """
     Targets the general exception block by providing a non-existent path
     after the initial check, or a file with completely invalid headers.

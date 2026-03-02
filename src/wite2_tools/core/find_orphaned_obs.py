@@ -43,19 +43,18 @@ Example:
 
 """
 import os
-from typing import Dict, Set, Optional, Sequence
+from typing import Dict, Set, Tuple, Union
 from functools import cache
 
 # Internal package imports
+from wite2_tools.config import normalize_nat_codes, NatData, make_hashable
 from wite2_tools.core.unit import Unit
 from wite2_tools.generator import get_csv_dict_stream
 from wite2_tools.utils import get_logger
 from wite2_tools.utils import format_header, format_list_item
 from wite2_tools.utils import (
     get_ob_full_name,
-    get_ob_suffix
-)
-from wite2_tools.utils import (
+    get_ob_suffix,
     parse_int,
     parse_str
 )
@@ -64,9 +63,9 @@ from wite2_tools.utils import (
 log = get_logger(__name__)
 
 
-NatData = Set[int] | None
 
-def _parse_ob_data(ob_file_path: str, nat_filter: NatData ):
+def _parse_ob_data(ob_file_path: str,
+                   nat_codes: NatData )->Tuple[Set[int], Set[int], Dict[int, str], Dict[int, int]]:
     """
     Parses the OB file and returns structured data for cross-referencing.
     """
@@ -75,12 +74,13 @@ def _parse_ob_data(ob_file_path: str, nat_filter: NatData ):
     ob_id_to_name: Dict[int, str] = {}
     ob_id_upgrade: Dict[int, int] = {}
 
-    ob_gen = get_csv_dict_stream(ob_file_path)
-    # next(ob_gen, None)
+    ob_stream = get_csv_dict_stream(ob_file_path)
 
-    for _, row in ob_gen.rows:
+    for _, row in ob_stream.rows:
         ob_nat: int = parse_int(row.get('nat'))
-        if nat_filter is not None and ob_nat not in nat_filter:
+
+        nat_filter = normalize_nat_codes(nat_codes)
+        if nat_codes is not None and ob_nat not in nat_filter:
             continue
 
         ob_id: int = parse_int(row.get('id'))
@@ -101,18 +101,19 @@ def _parse_ob_data(ob_file_path: str, nat_filter: NatData ):
 
 def _trace_unit_references(unit_file_path: str,
                            ob_file_path: str,
-                           nat_filter: NatData,
-                           ob_id_upgrade: Dict[int, int]):
+                           nat_codes: NatData,
+                           ob_id_upgrade: Dict[int, int])->Tuple[Set[int], Dict[int, Set[Unit]]]:
     """Parses unit file and traces the full TOE upgrade chain."""
     obs_ref_by_unit: Set[int] = set()
     ob_to_units: Dict[int, Set[Unit]] = {}
 
-    unit_gen = get_csv_dict_stream(unit_file_path)
-    # next(unit_gen, None)
+    unit_stream = get_csv_dict_stream(unit_file_path)
 
-    for _, row in unit_gen.rows:
+    for _, row in unit_stream.rows:
         u_nat: int = parse_int(row.get('nat'))
-        if nat_filter is not None and u_nat not in nat_filter:
+
+        nat_filter = normalize_nat_codes(nat_codes)
+        if nat_codes is not None and u_nat not in nat_filter:
             continue
 
         u_id: int = parse_int(row.get('id'))
@@ -139,24 +140,33 @@ def _trace_unit_references(unit_file_path: str,
 def find_orphaned_obs(ob_file_path: str,
                       unit_file_path: str,
                       nat_codes: NatData = None) -> Set[int]:
-    """Identifies orphaned TOE(OB) IDs and invalid references."""
+    """
+    Identifies unreferenced TOE(OB) templates within a scenario.
+
+    A TOE is considered an "orphan" if it is not directly assigned to a unit
+    AND it is not part of a valid upgrade chain for an active unit.
+
+    Args:
+        ob_file_path: Path to the _ob.csv template file.
+        unit_file_path: Path to the _unit.csv scenario file.
+        nat_codes (list/int, optional): Filter to specific nationalities.
+
+    Returns:
+        Set[int]: A set of OB IDs that are safely removable (orphans).
+    """
     if not all(os.path.exists(f) for f in [ob_file_path, unit_file_path]):
         log.error("Required CSV files not found.")
         return set()
 
-    # Standardize nationality filter
-    if nat_codes is None:
-        nat_filter = None
-    else:
-        nat_filter = {int(nat_codes)} if isinstance(nat_codes, (int, str)) else {int(n) for n in nat_codes}
+   # nat_filter = normalize_nat_codes(nat_codes)
 
     try:
         # 1. Parse OB Data
-        all_obs, active_obs, _, ob_id_upgrade = _parse_ob_data(ob_file_path, nat_filter)
+        _, active_obs, _, ob_id_upgrade = _parse_ob_data(ob_file_path, nat_codes)
 
         # 2. Parse Unit Data & Trace Upgrades
         obs_ref_by_unit, ob_to_units = _trace_unit_references(
-            unit_file_path, ob_file_path, nat_filter, ob_id_upgrade
+            unit_file_path, ob_file_path, nat_codes, ob_id_upgrade
         )
 
         # 3. Calculate Differences
@@ -166,7 +176,7 @@ def find_orphaned_obs(ob_file_path: str,
         _report_results(orphaned_ob_ids, inv_ref_ob_ids, ob_to_units, ob_file_path)
 
         log.info("Analysis complete for Nat Filter %s. Found %d orphans.",
-                 nat_filter, len(orphaned_ob_ids))
+                 nat_codes, len(orphaned_ob_ids))
         return orphaned_ob_ids
 
     except (ValueError, OSError, KeyError) as exc:
@@ -204,14 +214,7 @@ def find_orphaned_ob_ids2(ob_file_path: str,
     obs_ref_by_unit: Set[int] = set()
     ob_to_units: Dict[int, Set[Unit]] = {}
 
-    # Standardize nation_id to a set for efficient lookup
-    if nat_codes is not None:
-        if isinstance(nat_codes, (int, str)):
-            nat_filter = {int(nat_codes)}
-        else:
-            nat_filter = {int(n) for n in nat_codes}
-    else:
-        nat_filter = None
+    nat_filter = normalize_nat_codes(nat_codes)
 
     try:
         # Extract filenames for logging
@@ -240,10 +243,9 @@ def find_orphaned_ob_ids2(ob_file_path: str,
 #    - nat (int): Nat Code
 
         # 1. Parse the TOE(OB) file
-        ob_gen = get_csv_dict_stream(ob_file_path)
-        # next(ob_gen)  # Skip DictReader header yield
+        ob_stream = get_csv_dict_stream(ob_file_path)
 
-        for _, row in ob_gen.rows:
+        for _, row in ob_stream.rows:
             ob_nat: int = parse_int(row.get('nat'))
 
             if nat_filter is not None and ob_nat not in nat_filter:
@@ -267,11 +269,10 @@ def find_orphaned_ob_ids2(ob_file_path: str,
                         ob_id_upgrade[ob_id] = ob_upgrade
 
         # 2. Parse the Unit file
-        unit_gen = get_csv_dict_stream(unit_file_path)
-        # next(unit_gen)  # Skip header
+        unit_stream = get_csv_dict_stream(unit_file_path)
         ref_upgraded_id_count = 0
 
-        for _, row in unit_gen.rows:
+        for _, row in unit_stream.rows:
             u_nat: int = parse_int(row.get('nat'))
 
             if nat_filter is not None and u_nat not in nat_filter:
@@ -429,7 +430,7 @@ def find_orphaned_ob_ids2(ob_file_path: str,
 def _report_results(orphans: Set[int],
                     invalid: Set[int],
                     unit_map: Dict[int, Set[Unit]],
-                    ob_path: str):
+                    ob_path: str) -> None:
     """Handles console output for the orphan report."""
     if orphans:
         print(format_header("Unused TOE(OB) Report"))
@@ -448,40 +449,36 @@ def _report_results(orphans: Set[int],
 
 
 @cache
-def _get_cached_orphans(ob_file_path: str, unit_file_path: str,
-                        nat_code_tuple: NatData) -> set[int]:
+def _get_cached_orphans(ob_file_path: str,
+                        unit_file_path: str,
+                        nat_codes: Union[int, str, Tuple[int, ...], None]) -> Set[int]:
     """
     Private helper: Runs the heavy orphan logic and caches the resulting set.
     """
 
     log.info("Building Orphan TOE(OB) cache for nat_codes %s...",
-             nat_code_tuple)
+             nat_codes)
+
     return find_orphaned_obs(ob_file_path, unit_file_path,
-                             nat_code_tuple)
+                             nat_codes)
 
 
 def is_ob_orphaned(ob_file_path: str,
                    unit_file_path: str,
                    ob_id_to_check: int,
-                   nation_id=None) -> bool:
+                   nat_codes : NatData) -> bool:
     """
     Public function: Converts arguments to hashables and queries the cached
     set.
     """
 
-    # 1. Convert the unhashable list/set into a hashable tuple
-    nat_tuple: tuple[int, ...]
-
-    if nation_id is None:
-        nat_tuple = ()
-    elif isinstance(nation_id, (int, str)):
-        nat_tuple = (int(nation_id),)
-    else:
-        nat_tuple = tuple(sorted(int(n) for n in nation_id))
-
-    # 2. Retrieve the cached set (only calculates once per unique file/nat
+    # 1. Retrieve the cached set (only calculates once per unique file/nat
     # combination)
-    orphan_set = _get_cached_orphans(ob_file_path, unit_file_path, nat_tuple)
 
-    # 3. Perform O(1) lookup
+    # Ensure nat_codes is a hashable tuple for lru_cache
+    hash_nats = make_hashable(nat_codes)
+
+    orphan_set = _get_cached_orphans(ob_file_path, unit_file_path, hash_nats)
+
+    # 2. Perform O(1) lookup
     return ob_id_to_check in orphan_set

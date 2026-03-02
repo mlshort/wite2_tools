@@ -34,8 +34,8 @@ from dataclasses import dataclass
 # Internal package imports
 from wite2_tools.constants import GroundColumn
 from wite2_tools.generator import (
-    read_csv_dict_generator,
-    read_csv_list_generator,
+    get_csv_dict_stream,
+    get_csv_list_stream,
 )
 from wite2_tools.utils.logger import get_logger
 from wite2_tools.utils.parsing import parse_int, parse_str
@@ -50,8 +50,8 @@ class ObName:
     """
     Used when building a full ob name
     """
-    full_name: str
-    suffix: str  # stores the suffix for later
+    name: str
+    suffix: str
 
 
 # ==========================================
@@ -73,18 +73,16 @@ def _build_ob_lookup(ob_file_path: str) -> Dict[int, ObName]:
         return lookup
 
     try:
-        ob_gen = read_csv_dict_generator(ob_file_path)
-        next(ob_gen)  # Skip DictReader yield
+        ob_stream = get_csv_dict_stream(ob_file_path)
 
-        for _, row in ob_gen:
-            ob_id = parse_int(row.get("id"), 0)
+        for _, row in ob_stream.rows:
+            ob_id = parse_int(row.get("id"))
             if ob_id != 0:
                 ob_name = parse_str(row.get('name'), '')
                 ob_suffix = parse_str(row.get('suffix'), '')
-                ob_full_name = f"{ob_name} {ob_suffix}"
 
                 lookup[ob_id] = ObName(
-                    full_name=ob_full_name,
+                    name=ob_name,
                     suffix=ob_suffix
                 )
 
@@ -92,6 +90,39 @@ def _build_ob_lookup(ob_file_path: str) -> Dict[int, ObName]:
         logger.error("Error building TOE(OB) lookup: %s", e)
 
     return lookup
+
+
+
+def get_ob_name(ob_file_path: str, ob_id_to_find: int) -> str:
+    """
+    Public API: Resolves an TOE(OB) ID to a name.
+    """
+    # 1. Retrieve the cached dictionary
+    cached_dict = _build_ob_lookup(ob_file_path)
+
+    # 2. Perform instant O(1) lookup
+    result = cached_dict.get(ob_id_to_find)
+
+    if result is not None:
+        return result.name
+
+    return f"Unk ({ob_id_to_find})"
+
+
+def get_ob_suffix(ob_file_path: str, ob_id_to_find: int) -> str:
+    """
+    Public API: Resolves an TOE(OB) ID to its suffix.
+    """
+    # 1. Retrieve the cached dictionary
+    cached_dict = _build_ob_lookup(ob_file_path)
+
+    # 2. Perform instant O(1) lookup
+    result = cached_dict.get(ob_id_to_find)
+
+    if result is not None:
+        return result.suffix
+
+    return f"Unk ({ob_id_to_find})"
 
 
 def get_ob_full_name(ob_file_path: str, ob_id_to_find: int) -> str:
@@ -105,23 +136,8 @@ def get_ob_full_name(ob_file_path: str, ob_id_to_find: int) -> str:
     result = cached_dict.get(ob_id_to_find)
 
     if result is not None:
-        return result.full_name
-
-    return f"Unk ({ob_id_to_find})"
-
-
-def get_ob_suffix(ob_file_path: str, ob_id_to_find: int) -> str:
-    """
-    Public API: Resolves an TOE(OB) ID to a full name.
-    """
-    # 1. Retrieve the cached dictionary
-    cached_dict = _build_ob_lookup(ob_file_path)
-
-    # 2. Perform instant O(1) lookup
-    result = cached_dict.get(ob_id_to_find)
-
-    if result is not None:
-        return result.suffix
+        ob_full_name = f"{result.name} {result.suffix}"
+        return ob_full_name
 
     return f"Unk ({ob_id_to_find})"
 
@@ -155,17 +171,15 @@ def _build_ground_elem_lookup(ground_file_path: str) -> Dict[int, str]:
 
     try:
         # Use list generator to handle duplicate 'id' column names safely
-        ground_gen = read_csv_list_generator(ground_file_path)
+        gnd_stream = get_csv_list_stream(ground_file_path)
 
-        # Safely skip header; next(gen, None) prevents StopIteration on empty files
-        header = next(ground_gen, None)
-        if header is None:
+        if gnd_stream.header is None:
             return lookup
 
-        for _, row in ground_gen:
+        for _, row in gnd_stream.rows:
             try:
                 # Ensure GroundColumn values are integers for list indexing
-                g_id = parse_int(row[GroundColumn.ID], 0)
+                g_id = parse_int(row[GroundColumn.ID])
                 if g_id != 0:
                     # Capture the name based on the specific column index
                     g_name = parse_str(row[GroundColumn.NAME], "")

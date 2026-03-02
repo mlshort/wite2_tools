@@ -17,6 +17,7 @@ Core Features:
   developers to easily swap between live game data and local test files.
 """
 import os
+from typing import Final
 
 # ==========================================
 # 1. DYNAMIC LOCAL PATHS (Project Relative)
@@ -51,25 +52,25 @@ GAME_DATA_PATH = os.getenv(
 # ==========================================
 # 3. FILENAMES
 # ==========================================
-_GC41_OB_FILENAME = "1941 Campaign_ob.csv"
-_GC41_UNIT_FILENAME = "1941 Campaign_unit.csv"
-_GC41_GROUND_FILENAME = "1941 Campaign_ground.csv"
-_GC41_DEVICE_FILENAME = "1941 Campaign_device.csv"
-_GC41_AIRCRAFT_FILENAME = "1941 Campaign_aircraft.csv"
+_GC41_OB_FILENAME : Final = "1941 Campaign_ob.csv"
+_GC41_UNIT_FILENAME : Final = "1941 Campaign_unit.csv"
+_GC41_GROUND_FILENAME : Final = "1941 Campaign_ground.csv"
+_GC41_DEVICE_FILENAME : Final = "1941 Campaign_device.csv"
+_GC41_AIRCRAFT_FILENAME : Final = "1941 Campaign_aircraft.csv"
 
-_GENERIC_OB_FILENAME = "_ob.csv"
-_GENERIC_UNIT_FILENAME = "_unit.csv"
-_GENERIC_GROUND_FILENAME = "_ground.csv"
-_GENERIC_DEVICE_FILENAME = "_device.csv"
-_GENERIC_AIRCRAFT_FILENAME = "_aircraft.csv"
+_GENERIC_OB_FILENAME : Final = "_ob.csv"
+_GENERIC_UNIT_FILENAME : Final = "_unit.csv"
+_GENERIC_GROUND_FILENAME : Final = "_ground.csv"
+_GENERIC_DEVICE_FILENAME : Final = "_device.csv"
+_GENERIC_AIRCRAFT_FILENAME : Final = "_aircraft.csv"
 
 # Names used for modded CSV files
 # Users are expected to replace these with their own custom scenario filenames
-_MOD_OB_FILENAME = "MyCustomMod_ob.csv"
-_MOD_UNIT_FILENAME = "MyCustomMod_unit.csv"
-_MOD_GROUND_FILENAME = "MyCustomMod_ground.csv"
-_MOD_DEVICE_FILENAME = "MyCustomMod_device.csv"
-_MOD_AIRCRAFT_FILENAME = "MyCustomMod_aircraft.csv"
+_MOD_OB_FILENAME : Final = "MyCustomMod_ob.csv"
+_MOD_UNIT_FILENAME : Final = "MyCustomMod_unit.csv"
+_MOD_GROUND_FILENAME : Final = "MyCustomMod_ground.csv"
+_MOD_DEVICE_FILENAME : Final = "MyCustomMod_device.csv"
+_MOD_AIRCRAFT_FILENAME : Final = "MyCustomMod_aircraft.csv"
 
 # ==========================================
 # 4. CONSTRUCTED FULL PATHS (Safe Joins)

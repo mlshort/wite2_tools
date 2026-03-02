@@ -1,5 +1,5 @@
 import csv
-
+from pathlib import Path
 import pytest
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
@@ -10,7 +10,7 @@ from wite2_tools.modifiers import (
 
 
 @pytest.fixture(name="mock_modify_unit_csv")
-def mock_modify_unit_csv(tmp_path):
+def mock_modify_unit_csv(tmp_path:Path):
     """
     Generates a mock _unit.csv to test global Ground Element replacements.
     """

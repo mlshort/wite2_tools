@@ -14,9 +14,10 @@ Example:
     Detects Encoding for _ground.csv: ISO-8859-1
 """
 import chardet
+from pathlib import Path
 
 
-def detect_encoding(file_path):
+def detect_encoding(file_path: Path)-> str | None :
     with open(file_path, 'rb') as file:
         detector = chardet.universaldetector.UniversalDetector()
         for line in file:

@@ -37,7 +37,7 @@ from typing import cast
 
 # Internal package imports
 from wite2_tools.constants import MAX_SQUAD_SLOTS
-from wite2_tools.generator import read_csv_dict_generator
+from wite2_tools.generator import get_csv_dict_stream
 from wite2_tools.utils import (
     get_logger,
     get_unit_type_name,
@@ -47,6 +47,7 @@ from wite2_tools.utils import (
     parse_str
 )
 
+# Initialize the log for this specific module
 log = get_logger(__name__)
 
 
@@ -62,7 +63,7 @@ def _check_squad_match(
         sqd_id_col = f"sqd.u{i}"
         sqd_num_col = f"sqd.num{i}"
 
-        wid = parse_int(row.get(sqd_id_col), 0)
+        wid = parse_int(row.get(sqd_id_col))
 
         # Check if column exists and matches the target ID
         if sqd_id_col in row and wid == target_wid:
@@ -70,10 +71,10 @@ def _check_squad_match(
             # Search the row for the new column name and print squad_quantity
             if sqd_num_col in row:
                 uname = parse_str(row.get("name"), "Unk")
-                squad_quantity = parse_int(row.get(sqd_num_col), 0)
-                uid = parse_int(row.get("id"), 0)
+                squad_quantity = parse_int(row.get(sqd_num_col))
+                uid = parse_int(row.get("id"))
                 # unit 'type' maps to its TOE(OB) ID
-                utype = parse_int(row.get("type"), 0)
+                utype = parse_int(row.get("type"))
                 unit_type_name = get_unit_type_name(ob_full_path, utype)
 
                 # Filter by exact quantity if a specific number was provided
@@ -118,8 +119,7 @@ def scan_unit_for_ground_elem(
     matches_found = 0
 
     try:
-        unit_gen = read_csv_dict_generator(unit_file_path)
-        next(unit_gen)  # Skip DictReader object
+        unit_stream = get_csv_dict_stream(unit_file_path)
 
         scan_str = "ANY" if target_num_squads == -1 else str(target_num_squads)
         ground_elem_name = get_ground_elem_type_name(ground_file_path,
@@ -136,11 +136,11 @@ def scan_unit_for_ground_elem(
         print("-" * 80)
 
         # Iterate through every row
-        for item in unit_gen:
+        for item in unit_stream.rows:
             _, row = cast(tuple[int, dict], item)
 
             # Convert to numbers for math comparison
-            utype = parse_int(row.get("type"), 0)
+            utype = parse_int(row.get("type"))
             if utype == 0:
                 continue
 

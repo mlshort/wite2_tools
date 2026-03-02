@@ -1,5 +1,5 @@
 import csv
-
+from pathlib import Path
 import pytest
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
@@ -10,14 +10,14 @@ from wite2_tools.constants import GroundColumn
 # FIXTURES (Setup)
 # ==========================================
 @pytest.fixture
-def mock_ground_csv(tmp_path):
+def mock_ground_csv(tmp_path:Path)->str:
     """
     Creates a mock ground element CSV that satisfies structural checks
     but contains exactly 4 logical errors.
     """
     csv_file = tmp_path / "mock_ground_audit.csv"
 
-    def create_row(gid, name, gtype, men="10", size="1"):
+    def create_row(gid, name, gtype, men="10", size="1")->list[str]:
         # Initialize a row with 25 columns to exceed REQUIRED_STAT_COLS (22)
         row = ["0"] * 25
         row[GroundColumn.ID] = str(gid)
@@ -56,24 +56,41 @@ def mock_ground_csv(tmp_path):
 
     return str(csv_file)
 
+@pytest.fixture
+def mock_ge_csv(tmp_path:Path)->str:
+    csv_file = tmp_path / "test_ge.csv"
+    header = "id,name,type,men,gun,alt_type\n"
+    content = (
+        "1,Rifle Squad,1,10,0,0\n"    # Valid
+        "2,Error Squad,1,0,0,0\n"     # Issue: 0 men for infantry
+    )
+    csv_file.write_text(header + content)
+    return str(csv_file)
+
+
 # ==========================================
 # TEST CASES
 # ==========================================
+def test_audit_ge_catches_zero_men(mock_ge_csv:Path)->None:
+    # This should find at least 1 issue (the 0 men squad)
+    issues = audit_ground_element_csv(str(mock_ge_csv))
+    assert issues >= 1
 
 
-def test_audit_ground_element_csv_identifies_issues(mock_ground_csv):
+
+def test_audit_ground_element_csv_identifies_issues(mock_ground_csv:Path)->None:
     """
     Verifies that the audit correctly identifies duplicates,
     missing types, unknown types, and malformed data.
     """
-    issues = audit_ground_element_csv(mock_ground_csv)
+    issues = audit_ground_element_csv(str(mock_ground_csv))
 
     # Now that the rows are properly padded, the "Insufficient columns"
     # warnings will disappear, and the count should return to 4.
     assert issues == 4
 
 
-def test_audit_ground_element_csv_file_not_found():
+def test_audit_ground_element_csv_file_not_found()->None:
     """
     Verifies safe failure and error handling when the file does not exist.
     """

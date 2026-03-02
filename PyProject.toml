@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wite2_tools"
-version = "0.4.0"
+version = "0.5.0"
 description = "A specialized toolkit for analyzing and modifying War in the East 2 data files."
 readme = "ReadMe.md"
-requires-python = ">=3.9"
+requires-python = ">=3.13"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
@@ -24,3 +24,29 @@ wite2-tools = "wite2_tools.cli:main"
 dev = [
     "pytest>=8.0.0"
 ]
+
+[tool.mypy]
+# Ensure MyPy checks against Python 3.13 rules
+python_version = "3.13"
+
+# Standard strictness settings
+warn_return_any = true
+warn_unused_configs = true
+show_error_codes = true
+check_untyped_defs = true
+
+# This is the "Magic" for your coverage badge:
+# It ensures MyPy doesn't skip functions just because they lack hints.
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+
+# If you use libraries without type stubs (like some older game tools)
+ignore_missing_imports = true
+
+# Ensure the report matches your GitHub Action path
+# (This allows you to run 'mypy .' locally and see the same report)
+txt_report = "reports"
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+ignore_errors = true

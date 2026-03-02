@@ -1,109 +1,117 @@
-"""
-Tests for the WiTE2 CLI Dispatcher
-==================================
-Verifies that subcommands correctly route to the intended worker functions
-within the Dispatch Map and handle errors gracefully.
-"""
+import pytest
+from unittest.mock import MagicMock, patch
+import wite2_tools.cli as cli
+from wite2_tools.cli import setup_parsers, COMMAND_MAP
 
-import sys
+@pytest.fixture
+def mock_paths()->dict[str,str]:
+    """Provides consistent dummy paths for testing."""
+    return {
+        "unit": "data/unit.csv",
+        "ob": "data/ob.csv",
+        "ground": "data/ground.csv",
+        "aircraft": "data/aircraft.csv",
+        "device" : "data/device.csv"
+    }
 
-import unittest
-import unittest.mock
-from unittest.mock import patch, ANY
+@pytest.fixture
+def mock_args()->MagicMock:
+    """Simulates the argparse Namespace with all possible CLI arguments."""
+    args = MagicMock()
+    args.nat_codes = [1]
+    args.active_only = True
+    args.set_path = "/new/path"
+    args.set_scenario = "1941"
+    args.csv_out = "out.csv"
+    args.txt_out = "out.txt"
+    args.target_uid = 100
+    args.target_wid = 50
+    args.target_slot = 2
+    args.old_wid = 50
+    args.new_wid = 60
+    args.target_ob_id = 500
+    args.old_num_s = 5
+    args.new_num_s = 10
+    args.device_type = 17
+    return args
 
-# Internal package imports
-from wite2_tools.cli import main, setup_parsers
+## --- Configuration & Audit Tests ---
 
+@patch("wite2_tools.cli.save_config")
+def test_command_config(mock_func, mock_args)->None:
+    """Verifies config saves paths and scenario settings."""
+    with patch("wite2_tools.cli.args", mock_args):
+        cli.COMMAND_MAP["config"](mock_args, {})
+    mock_func.assert_called_once_with(mock_args.set_path, mock_args.set_scenario)
 
-class TestCLIDispatcher(unittest.TestCase):
-    """Verifies command routing and error handling in the refactored CLI."""
+@patch("wite2_tools.cli.audit_unit_ob_excess")
+def test_command_audit_toe(mock_func, mock_args, mock_paths):
+    """Verifies TOE audit receives unit/ob paths and nat set."""
+    with patch("wite2_tools.cli.paths", mock_paths), patch("wite2_tools.cli.args", mock_args):
+        cli.COMMAND_MAP["audit-toe"](mock_args, mock_paths)
+    mock_func.assert_called_once_with(mock_paths["unit"], mock_paths["ob"], {1})
 
-    def setUp(self):
-        # Common mocks to prevent actual file IO or logging side effects
-        self.mock_log = patch("wite2_tools.cli.get_logger").start()
-        self.addCleanup(patch.stopall)
+@patch("wite2_tools.cli.identify_unused_devices")
+def test_command_audit_devices(mock_func, mock_args, mock_paths):
+    """Verifies device audit cross-references all three main files."""
+    with patch("wite2_tools.cli.paths", mock_paths), patch("wite2_tools.cli.args", mock_args):
+        cli.COMMAND_MAP["scan-unused"](mock_args, mock_paths)
+    mock_func.assert_called_once_with(
+        mock_paths["ground"],
+        mock_paths["aircraft"],
+        mock_paths["device"],
+        mock_args.device_type
+    )
 
-    @patch("wite2_tools.cli.audit_unit_ob_excess")
-    def test_dispatch_audit_unit_ob_excess(self, mock_audit):
-        """Verifies that 'audit-toe' routes correctly to the auditor."""
-        test_args = ["cli.py", "audit-toe", "--nat", "1"]
+## --- Generation & Analysis Tests ---
 
-        with patch.object(sys, "argv", test_args):
-            main()
+@patch("wite2_tools.cli.find_orphaned_obs")
+def test_command_gen_orphans(mock_func, mock_args, mock_paths):
+    """Verifies orphaned OB search uses correct paths."""
+    with patch("wite2_tools.cli.paths", mock_paths), patch("wite2_tools.cli.args", mock_args):
+        cli.COMMAND_MAP["gen-orphans"](mock_args, mock_paths)
+    mock_func.assert_called_once_with(mock_paths["ob"], mock_paths["unit"], [1])
 
-        # Verify the auditor was called with expected path/nat logic
-        mock_audit.assert_called_once()
-        # Verify lazy logging was used (checking the call to log.info)
-        self.mock_log.return_value.info.assert_any_call(
-            "Executing: %s", "audit-toe"
-        )
+@patch("wite2_tools.cli.group_units_by_ob")
+def test_command_gen_groups(mock_func, mock_args, mock_paths):
+    """Verifies unit grouping handles the active_only flag."""
+    with patch("wite2_tools.cli.paths", mock_paths), patch("wite2_tools.cli.args", mock_args):
+        cli.COMMAND_MAP["gen-groups"](mock_args, mock_paths)
+    mock_func.assert_called_once_with(mock_paths["unit"], True, [1])
 
-    @patch("wite2_tools.cli.find_orphaned_obs")
-    def test_dispatch_gen_orphans(self, mock_orphans):
-        """Verifies that 'gen-orphans' routes correctly."""
-        test_args = ["cli.py", "gen-orphans", "--nat", "1", "2"]
+@patch("wite2_tools.cli.generate_ob_chains")
+def test_command_gen_chains(mock_func, mock_args, mock_paths):
+    """Verifies OB chain generation handles dual output paths."""
+    with patch("wite2_tools.cli.paths", mock_paths), patch("wite2_tools.cli.args", mock_args):
+        cli.COMMAND_MAP["gen-chains"](mock_args, mock_paths)
+    mock_func.assert_called_once_with(mock_paths["ob"], "out.csv", "out.txt", [1])
 
-        with patch.object(sys, "argv", test_args):
-            main()
+@patch("wite2_tools.cli.handle_scan_excess")
+def test_command_scan_excess(mock_func, mock_args, mock_paths):
+    """Verifies excess scanning receives full paths and args context."""
+    with patch("wite2_tools.cli.paths", mock_paths), patch("wite2_tools.cli.args", mock_args):
+        cli.COMMAND_MAP["scan-excess"](mock_args, mock_paths)
+    mock_func.assert_called_once_with(mock_paths, mock_args)
 
-        mock_orphans.assert_called_once()
-        # Check that nat_codes were passed as a list [1, 2]
-        args, kwargs = mock_orphans.call_args
-        assert 1 in args[2] and 2 in args[2]
+## --- Modification Tests ---
 
-    @patch("wite2_tools.cli.modify_unit_num_squads")
-    def test_dispatch_mod_update_num(self, mock_update):
-        """Verifies complex argument passing for modifiers."""
-        test_args = [
-            "cli.py", "mod-update-num",
-            "--ob-id", "500", "--wid", "10",
-            "--old", "5", "--new", "10"
-        ]
+@patch("wite2_tools.cli.reorder_unit_squads")
+def test_command_mod_reorder(mock_func, mock_args, mock_paths):
+    """Verifies squad reordering passes target indices."""
+    with patch("wite2_tools.cli.paths", mock_paths), patch("wite2_tools.cli.args", mock_args):
+        cli.COMMAND_MAP["mod-reorder-unit"](mock_args, mock_paths)
+    mock_func.assert_called_once_with(mock_paths["unit"], 100, 50, 2)
 
-        with patch.object(sys, "argv", test_args):
-            main()
+@patch("wite2_tools.cli.modify_unit_ground_element")
+def test_command_mod_replace(mock_func, mock_args, mock_paths):
+    """Verifies element replacement maps old and new weapon IDs."""
+    with patch("wite2_tools.cli.paths", mock_paths), patch("wite2_tools.cli.args", mock_args):
+        cli.COMMAND_MAP["mod-replace-elem"](mock_args, mock_paths)
+    mock_func.assert_called_once_with(mock_paths["unit"], 50, 60)
 
-        # Capture the actual arguments used in the call
-        args, _ = mock_update.call_args
-        actual_path = args[0]
-
-        # 1. Verify the path ends with the correct scenario-based filename
-        # This handles absolute vs relative path differences
-        self.assertTrue(actual_path.endswith("_unit.csv"))
-
-        # 2. Verify the numerical arguments remain exact
-        # expected: (path, ob_id, wid, old, new)
-        self.assertEqual(args[1:], (500, 10, 5, 10))
-
-
-    @patch("wite2_tools.cli.sys.exit")
-    @patch("wite2_tools.cli.audit_unit_ob_excess")
-    def test_main_handles_exception(self, mock_audit, mock_exit):
-        """Verifies global try/except catches and logs errors lazily."""
-        # Force the mock to raise an error
-        mock_audit.side_effect = Exception("Data Corrupt")
-
-        test_args = ["cli.py", "audit-toe"]
-
-        with patch.object(sys, "argv", test_args):
-            # main() will catch the Exception and call sys.exit(1)
-            main()
-
-            # Verify the logger was called with the lazy % formatting
-            self.mock_log.return_value.error.assert_called_with(
-                "Critical failure in %s: %s", "audit-toe",
-                ANY, exc_info=True
-            )
-
-        # This will now pass because main() stayed alive long enough to exit
-        mock_exit.assert_called_once_with(1)
-
-    def test_parser_nat_defaults(self):
-        """Verifies that the add_common helper applies default nat codes."""
-        parser = setup_parsers()
-        args = parser.parse_args(["audit-toe"])
-        assert args.nat_codes == [1]
-
-
-if __name__ == "__main__":
-    unittest.main()
+@patch("wite2_tools.cli.modify_unit_squads")
+def test_command_mod_update_num(mock_func, mock_args, mock_paths):
+    """Verifies squad count updates target the correct OB ID."""
+    with patch("wite2_tools.cli.paths", mock_paths), patch("wite2_tools.cli.args", mock_args):
+        cli.COMMAND_MAP["mod-update-num"](mock_args, mock_paths)
+    mock_func.assert_called_once_with(mock_paths["unit"], 500, 50, 5, 10)

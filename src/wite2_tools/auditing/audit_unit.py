@@ -29,7 +29,7 @@ Command Line Usage:
 import csv
 import os
 from tempfile import NamedTemporaryFile
-from typing import Set
+from typing import Set, Any
 
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
@@ -59,7 +59,7 @@ from wite2_tools.utils import (
 log = get_logger(__name__)
 
 
-def is_greater_than_zero(value) -> bool:
+def is_greater_than_zero(value: Any) -> bool:
     try:
         return float(value) > 0
     except ValueError:
@@ -102,8 +102,8 @@ def _check_squads(uid: int,
 
     for i in range(MAX_SQUAD_SLOTS):
         sqd_id_col, sqd_num_col = f"sqd.u{i}", f"sqd.num{i}"
-        sqd_id = parse_int(row.get(sqd_id_col), 0)
-        qty = parse_int(row.get(sqd_num_col), 0)
+        sqd_id = parse_int(row.get(sqd_id_col))
+        qty = parse_int(row.get(sqd_num_col))
 
         if sqd_id != 0 and sqd_id not in valid_elem_ids:
             log.error("%s: Slot %d has invalid Elem WID[%d].",
@@ -130,10 +130,10 @@ def _check_hq_and_delay(uid: int,
     issues = 0
     fixed = 0
     ref: str = format_ref("UID", uid, uname)
-    unit_hhq = parse_int(row.get('hhq'), 0)
+    unit_hhq = parse_int(row.get('hhq'))
 
     if unit_hhq == uid:
-        hq_type = parse_int(row.get('hq'), 0)
+        hq_type = parse_int(row.get('hq'))
         if hq_type not in (0, 1):
             log.warning("%s: Self-reporting as HQ with Type(%d).",
                      ref, hq_type)
@@ -153,7 +153,7 @@ def _check_hq_and_delay(uid: int,
                 row['hhq'] = str(fallback_hq)
                 fixed += 1
 
-    u_delay = parse_int(row.get("delay"), 0)
+    u_delay = parse_int(row.get("delay"))
     if u_delay > MAX_GAME_TURNS:
         log.warning("%s: Delay(%d) exceeds MAX_GAME_TURNS(%d).",
                     ref, u_delay, MAX_GAME_TURNS)
@@ -192,8 +192,7 @@ def audit_unit_csv(unit_file_path: str,
         valid_elem_ids: Set[int] = get_valid_ground_elem_ids(ground_file_path)
         valid_unit_ids: Set[int] = get_valid_unit_ids(unit_file_path, active_only)
 
-        unit_gen = get_csv_dict_stream(unit_file_path, 2)
-     #   reader = next(unit_gen)
+        unit_stream = get_csv_dict_stream(unit_file_path, 2)
 
         # Initialize temp file if fix mode is enabled
         writer = None
@@ -201,7 +200,7 @@ def audit_unit_csv(unit_file_path: str,
             temp_file = NamedTemporaryFile(mode='w', delete=False,
                                            dir=os.path.dirname(unit_file_path),
                                            newline='', encoding=ENCODING_TYPE)
-            header = unit_gen.fieldnames
+            header = unit_stream.fieldnames
             writer = csv.DictWriter(temp_file,
                                     fieldnames=header)
             writer.writeheader()
@@ -209,7 +208,7 @@ def audit_unit_csv(unit_file_path: str,
         log.info("Evaluating Unit file consistency:'%s' (Active Only:%s) (Fix Mode:%s)",
                  file_base, active_only, (fix_ghosts or relink_orphans))
 
-        for _, row in unit_gen.rows:
+        for _, row in unit_stream.rows:
             uid = parse_int(row.get("id"))
             utype = parse_int(row.get("type"))
 

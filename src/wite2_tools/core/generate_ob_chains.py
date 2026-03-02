@@ -48,7 +48,7 @@ from typing import Optional, Union, Iterable, cast, List
 
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
-from wite2_tools.generator import read_csv_dict_generator
+from wite2_tools.generator import get_csv_dict_stream
 from wite2_tools.utils import (
     get_logger,
     parse_int,
@@ -94,10 +94,9 @@ def generate_ob_chains(
              os.path.basename(ob_file_path))
 
     # 1. Read the input _ob CSV and build mappings
-    ob_gen = read_csv_dict_generator(ob_file_path)
-    next(ob_gen)  # Skip DictReader object
+    ob_stream = get_csv_dict_stream(ob_file_path)
 
-    for item in ob_gen:
+    for item in ob_stream.rows:
         # Cast the yielded item to satisfy static type checkers
         _, row = cast(tuple[int, dict], item)
 
@@ -112,7 +111,7 @@ def generate_ob_chains(
                 continue
 
             ob_id = parse_int(row.get("id"))
-            ob_upgrade_id = parse_int(row.get('upgrade'), 0)
+            ob_upgrade_id = parse_int(row.get('upgrade'))
 
             # Combine ob_name and ob_suffix
             ob_name = parse_str(row.get('name'), '')

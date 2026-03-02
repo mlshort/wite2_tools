@@ -18,18 +18,60 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Set up Python 3.13
       uses: actions/setup-python@v5
       with:
         python-version: "3.13"
+        cache: pip
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pylint pytest
+        # Install testing/linting tools + your local package
+        pip install pylint pytest mypy lxml
+        pip install -e .
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    - name: Test with pytest
+    - name: Type check (MyPy)
+      run: |
+        mkdir -p reports
+        mypy src/ --txt-report reports || true
+
+    - name: Running Tests (Pytest)
       run: |
         pytest -m "not integration"
+
+    # ==========================================================
+    # DISABLED BLOCKS (Change 'if: false' to 'if: true' to enable)
+    # ==========================================================
+
+    - name: Extract Coverage and Determine Color
+      if: github.ref == 'refs/heads/main'
+      id: vars
+      run: |
+        # Extract percentage from the MyPy report
+        COVERAGE=$(grep "Total" reports/index.txt | awk '{print $NF}' | sed 's/%//')
+
+        # Logic for badge color
+        if (( $(echo "$COVERAGE > 90" | bc -l) )); then
+          COLOR="brightgreen"
+        elif (( $(echo "$COVERAGE > 75" | bc -l) )); then
+          COLOR="green"
+        else
+          COLOR="yellow"
+        fi
+
+        echo "percentage=$COVERAGE" >> $GITHUB_OUTPUT
+        echo "color=$COLOR" >> $GITHUB_OUTPUT
+
+    - name: Update Coverage Badge
+      if: github.ref == 'refs/heads/main'
+      uses: schneegans/dynamic-badges-action@v1.7.0
+      with:
+        auth: ${{ secrets.GIST_TOKEN }}
+        gistID: 65b562e5180666321b1616e1a2e0033c
+        filename: mypy-coverage.json
+        label: MyPy Coverage
+        message: ${{ steps.vars.outputs.percentage }}%
+        color: ${{ steps.vars.outputs.color }}

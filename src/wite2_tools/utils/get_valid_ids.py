@@ -40,8 +40,8 @@ from wite2_tools.constants import (
     ObColumn
 )
 from wite2_tools.generator import (
-    read_csv_list_generator,
-    read_csv_dict_generator
+    get_csv_list_stream,
+    get_csv_dict_stream
 )
 from wite2_tools.utils.logger import get_logger
 from wite2_tools.utils.parsing import parse_int
@@ -62,13 +62,12 @@ def get_valid_ob_ids(ob_file_path: str) -> Set[int]:
     logger.info("Building valid TOE(OB) ID cache from '%s'...", file_name)
 
     try:
-        data_gen = read_csv_list_generator(ob_file_path)
-        next(data_gen)  # Skip header
+        ob_stream = get_csv_list_stream(ob_file_path)
 
-        for _, row in data_gen:
+        for _, row in ob_stream.rows:
             try:
-                ob_id = parse_int(row[ObColumn.ID], 0)  # 'id' column
-                ob_type = parse_int(row[ObColumn.TYPE], 0)  # 'type' column
+                ob_id = parse_int(row[ObColumn.ID])  # 'id' column
+                ob_type = parse_int(row[ObColumn.TYPE])  # 'type' column
                 if ob_id != 0 and ob_type != 0:
                     valid_ob_ids.add(ob_id)
             except (ValueError, IndexError):
@@ -94,17 +93,15 @@ def get_valid_ob_upgrade_ids(ob_file_path: str) -> Set[int]:
                 ob_file_path)
 
     try:
-        data_gen = read_csv_list_generator(ob_file_path)
-        # Skip header
-        next(data_gen)
+        ob_stream = get_csv_list_stream(ob_file_path)
 
-        for _, row in data_gen:
+        for _, row in ob_stream.rows:
             try:
-                ob_id = parse_int(row[ObColumn.ID], 0)
+                ob_id = parse_int(row[ObColumn.ID])
                 if ob_id == 0:
                     continue
-                ob_type = parse_int(row[ObColumn.TYPE], 0)
-                ob_upgrade = parse_int(row[ObColumn.UPGRADE], 0)
+                ob_type = parse_int(row[ObColumn.TYPE])
+                ob_upgrade = parse_int(row[ObColumn.UPGRADE])
 
                 if ob_type != 0 and ob_upgrade != 0:
                     valid_ob_upgrade_ids.add(ob_upgrade)
@@ -134,17 +131,15 @@ def get_valid_ground_elem_ids(ground_file_path: str) -> Set[int]:
 
     try:
         # Use list generator to handle duplicate 'id' column names safely
-        ground_gen = read_csv_list_generator(ground_file_path)
-        # Skip header
-        next(ground_gen)
+        gnd_stream = get_csv_list_stream(ground_file_path)
 
-        for _, row in ground_gen:
+        for _, row in gnd_stream.rows:
             try:
                 # Access by index to avoid duplicate header issues
-                wid = parse_int(row[GroundColumn.ID], 0)
+                wid = parse_int(row[GroundColumn.ID])
                 if wid == 0:
                     continue
-                ground_type = parse_int(row[GroundColumn.TYPE], 0)
+                ground_type = parse_int(row[GroundColumn.TYPE])
                 if ground_type != 0:
                     valid_elem_ids.add(wid)
             except (ValueError, IndexError):
@@ -175,15 +170,14 @@ def get_valid_unit_ids(unit_file_path: str,
 
     try:
         # start=2 accounts for WiTE2 headers
-        unit_gen = read_csv_dict_generator(unit_file_path, 2)
-        next(unit_gen)  # skip the header row
+        unit_stream = get_csv_dict_stream(unit_file_path, 2)
 
-        for _, row in unit_gen:
-            uid = parse_int(row.get("id"), 0)
+        for _, row in unit_stream.rows:
+            uid = parse_int(row.get("id"))
 
             # If filtering by active, skip Type 0 units
             if active_only:
-                utype = parse_int(row.get("type"), 0)
+                utype = parse_int(row.get("type"))
                 if utype == 0:
                     continue
 

@@ -33,7 +33,7 @@ def test_scan_ob_for_ground_elem_no_matches(mock_ob_csv, capsys):
     assert "No matches found." in captured.out
 
 
-def test_scan_ob_for_ground_elem_missing_file():
+def test_scan_ob_for_ground_elem_missing_file()->None:
     """
     Verifies graceful failure when the file doesn't exist.
     """

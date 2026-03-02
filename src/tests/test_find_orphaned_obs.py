@@ -1,6 +1,7 @@
 import csv
-
+from pathlib import Path
 import pytest
+
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.constants import MAX_SQUAD_SLOTS
@@ -12,7 +13,7 @@ from wite2_tools.core.find_orphaned_obs import find_orphaned_obs
 
 
 @pytest.fixture(name="mock_ob_csv")
-def mock_ob_csv(tmp_path) -> str:
+def mock_ob_csv(tmp_path:Path) -> str:
     """
     Creates a mock _ob.csv with various upgrade chains and edge cases.
     """
@@ -35,7 +36,7 @@ def mock_ob_csv(tmp_path) -> str:
 
 
 @pytest.fixture(name="mock_unit_csv")
-def mock_unit_csv(tmp_path):
+def mock_unit_csv(tmp_path:Path)->str:
     file_path = tmp_path / "mock_unit.csv"
 
     # 1. Generate full width of _unit.csv headers

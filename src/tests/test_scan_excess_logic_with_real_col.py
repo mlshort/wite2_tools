@@ -1,3 +1,5 @@
+from pathlib import Path
+
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.scanning.scan_unit_for_excess import (
@@ -5,7 +7,7 @@ from wite2_tools.scanning.scan_unit_for_excess import (
 )
 
 
-def test_scan_excess_logic_with_real_columns(tmp_path):
+def test_scan_excess_logic_with_real_columns(tmp_path:Path):
     """Verifies the resource > 5 * need logic using real WiTE2 headers."""
     # Note: 'sup' is the current supply, 'sNeed' is the requirement
     headers = "id,name,type,sup,sNeed\n"

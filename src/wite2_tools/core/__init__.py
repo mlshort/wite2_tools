@@ -5,8 +5,8 @@ evolution chains, identifying unreferenced database IDs, and performing
 global inventory calculations across the unit database.
 """
 
-__version__ = "0.4.0"
-__date__ = "2026-02-26"
+__version__ = "0.5.0"
+__date__ = "2026-03-02"
 
 from .exceptions import (
     WiTE2Error,
@@ -17,6 +17,7 @@ from .find_orphaned_obs import (
     find_orphaned_obs,
     is_ob_orphaned
 )
+from .calc_unit_stats import calc_unit_needed_support
 from .count_global_unit_inventory import count_global_unit_inventory
 from .identify_unused_devices import identify_unused_devices
 from .group_units_by_ob import group_units_by_ob, Unit
@@ -31,5 +32,6 @@ __all__ = [
     "count_global_unit_inventory",
     "group_units_by_ob",
     "identify_unused_devices",
+    "calc_unit_needed_support",
     "Unit"
 ]

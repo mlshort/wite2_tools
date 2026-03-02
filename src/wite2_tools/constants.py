@@ -1,38 +1,42 @@
 """
-WiTE2 Global Constants and Enumerations
-=======================================
+WiTE2 CSV Schema Constants and Enumerations
+===========================================
+Defines the core structural constants, column indices, and data enumerations
+derived from Gary Grigsby's War in the East 2 (WiTE2) CSV database schema.
 
-This module defines global constants, game engine limits, and column
-enumerations used throughout the `wite2_tools` package. Centralizing
-these values ensures structural consistency and simplifies maintenance
-across the various modifier, auditing, and analysis scripts.
+This module serves as the 'Single Source of Truth' for data offsets, ensuring
+that auditing, scanning, and modification tools remain synchronized with
+the game engine's legacy file formats.
 
-Core Contents:
---------------
-* Engine Limits: Defines hardcoded game engine limitations (e.g.,
-  `MAX_SQUAD_SLOTS = 32`) to replace magic numbers in iterative loops
-  and validation checks.
-* Column Enumerations: Provides strongly typed `IntEnum` classes
-  (`UnitColumn`, `OBColumn`, `GroundColumn`) that map game CSV column headers
-  to their exact zero-based integer indices, enabling safe, readable,
-  and highly performant row parsing.
+Key Data Definitions:
+---------------------
+* Column Indices: Offsets for _unit.csv, _ob.csv, and _ground.csv fields.
+* Nationalities: Mapping of country codes to historical combatants.
+* Ground Element Classes: Enumeration of weapon types (AFV, Infantry, etc.).
+* Device Categories: Classification of sub-components and hardware.
+
+Note:
+-----
+Many indices in this module are 0-based to align with Python's list indexing,
+representing the exact column position in the raw comma-separated data.
 """
 from enum import IntEnum
+from typing import Final
 
-MIN_SQUAD_SLOTS: int = 0
-MAX_SQUAD_SLOTS: int = 32
-MAX_GROUND_MEN: int = 30
-MAX_WPN_SLOTS: int = 10
+MIN_SQUAD_SLOTS: Final= 0
+MAX_SQUAD_SLOTS: Final = 32
+MAX_GROUND_MEN: Final = 30
+MAX_GND_WPN_SLOTS: Final = 10
 # GC41 is configured to run from 22 Jun 1941 till 2 Aug 1945
 # which is 216 turns
-MAX_GAME_TURNS: int = 225
-EXCESS_RESOURCE_MULTIPLIER: int = 5
+MAX_GAME_TURNS: Final = 225
+EXCESS_RESOURCE_MULTIPLIER: Final = 5
 
 # Map Coordinate Limits
-MIN_X: int = 0
-MIN_Y: int = 0
-MAX_X: int = 378
-MAX_Y: int = 354
+MIN_X: Final = 0
+MIN_Y: Final = 0
+MAX_X: Final = 378
+MAX_Y: Final = 354
 
 GROUND_WPN_PREFIXES: list[str] = ["wpn ", "wpnNum ", "wpnAmmo ",
                                   "wpnRof ", "wpnAcc ", "wpnFace "]
@@ -692,7 +696,7 @@ class GroundElementType(IntEnum):
     CS_INFANTRY_TANK = 69
     LT_ARMOURED_CAR = 70
     NAVAL_ARTILLERY = 71
-    CDL_TANK = 72
+    RECON_TANK = 72
     RECON_HALFTRACK = 73
     FLAMETHROWER = 74
     ASSAULT_TANK = 75
@@ -739,6 +743,44 @@ class GroundElementType(IntEnum):
     STATIC_AT_GUN = 116  # New to WiTE2
     MECH_CAV = 117  # New to WiTE2
     MG_SECTION = 118  # Local Modification
+
+    @property
+    def is_armored_infantry_element(self) -> bool:
+        armored_infantry_types = {
+            GroundElementType.MECH_INF_SQUAD
+        }
+        return self in armored_infantry_types
+
+    @property
+    def is_light_tank_element(self) -> bool:
+        _types = {
+            GroundElementType.LT_TANK,
+            GroundElementType.FOREIGN_LT_TANK,
+            GroundElementType.RECON_TANK
+        }
+        return self in _types
+
+    @property
+    def is_medium_tank_element(self) -> bool:
+        _types = {
+            GroundElementType.MD_TANK,
+            GroundElementType.FOREIGN_MD_TANK,
+            GroundElementType.FLAME_TANK,
+            GroundElementType.INFANTRY_TANK,
+            GroundElementType.DD_TANK
+        }
+        return self in _types
+
+    @property
+    def is_heavy_tank_element(self) -> bool:
+        _types = {
+            GroundElementType.HVY_TANK,
+            GroundElementType.HVY_CAVALRY_TANK,
+            GroundElementType.HVY_ASSAULT_TANK,
+            GroundElementType.CS_TANK,
+            GroundElementType.CS_INFANTRY_TANK
+        }
+        return self in _types
 
     @property
     def is_combat_element(self) -> bool:
@@ -1125,39 +1167,6 @@ class Elem(IntEnum):
     HMG_SECTION_40 = 600
     HMG_SECTION_42 = 601
     SUPPORT_GER = 1490
-
-
-# pylint: disable=invalid-name
-class OB(IntEnum):
-    """
-    Work in progress for convenience
-    """
-    TIER_1A_PZ_DIV_41 = 33
-    TIER_1B_PZ_DIV_41 = 35
-    TIER_1C_PZ_DIV_41 = 37
-    TIER_1_PZ_DIV_42a = 39
-    TIER_2_PZ_DIV_41 = 47
-    TIER_3_PZ_DIV_41 = 56
-    TIER_4a_PZ_DIV_41 = 65
-    TIER_1_MOT_DIV_41 = 250
-    TIER_2_MOT_DIV_41 = 258
-    WAVE_1_INF_DIV_41 = 389
-    WAVE_1_INF_DIV_42 = 390
-    WAVE_1_INF_DIV_43 = 391
-    WAVE_3_INF_DIV_41 = 393
-    WAVE_4_INF_DIV_41 = 398
-    WAVE_5_INF_DIV_41 = 402
-    WAVE_6_INF_DIV_41 = 407
-    WAVE_7_INF_DIV_41 = 412
-    WAVE_8_INF_DIV_41 = 416
-    WAVE_11_INF_DIV_41 = 420
-    WAVE_12_INF_DIV_41 = 424
-    WAVE_17_INF_DIV_41 = 438
-    AIR_LANDING_DIV_41 = 483
-    MOT_MG_BN_41 = 577
-    WAVE_12_LIGHT_DIV_41 = 599
-    MTN_DIV_41 = 606
-    CAV_DIV_41 = 727
 
 
 class NatCode(IntEnum):

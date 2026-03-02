@@ -34,7 +34,7 @@ from typing import cast
 
 # Internal package imports
 from wite2_tools.constants import EXCESS_RESOURCE_MULTIPLIER
-from wite2_tools.generator import read_csv_dict_generator
+from wite2_tools.generator import get_csv_dict_stream
 from wite2_tools.utils import (
     get_nat_abbr,
     get_logger,
@@ -62,8 +62,7 @@ def _scan_excess_resource(unit_file_path: str,
     matches_found = 0
 
     try:
-        unit_gen = read_csv_dict_generator(unit_file_path)
-        next(unit_gen)  # Skip DictReader object
+        unit_stream = get_csv_dict_stream(unit_file_path)
 
         print(f"\nScanning '{os.path.basename(unit_file_path)}'"
               f" for excess {display_name.lower()}.")
@@ -72,13 +71,13 @@ def _scan_excess_resource(unit_file_path: str,
               f" {display_name:^10} | {need_col:^10} | {'Ratio':<8}")
         print("-" * 85)
 
-        for item in unit_gen:
+        for item in unit_stream.rows:
             # Cast the yielded item to satisfy static type checkers
             row_idx, row = cast(tuple[int, dict], item)
 
             # 1. Convert to numbers (int) for math comparison
-            resource = parse_int(row.get(resource_col), 0)
-            resource_need = parse_int(row.get(need_col), 0)
+            resource = parse_int(row.get(resource_col))
+            resource_need = parse_int(row.get(need_col))
             utype = parse_int(row.get("type"))
 
             if utype == 0:

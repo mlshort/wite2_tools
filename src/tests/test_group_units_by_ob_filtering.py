@@ -1,4 +1,5 @@
 import pytest
+from pathlib import Path
 
 from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.core.group_units_by_ob import group_units_by_ob
@@ -11,7 +12,7 @@ def clear_caches():
 
 
 @pytest.fixture(name="mock_nat_unit_csv")
-def mock_nat_unit_csv(tmp_path):
+def mock_nat_unit_csv(tmp_path:Path):
     """Creates a mock _unit.csv with multiple nationalities."""
     content = (
         "id,name,type,nat\n"

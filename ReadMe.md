@@ -2,9 +2,10 @@
 
 [![Build Status](https://github.com/mlshort/wite2_tools/actions/workflows/python-app.yml/badge.svg)](https://github.com/mlshort/wite2_tools/actions)
 [![Pylint](https://github.com/mlshort/wite2_tools/actions/workflows/pylint.yml/badge.svg?event=push)](https://github.com/mlshort/wite2_tools/actions/workflows/pylint.yml)
+![MyPy Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/mlshort/65b562e5180666321b1616e1a2e0033c/raw/mypy-coverage.json)
 
 
-**Version:** 0.4.0
+**Version:** 0.5.0
 **Author:** Mark L. Short
 
 A specialized, Python-based toolkit for managing, modifying, and analyzing

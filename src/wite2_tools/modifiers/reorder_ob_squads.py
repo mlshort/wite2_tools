@@ -123,13 +123,13 @@ def reorder_ob_squads(ob_file_path: str,
 
     # Define the specific logic for processing an TOE(OB) row
     def process_row(row: dict, _: int) -> tuple[dict, bool]:
-        ob_id = parse_int(row.get("id"), 0)
+        ob_id = parse_int(row.get("id"))
         if target_ob_id == ob_id:
             for i in range(MAX_SQUAD_SLOTS):
                 current_sqd_col = f"sqd {i}"
 
                 if current_sqd_col in row:
-                    wid = parse_int(row.get(current_sqd_col), 0)
+                    wid = parse_int(row.get(current_sqd_col))
 
                     if wid == target_wid:
                         if i != target_slot:

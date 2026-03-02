@@ -1,14 +1,15 @@
 import csv
 import pytest
+from pathlib import Path
 
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.constants import MAX_SQUAD_SLOTS
-from wite2_tools.modifiers import modify_unit_num_squads
+from wite2_tools.modifiers import modify_unit_squads
 
 
 @pytest.fixture(name="mock_modify_unit_csv")
-def mock_modify_unit_csv(tmp_path):
+def mock_modify_unit_csv(tmp_path:Path):
     """Generates a 4-row truth table to test all conditional updating paths."""
     file_path = tmp_path / "mock_modify_unit.csv"
 
@@ -51,13 +52,13 @@ def mock_modify_unit_csv(tmp_path):
     return str(file_path)
 
 
-def test_modify_unit_num_squads_success_and_filters(mock_modify_unit_csv):
+def test_modify_unit_squads_success_and_filters(mock_modify_unit_csv):
     """
     Verifies that the strict multi-level conditions are applied correctly.
     """
 
     # Execute: In TOE(OB) 50, if Elem 105 has qty 10, change it to 99
-    updates = modify_unit_num_squads(
+    updates = modify_unit_squads(
         mock_modify_unit_csv,
         target_ob_id=50,
         target_wid=105,

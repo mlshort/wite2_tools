@@ -1,6 +1,6 @@
 from unittest.mock import patch, MagicMock
 from wite2_tools.core.find_orphaned_obs import find_orphaned_obs
-from wite2_tools.generator import CSVStream
+from wite2_tools.generator import CSVDictStream
 
 # 1. Standardized Mock Data for TOE(OB) templates
 MOCK_OB_DATA = [
@@ -26,7 +26,7 @@ def create_mock_stream(data_list):
     """Helper to simulate the CSVStream object returned by get_csv_dict_stream."""
     mock_rows = enumerate(data_list[1:], start=1) # Skip header row for iteration
     fieldnames = list(data_list[0].keys()) if data_list else []
-    return CSVStream(fieldnames=fieldnames, rows=mock_rows)
+    return CSVDictStream(fieldnames=fieldnames, rows=mock_rows)
 
 class TestOrphanedObs:
 

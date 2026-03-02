@@ -25,38 +25,66 @@ Functions
     (for metadata access), followed by enumerated tuples of (index, row_dict).
 """
 import csv
-from typing import Generator, Union, List, Dict
+from typing import Generator, Union, List, Dict, Tuple
 from collections.abc import Iterator
 from dataclasses import dataclass
 
 # Internal package imports
 from .config import ENCODING_TYPE
 
+
 @dataclass
-class CSVStream:
-    fieldnames: list[str]
-    rows: Iterator[tuple[int, dict[str, str]]]
+class CSVDictStream:
+    fieldnames: List[str]
+    rows: Iterator[Tuple[int, Dict[str, str]]]
+
 
 def get_csv_dict_stream(filename: str,
-                        enum_start: int = 1) -> CSVStream:
-
+                        enum_start: int = 1) -> CSVDictStream:
+    # throws OSError on failure
     file = open(filename, mode='r', newline='', encoding=ENCODING_TYPE)
     reader = csv.DictReader(file)
     fieldnames = reader.fieldnames or []
 
-    def row_gen() -> Iterator[tuple[int, dict[str, str]]]:
+    def row_gen() -> Iterator[Tuple[int, dict[str, str]]]:
         try:
             for index, row in enumerate(reader, start=enum_start):
                 yield index, row
         finally:
             file.close()
 
-    return CSVStream(fieldnames=list(fieldnames), rows=row_gen())
+    return CSVDictStream(fieldnames=list(fieldnames), rows=row_gen())
+
+@dataclass
+class CSVListStream:
+    header: List[str]
+    rows: Iterator[Tuple[int, List[str]]]
+
+
+def get_csv_list_stream(filename: str, enum_start: int = 1) -> CSVListStream:
+    # throws OSError upon failue
+    file = open(filename, mode='r', newline='', encoding=ENCODING_TYPE)
+    reader = csv.reader(file)
+    try:
+        header = next(reader) # Error check: handle StopIteration here
+    except StopIteration:
+        file.close()
+        return CSVListStream(header=[], rows=iter([]))
+
+    def row_gen()->Iterator[Tuple[int, List[str]]]:
+        try:
+            for index, row in enumerate(reader, start=enum_start):
+                yield index, row
+        finally:
+            file.close() # Clean up resource
+
+    return CSVListStream(header=header, rows=row_gen())
+
 
 def read_csv_list_generator(
     filename: str,
     enum_start: int = 1
-) -> Generator[Union[List[str], tuple[int, List[str]]], None, None]:
+) -> Generator[Union[List[str], Tuple[int, List[str]]], None, None]:
     """
     Yields the header list first, then index and row lists.
     """
@@ -81,7 +109,7 @@ def read_csv_list_generator(
 def read_csv_dict_generator(
     filename: str,
     enum_start: int = 1
-) -> Generator[Union[csv.DictReader, tuple[int, Dict[str, str]]], None, None]:
+) -> Generator[Union[csv.DictReader, Tuple[int, Dict[str, str]]], None, None]:
     """
     Yields the DictReader object first, then index, row dictionaries.
     """

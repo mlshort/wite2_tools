@@ -1,12 +1,13 @@
 import os
 from typing import cast
 
-from wite2_tools.generator import read_csv_dict_generator
+from wite2_tools.generator import get_csv_dict_stream
 from wite2_tools.utils import (
     get_logger,
     parse_int,
     parse_str
 )
+from wite2_tools.constants import MAX_SQUAD_SLOTS
 
 # Initialize the log for this specific module
 log = get_logger(__name__)
@@ -15,7 +16,7 @@ log = get_logger(__name__)
 def identify_unused_devices(ground_file_path: str,
                             aircraft_file_path: str,
                             device_file_path: str,
-                            device_type: int):
+                            device_type: int)->None:
     """
     Identifies devices of a specific type that are not present in any ground
     unit or aircraft.
@@ -53,16 +54,15 @@ def identify_unused_devices(ground_file_path: str,
 
     # 1. Identify all devices of the specified type from the device file
     try:
-        device_gen = read_csv_dict_generator(device_file_path)
-        next(device_gen)  # Skip DictReader header
+        device_gen = get_csv_dict_stream(device_file_path)
 
-        for item in device_gen:
+        for item in device_gen.rows:
             # Cast the yielded item to satisfy static type checkers
             _, row = cast(tuple[int, dict], item)
             d_type = parse_int(row.get("type"))
             if d_type == device_type:
                 d_name = parse_str(row.get('name', "Unk"))
-                d_id = parse_int(row.get('id', 0))
+                d_id = parse_int(row.get('id'))
                 if d_id:
                     devices_of_type[d_id] = d_name
 
@@ -76,17 +76,16 @@ def identify_unused_devices(ground_file_path: str,
 
     # 2. Identify all weapon IDs used in the ground and aircraft files (wpn 0 through wpn 9)
     used_weapon_ids = set()
-    wpn_cols = [f'wpn {i}' for i in range(10)]
+    wpn_cols = [f'wpn {i}' for i in range(MAX_SQUAD_SLOTS)]
 
     for file_path in [ground_file_path, aircraft_file_path]:
         try:
-            gen = read_csv_dict_generator(file_path)
-            next(gen)  # Skip DictReader header
+            gen = get_csv_dict_stream(file_path)
 
-            for item in gen:
+            for item in gen.rows:
                 _, row = cast(tuple[int, dict], item)
                 for col in wpn_cols:
-                    wpn_id = parse_int(row.get(col), 0)
+                    wpn_id = parse_int(row.get(col))
                     # Filter out zero values
                     if wpn_id:
                         used_weapon_ids.add(wpn_id)

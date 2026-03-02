@@ -6,9 +6,10 @@ from wite2_tools.utils import (
     get_ground_elem_type_name,
     get_ob_suffix
 )
-from wite2_tools.generator import read_csv_dict_generator
+from wite2_tools.generator import get_csv_dict_stream
 from wite2_tools.utils.parsing import parse_int, parse_str
 from wite2_tools.paths import LOCAL_DATA_PATH
+from wite2_tools.constants import MAX_SQUAD_SLOTS
 
 
 # Initialize the logger for this specific module
@@ -35,9 +36,7 @@ def audit_unit_ob_excess(
         log.error("Error: The file '%s' was not found.", ob_file_path)
         return
 
-    ob_gen = read_csv_dict_generator(ob_file_path)
-    # Skip DictReader header yield
-    next(ob_gen)
+    ob_stream = get_csv_dict_stream(ob_file_path)
 
     log.info("Task Start: Evaluating Unit ob excess: '%s' against '%s' for Nat Codes: %s",
              os.path.basename(unit_file_path),
@@ -48,7 +47,7 @@ def audit_unit_ob_excess(
     unit_count: int = 0
     excess_count: int = 0
 
-    for _, row in ob_gen:
+    for _, row in ob_stream.rows:
         ob_id = parse_int(row.get('id'))
         if ob_id == 0:
             continue
@@ -57,7 +56,7 @@ def audit_unit_ob_excess(
 
         composition: Dict[int,int] = {}
         # OBs use 'sqd X' for ID and 'sqdNum X' for Count (0-31)
-        for i in range(32):
+        for i in range(MAX_SQUAD_SLOTS):
             o_wid = parse_int(row.get(f'sqd {i}'))
             o_cnt = parse_int(row.get(f'sqdNum {i}'))
             if o_wid > 0:
@@ -65,8 +64,7 @@ def audit_unit_ob_excess(
         ob_templates[ob_id] = composition
 
     # 2. Process Units and Compare to TOE
-    unit_gen = read_csv_dict_generator(unit_file_path)
-    next(unit_gen)
+    unit_stream = get_csv_dict_stream(unit_file_path)
 
     header = (
         f"{'UID':<7} | {'Unit Name':<25} | {'WID':<7} | {'Element Name':<25} | "
@@ -75,7 +73,7 @@ def audit_unit_ob_excess(
     print(header)
     print("-" * 80)
 
-    for _, row in unit_gen:
+    for _, row in unit_stream.rows:
         u_nat = parse_int(row.get('nat'), default=-1)
         if u_nat not in target_nat:
             continue
@@ -100,7 +98,7 @@ def audit_unit_ob_excess(
         u_fullname = f"{u_name} {u_suffix}"
 
         # Units use 'sqd X' and 'sqdNum X' (0-31)
-        for i in range(32):
+        for i in range(MAX_SQUAD_SLOTS):
             u_wid = parse_int(row.get(f'sqd.u{i}'))
             u_cnt = parse_int(row.get(f'sqd.num{i}'))
 
@@ -129,7 +127,8 @@ def audit_unit_ob_excess(
                     #)
                     # print(line)
 
-    log.info("Task Complete: %d Units checked against %d TOE(OB)s. %d instances of ground element excess found",
+    log.info("Task Complete: %d Units checked against %d TOE(OB)s."
+             " %d instances of ground element excess found",
              unit_count,
              ob_count,
              excess_count)

@@ -6,6 +6,7 @@ from wite2_tools.constants import DeviceCol
 from wite2_tools.utils import get_logger
 from wite2_tools.utils import parse_int
 
+# Initialize the log for this specific module
 log = get_logger(__name__)
 
 
@@ -29,7 +30,7 @@ def scan_devices_by_stat(
 
             for row in reader:
                 # Use the Enum to safely access the column index
-                val = parse_int(row[stat_col], 0)
+                val = parse_int(row[stat_col])
 
                 if val >= min_value:
                     device_info = {

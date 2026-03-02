@@ -58,7 +58,7 @@ def modify_unit_ground_element(unit_file_path: str,
         for i in range(MAX_SQUAD_SLOTS):
             sqd_id_col = f"sqd.u{i}"
 
-            wid = parse_int(row.get(sqd_id_col), 0)
+            wid = parse_int(row.get(sqd_id_col))
 
             if wid != 0:
                 try:

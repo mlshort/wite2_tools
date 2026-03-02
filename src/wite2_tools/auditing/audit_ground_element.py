@@ -17,7 +17,8 @@ Example:
     $ python -m wite2_tools.cli audit-ground
 
     Scans the default _ground CSV file to ensure all type IDs are valid
-    and logs any logical errors.
+    and logs any logical errors. Returns the number of issues found or
+    -1 on error.
 """
 
 import os
@@ -29,7 +30,7 @@ from wite2_tools.constants import (
     GroundElementType
 )
 
-from wite2_tools.generator import read_csv_list_generator
+from wite2_tools.generator import get_csv_list_stream
 from wite2_tools.utils import (
     get_logger,
     get_ground_elem_class_name,
@@ -134,10 +135,9 @@ def audit_ground_element_csv(ground_file_path: str) -> int:
         file_name = os.path.basename(ground_file_path)
         log.info("--- Starting Ground Element Audit: '%s' ---", file_name)
         # Use list generator to handle duplicate 'id' column names safely
-        ground_gen = read_csv_list_generator(ground_file_path)
-        next(ground_gen)  # Skip Header
+        gnd_stream = get_csv_list_stream(ground_file_path)
 
-        for row_idx, row in ground_gen:
+        for row_idx, row in gnd_stream.rows:
             row_len = len(row)
 
             # Structural Safety Check

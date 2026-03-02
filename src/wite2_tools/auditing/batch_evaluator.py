@@ -40,7 +40,7 @@ log = get_logger(__name__)
 
 
 def scan_and_evaluate_unit_files(target_folder: str, active_only: bool,
-                                 fix_ghosts: bool):
+                                 fix_ghosts: bool)->None:
     """
     Scans a folder for CSV files containing '_unit','_ground' and runs
     consistency checks.
@@ -98,7 +98,7 @@ def scan_and_evaluate_unit_files(target_folder: str, active_only: bool,
           "row details.")
 
 
-def scan_and_evaluate_ob_files(target_folder: str):
+def scan_and_evaluate_ob_files(target_folder: str) -> None:
     """
     Scans a folder for CSV files containing '_ob','_ground' and runs
     consistency checks.

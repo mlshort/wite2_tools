@@ -84,6 +84,7 @@ NAT_LOOKUP: dict[int, str] = {
     4: "Rum",
     5: "Hun",
     6: "Slo",
+    7: "Bul",
     8: "Cze",
     9: "Bel",
     10: "Net",
@@ -103,8 +104,19 @@ NAT_LOOKUP: dict[int, str] = {
     25: "Bra",
     26: "Com",
     27: "Fra",
+    28: "NZ",
+    29: "Mor",
+    30: "Por",
     32: "Den",
-    41: "Swe"
+    33: "Tur",
+    34: "Swi",
+    35: "Spa",
+    38: "Ame",
+    41: "Swe",
+    42: "Ire",
+    43: "Ice",
+    44: "Lux",
+    56: "Syr"
 }
 
 
@@ -147,7 +159,7 @@ NATION_LOOKUP: dict[int, str] = {
     25: "Brazil",
     26: "Commonwealth",
     27: "France",
-    28: "New zealand",
+    28: "New Zealand",
     29: "Morocco",
     30: "Portugal",
     31: "Sweden",
@@ -156,7 +168,7 @@ NATION_LOOKUP: dict[int, str] = {
     34: "Switzerland",
     35: "Spain",
     36: "Iraq",
-    37: "vichy France",
+    37: "Vichy France",
     38: "America",
     41: "Sweden",
     42: "Ireland",
@@ -285,11 +297,11 @@ def get_hq_type_description(type_code: int) -> str:
 # Key: Type ID (int), Value: Description (str)
 GROUND_ELEMENT_TYPE_LOOKUP: dict[int, str] = {
     1: "Rifle Squad",
-    2: "Infantry-AT",
+    2: "Inf-AntiTank",
     3: "Cavalry Squad",
     4: "Machinegun",
     5: "Mortar",
-    6: "AT Gun",
+    6: "AntiTank Gun",
     7: "Mech-Inf Squad",
     8: "Md Flak",
     9: "Artillery",
@@ -307,24 +319,24 @@ GROUND_ELEMENT_TYPE_LOOKUP: dict[int, str] = {
     21: "SP Artillery",
     22: "SP Flak",
     23: "HT AT-Gun",
-    24: "HT MG/Mor",
+    24: "Mech-MG Section",
     25: "HT CS-Mortar",
     26: "Special Forces",
     27: "Marine Commando",
-    28: "Airborne Eng",
+    28: "Airborne Engineer",
     29: "SP AAMG",
     30: "AAMG",
     31: "Rocket",
     32: "Hvy Artillery",
     33: "Lt Flak",
     34: "Hvy Flak",
-    35: "DD Tank",
+    35: "Amphibious Tank",
     36: "MSW Tank",  # Minesweeper Tank
     37: "Engineer Tank",
     38: "Airborne Squad",
     39: "SP Inf-Gun",
     40: "SMG Squad",
-    41: "Barge",
+    41: "Carrier-Inf Squad",
     42: "Air Landing Section",
     43: "Hvy AT Gun",
     44: "Lt AT Gun",
@@ -338,11 +350,11 @@ GROUND_ELEMENT_TYPE_LOOKUP: dict[int, str] = {
     52: "Partisan Squad",
     53: "Naval Rifle Squad",
     54: "Labour Squad",
-    55: "HQ Troops",
-    56: "Ammo Truck",
+    55: "Md Field Gun", # change in WiTE2
+    56: "SP Rocket Launcher",  # change in WiTE2
     57: "Lt Armour",
     58: "Hvy Mortar",
-    59: "SP AT Gun",
+    59: "SP AntiTank Gun",
     60: "Tank Destroyer",
     61: "Hvy Tank Destroyer",
     62: "Infantry Gun",
@@ -355,7 +367,7 @@ GROUND_ELEMENT_TYPE_LOOKUP: dict[int, str] = {
     69: "CS Infantry Tank",
     70: "Lt Armoured Car",
     71: "Naval Artillery",
-    72: "CDL Tank",
+    72: "Recon Tank", # change in WiTE2
     73: "Recon Halftrack",
     74: "Flamethrower",
     75: "Assault Tank",
@@ -367,11 +379,11 @@ GROUND_ELEMENT_TYPE_LOOKUP: dict[int, str] = {
     81: "Foreign Assault Gun",
     82: "Foreign SP Artillery",
     83: "Foreign Armoured Car",
-    84: "Foreign SP Rocket",  # Unarmored?
+    84: "Unarmored SP Rocket",  # Unarmored?
     85: "HT Mortar",  # New to WiTE2
     86: "Super Hvy Artillery",  # New to WiTE2
     87: "Chassis",  # New to WiTE2
-    88: "Mech Recon",  # New to WiTE2
+    88: "Mech-Recon",  # New to WiTE2
     89: "Lt Infantry",  # New to WiTE2
     90: "Hvy SP Artillery",  # New to WiTE2
     91: "CS Armored Car",  # New to WiTE2
@@ -392,15 +404,15 @@ GROUND_ELEMENT_TYPE_LOOKUP: dict[int, str] = {
     106: "Resource",
     107: "Artillery",
     108: "Vehicle",
-    109: "Rail yard",
+    109: "Railyard",
     110: "Port",
-    111: "V-weapons Factory",
-    112: "V-weapons launcher",
-    113: "U-boat Factory",
-    114: "U-boat Pen",
+    111: "V-Weapons Factory",
+    112: "V-Weapons Launcher",
+    113: "U-Boat Factory",
+    114: "U-Boat Pen",
     115: "Assault Squad",  # New to WiTE2
-    116: "Static AT Gun",  # New to WiTE2
-    117: "Mech Cav",  # New to WiTE2
+    116: "Static AntiTank Gun",  # New to WiTE2
+    117: "Mech-Cavalry",  # New to WiTE2
     118: "MG Section"  # Local Modification
 }
 

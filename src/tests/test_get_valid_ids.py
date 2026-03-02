@@ -1,5 +1,6 @@
 import csv
 import pytest
+from pathlib import Path
 
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
@@ -28,7 +29,7 @@ def clear_caches():
 
 
 @pytest.fixture(name="mock_ob_csv")
-def mock_ob_csv(tmp_path) -> str:
+def mock_ob_csv(tmp_path:Path) -> str:
     """
     Creates a temporary _ob.csv.
     Requires at least 10 columns so row[8] (type) and row[9] (upgrade) don't
@@ -52,7 +53,7 @@ def mock_ob_csv(tmp_path) -> str:
 
 
 @pytest.fixture(name="mock_ground_csv")
-def mock_ground_csv(tmp_path) -> str:
+def mock_ground_csv(tmp_path:Path) -> str:
     """
     Creates a temporary _ground.csv.
     Requires at least 4 columns so row[3] (type) doesn't throw IndexError.
@@ -72,7 +73,7 @@ def mock_ground_csv(tmp_path) -> str:
 
 
 @pytest.fixture(name="mock_unit_csv")
-def mock_unit_csv(tmp_path) -> str:
+def mock_unit_csv(tmp_path:Path) -> str:
     """
     Creates a temporary _unit.csv.
     Requires at least 3 columns so row[2] (type) doesn't throw IndexError.
@@ -126,7 +127,7 @@ def test_get_valid_unit_ids(mock_unit_csv):
     assert unit_ids == {500, 502}
 
 
-def test_file_not_found_returns_empty_set():
+def test_file_not_found_returns_empty_set()->None:
     """
     Verifies that missing files are handled gracefully and return an empty
     set.

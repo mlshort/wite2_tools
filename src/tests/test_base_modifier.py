@@ -1,5 +1,6 @@
 import os
 from typing import Tuple
+from pathlib import Path
 
 import pytest
 from wite2_tools.config import ENCODING_TYPE
@@ -11,7 +12,7 @@ from wite2_tools.modifiers.base import process_csv_in_place
 
 
 @pytest.fixture(name="mock_unit_csv")
-def mock_unit_csv(tmp_path) -> str:
+def mock_unit_csv(tmp_path:Path) -> str:
     """Uses exact headers from your production _unit.csv."""
     headers = "id,name,type,nat,sqd.u0,sqd.num0\n"
     content = (

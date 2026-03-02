@@ -19,6 +19,7 @@ Core Features:
   module-specific logger instances, explicitly preventing propagation
   to the root logger to avoid duplicate log entries.
 """
+from logging import Logger
 import logging
 import os
 import sys
@@ -64,7 +65,7 @@ logging.basicConfig(
     ]
 )
 
-def get_logger(name):
+def get_logger(name: str | None)->Logger:
     """
     Creates or retrieves a logger instance.
     """
@@ -87,7 +88,7 @@ def get_logger(name):
 
     return logger
 
-def set_formatter(msg_format: str):
+def set_formatter(msg_format: str)->None:
     new_formatter = logging.Formatter(msg_format, datefmt=DATE_FORMAT)
     root_logger = logging.getLogger()
     for handler in root_logger.handlers:

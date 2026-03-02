@@ -27,7 +27,7 @@ Command Line Usage:
 import os
 
 # Internal package imports
-from wite2_tools.generator import read_csv_dict_generator
+from wite2_tools.generator import get_csv_dict_stream
 from wite2_tools.constants import MAX_SQUAD_SLOTS
 from wite2_tools.utils import (
     get_logger,
@@ -37,17 +37,17 @@ from wite2_tools.utils import (
     format_ref
 )
 
-
+# Initialize the log for this specific module
 log = get_logger(__name__)
 
 
 def _check_chronology(ob_id: int, ob_name: str, row: dict) -> int:
     """Validates the historical introduction and expiration dates."""
     issues = 0
-    f_year = parse_int(row.get('firstYear'), 0)
-    f_month = parse_int(row.get('firstMonth'), 0)
-    l_year = parse_int(row.get('lastYear'), 0)
-    l_month = parse_int(row.get('lastMonth'), 0)
+    f_year = parse_int(row.get('firstYear'))
+    f_month = parse_int(row.get('firstMonth'))
+    l_year = parse_int(row.get('lastYear'))
+    l_month = parse_int(row.get('lastMonth'))
 
     ref = format_ref("TOE(OB)", ob_id, ob_name)
 
@@ -77,7 +77,7 @@ def _check_upgrade_path(ob_id: int,
                         valid_ob_ids: set[int]) -> int:
     """Validates the TOE upgrade paths to prevent loops and dead-ends."""
     issues = 0
-    upgrade_id = parse_int(row.get('upgrade'), 0)
+    upgrade_id = parse_int(row.get('upgrade'))
 
     ref = format_ref("TOE(OB)", ob_id, ob_name)
 
@@ -110,8 +110,8 @@ def _check_squad_slots(ob_id: int,
         sqd_id_col = f"sqd.u{i}"
         sqd_num_col = f"sqd.num{i}"
 
-        sqd_id = parse_int(row.get(sqd_id_col), 0)
-        qty = parse_int(row.get(sqd_num_col), 0)
+        sqd_id = parse_int(row.get(sqd_id_col))
+        qty = parse_int(row.get(sqd_num_col))
 
         if qty < 0:
             log.error("%s: %s has negative quantity (%d).",
@@ -160,25 +160,33 @@ def audit_ob_csv(ob_file_path: str, ground_file_path: str) -> int:
     valid_elem_ids: set[int] = set()
     valid_ob_ids: set[int] = set()
 
+    if not os.path.exists(ob_file_path):
+        log.error("Error: The file '%s' was not found.", ob_file_path)
+        return -1
+
+    if not os.path.exists(ground_file_path):
+        log.error("Error: The file '%s' was not found.", ground_file_path)
+        return -1
+
     try:
         ob_file_base_name = os.path.basename(ob_file_path)
         valid_elem_ids = get_valid_ground_elem_ids(ground_file_path)
 
         # 1. PRE-PASS: Collect all valid TOE(OB) IDs for upgrade checking
-        ob_gen_pre = read_csv_dict_generator(ob_file_path, 2)
-        next(ob_gen_pre)  # skip header
-        for _, r in ob_gen_pre:
-            valid_ob_ids.add(parse_int(r.get("id"), 0))
+        ob_gen_pre = get_csv_dict_stream(ob_file_path, 2)
+
+        for _, r in ob_gen_pre.rows:
+            valid_ob_ids.add(parse_int(r.get("id")))
 
         # 2. MAIN PASS
-        ob_gen = read_csv_dict_generator(ob_file_path, 2)
-        reader = next(ob_gen)
-        fieldnames = getattr(reader, 'fieldnames', None)
+        ob_stream = get_csv_dict_stream(ob_file_path, 2)
+
+        fieldnames = ob_stream.fieldnames
         header_len = len(fieldnames) if fieldnames else 0
 
         log.info("Checking consistency on: '%s'", ob_file_base_name)
 
-        for _, row in ob_gen:
+        for _, row in ob_stream.rows:
             ob_id = parse_int(row.get("id"))
             ob_type = parse_int(row.get("type"))
             ob_name = parse_str(row.get('name'), 'Unk')

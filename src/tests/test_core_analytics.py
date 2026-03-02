@@ -1,5 +1,7 @@
 
 import pytest
+from pathlib import Path
+
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.core.group_units_by_ob import Unit
@@ -20,7 +22,7 @@ def clear_caches():
 
 
 @pytest.fixture(name="mock_unit_csv")
-def mock_unit_csv(tmp_path) -> str:
+def mock_unit_csv(tmp_path:Path) -> str:
     content = (
         "id,name,type,nat,sqd.u0,sqd.num0,sqd.u1,sqd.num1\n"
         "1,1st Panzer,10,1,105,10,106,5\n"  # Nat 1 (Ger), 10x 105s, 5x 106s
@@ -34,7 +36,7 @@ def mock_unit_csv(tmp_path) -> str:
 
 
 @pytest.fixture(name="mock_ground_csv")
-def mock_ground_csv(tmp_path) -> str:
+def mock_ground_csv(tmp_path:Path) -> str:
     content = "id,name,other,type\n105,Panzer IV,x,1\n106,Tiger I,x,1\n"
     file_path = tmp_path / "mock_ground.csv"
     file_path.write_text(content, encoding=ENCODING_TYPE)

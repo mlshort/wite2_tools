@@ -20,8 +20,8 @@ Core Capabilities:
   ID-to-string lookup caching.
 """
 
-__version__ = "0.4.0"
-__date__ = "2026-02-26"
+__version__ = "0.5.0"
+__date__ = "2026-03-02"
 
 # Expose common configuration so other modules can access it easily
 from .logger import get_logger
@@ -40,9 +40,10 @@ from .lookups import (
     get_ground_elem_class_name,
     get_unit_special_name
 )
-from .get_type_name import (
-    get_ob_full_name,
+from .get_name import (
+    get_ob_name,
     get_ob_suffix,
+    get_ob_full_name,
     get_unit_type_name,
     get_ground_elem_type_name
 )
@@ -72,6 +73,7 @@ __all__ = [
     "get_ob_type_code_name",
     "get_device_type_name",
     "get_country_name",
+    "get_ob_name",
     "get_ob_full_name",
     "get_ob_suffix",
     "get_unit_type_name",

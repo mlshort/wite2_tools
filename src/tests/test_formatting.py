@@ -11,7 +11,7 @@ from wite2_tools.utils.formatting import (
     CRITICAL_MARK
 )
 
-def test_format_ref():
+def test_format_ref()->None:
     """Verifies standardized resource identifiers with and without names."""
     # Test with name
     assert format_ref("UID", 100, "1st Panzer") == "UID[100] (1st Panzer)"
@@ -20,22 +20,22 @@ def test_format_ref():
     # Test different object type
     assert format_ref("TOE", 33, "Inf Div") == "TOE[33] (Inf Div)"
 
-def test_format_coords():
+def test_format_coords()->None:
     """Verifies that map coordinates are formatted as (X, Y)."""
     assert format_coords(300, 150) == "(300, 150)"
     assert format_coords(0, 0) == "(0, 0)"
 
-def test_format_header():
+def test_format_header()->None:
     """Verifies that headers are uppercase and wrapped in equal signs."""
     header = format_header("audit report")
     assert "AUDIT REPORT" in header
     assert "====================" in header
 
-def test_format_list_item():
+def test_format_list_item()->None:
     """Verifies standard list item indentation and bullets."""
     assert format_list_item("Item 1") == f"{BULLET}Item 1"
 
-def test_completion_msg():
+def test_completion_msg()->None:
     """Verifies the standardized success message for modifiers."""
     msg = completion_msg("Repair", 5, "_unit.csv")
     assert SUCCESS_MARK in msg

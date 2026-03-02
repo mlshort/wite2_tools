@@ -1,4 +1,6 @@
 import csv
+from unittest.mock import patch
+from pathlib import Path
 import pytest
 
 # Internal package imports
@@ -13,7 +15,7 @@ from wite2_tools.constants import MAX_SQUAD_SLOTS
 
 
 @pytest.fixture(name="mock_ground_csv")
-def mock_ground_csv(tmp_path) -> str:
+def mock_ground_csv(tmp_path:Path) -> str:
     content = "id,name,other,type\n105,Panzer IV,x,1\n"
     file_path = tmp_path / "mock_ground.csv"
     file_path.write_text(content, encoding=ENCODING_TYPE)
@@ -21,7 +23,7 @@ def mock_ground_csv(tmp_path) -> str:
 
 
 @pytest.fixture(name="mock_corrupted_unit_csv")
-def mock_corrupted_unit_csv(tmp_path) -> str:
+def mock_corrupted_unit_csv(tmp_path:Path) -> str:
     """
     Creates a unit file with multiple deliberate errors for
     the audit_ob to catch.
@@ -46,7 +48,7 @@ def mock_corrupted_unit_csv(tmp_path) -> str:
 
 
 @pytest.fixture
-def mock_files(tmp_path):
+def mock_files(tmp_path:Path):
     """
     A PyTest fixture that sets up mock _ground.csv and _ob.csv files
     in a temporary directory before each test, and yields their paths.
@@ -67,13 +69,25 @@ def mock_files(tmp_path):
         ])
 
     return ground_path, ob_path
+
+@pytest.fixture
+def mock_ob_audit_csv(tmp_path:Path)->str:
+    csv_file = tmp_path / "mock_ob_logic.csv"
+    header = "id,name,firstYear,firstMonth,lastYear,lastMonth,upgrade\n"
+    content = (
+        "10,Stable TOE,1941,6,1945,1,11\n"     # Valid
+        "11,Infinite Loop,1941,1,0,0,11\n"     # ISSUE 1: Upgrades to self
+        "12,Time Traveler,1942,1,1941,1,0\n"   # ISSUE 2: Expires before it starts
+    )
+    csv_file.write_text(header + content)
+    return str(csv_file)
 # ==========================================
 # TEST CASES
 # ==========================================
 
 
 # Base headers for TOE(OB)
-def write_ob_csv(ob_path, rows):
+def write_ob_csv(ob_path, rows)->None:
     """Helper function to quickly write TOE(OB) scenarios for tests."""
     ob_headers = [
             "id", "type", "name", "firstYear", "firstMonth",
@@ -94,9 +108,7 @@ def write_ob_csv(ob_path, rows):
             writer.writerow(padded_row)
 
 
-# --- TEST CASES ---
-
-def test_audit_ob_handles_key_error(tmp_path):
+def test_audit_ob_handles_key_error(tmp_path:Path)->None:
     """
     Targets the KeyError branch by providing a CSV that is missing
     required columns like 'id' or 'type'.
@@ -116,7 +128,7 @@ def test_audit_ob_handles_key_error(tmp_path):
     assert issues == 0
 
 
-def test_clean_ob_passes(mock_files):
+def test_clean_ob_passes(mock_files)->None:
     """A perfectly valid TOE(OB) should return 0 issues."""
     ground_path, ob_path = mock_files
     write_ob_csv(ob_path, [
@@ -128,7 +140,7 @@ def test_clean_ob_passes(mock_files):
     assert issues == 0
 
 
-def test_chronological_bounds_error(mock_files):
+def test_chronological_bounds_error(mock_files)->None:
     """Should flag if lastYear is before firstYear."""
     ground_path, ob_path = mock_files
     write_ob_csv(ob_path, [
@@ -140,7 +152,7 @@ def test_chronological_bounds_error(mock_files):
     assert issues == 1
 
 
-def test_upgrade_dead_end_and_loop(mock_files):
+def test_upgrade_dead_end_and_loop(mock_files)->None:
     """Should flag upgrades to non-existent IDs and self-upgrades."""
     ground_path, ob_path = mock_files
     write_ob_csv(ob_path, [
@@ -154,7 +166,7 @@ def test_upgrade_dead_end_and_loop(mock_files):
     assert issues == 2
 
 
-def test_intra_template_duplicate_element(mock_files):
+def test_intra_template_duplicate_element(mock_files)->None:
     """Should flag if the same WID is used in multiple slots."""
     ground_path, ob_path = mock_files
     write_ob_csv(ob_path, [
@@ -166,7 +178,7 @@ def test_intra_template_duplicate_element(mock_files):
     assert issues == 1
 
 
-def test_ghost_and_negative_squads(mock_files):
+def test_ghost_and_negative_squads(mock_files)->None:
     """Should flag negative quantities and ghost squads."""
     ground_path, ob_path = mock_files
     write_ob_csv(ob_path, [

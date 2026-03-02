@@ -125,12 +125,12 @@ def reorder_unit_squads(unit_file_path: str,
              file_name, target_uid, target_wid, target_slot)
 
     def process_row(row: dict, row_idx: int) -> tuple[dict, bool]:
-        uid = parse_int(row.get("id"), 0)
+        uid = parse_int(row.get("id"))
         if target_uid == uid:
             for i in range(MAX_SQUAD_SLOTS):
                 current_sqd_col = f"sqd.u{i}"
                 if current_sqd_col in row:
-                    wid = parse_int(row.get(current_sqd_col), 0)
+                    wid = parse_int(row.get(current_sqd_col))
                     if wid == target_wid:
                         if i != target_slot:
                             row = reorder_unit_elems(row, i, target_slot)

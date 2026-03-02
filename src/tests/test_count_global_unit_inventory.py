@@ -1,5 +1,6 @@
 import csv
 from pathlib import Path
+from typing import Any
 
 import pytest
 # Internal package imports
@@ -38,7 +39,7 @@ def mock_unit_csv(tmp_path: Path) -> str:
         fieldnames.append(f"sqd.u{i}")
         fieldnames.append(f"sqd.num{i}")
 
-    def create_row(uid, name, utype, nat, slots):
+    def create_row(uid, name, utype, nat, slots) -> dict[str, Any]:
         row = {"id": uid, "name": name, "type": utype, "nat": nat,
                "x": "50", "y": "50", "aNeed": "0", "sNeed": "0"}
         for i in range(MAX_SQUAD_SLOTS):

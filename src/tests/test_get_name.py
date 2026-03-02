@@ -1,12 +1,14 @@
 import pytest
+from pathlib import Path
 
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
-from wite2_tools.utils.get_type_name import (
+from wite2_tools.utils.get_name import (
     _build_ob_lookup,
     _build_ground_elem_lookup,
     get_ob_full_name,
-    get_ground_elem_type_name
+    get_ground_elem_type_name,
+    get_unit_type_name
 )
 
 # ==========================================
@@ -26,7 +28,7 @@ def clear_caches():
 
 
 @pytest.fixture(name="mock_ob_csv")
-def mock_ob_csv(tmp_path) -> str:
+def mock_ob_csv(tmp_path:Path) -> str:
     """Creates a temporary, miniaturized _ob.csv file for testing."""
     content = (
         "id,name,suffix,type\n"  # Header
@@ -42,13 +44,15 @@ def mock_ob_csv(tmp_path) -> str:
 
 
 @pytest.fixture(name="mock_ground_csv")
-def mock_ground_csv(tmp_path) -> str:
+def mock_ground_csv(tmp_path:Path) -> str:
     """Creates a temporary, miniaturized _ground.csv file for testing."""
     content = (
         "id,name,other,type\n"  # Header
         "105,Panzer IV,x,13\n"  # Valid row
         "0,Empty,x,0\n"  # Should be skipped
         "106,Tiger I,x,14\n"  # Valid row
+        "1,Rifle Squad,x,16\n"
+        "72,Recon Tank,x,30\n"
     )
     file_path = tmp_path / "mock_ground.csv"
     file_path.write_text(content, encoding=ENCODING_TYPE)
@@ -94,3 +98,15 @@ def test_file_not_found_graceful_fail():
     fake_path = "this/does/not/exist.csv"
     assert get_ob_full_name(fake_path, 10) == "Unk (10)"
     assert get_ground_elem_type_name(fake_path, 105) == "Unk (105)"
+
+def test_get_ground_elem_type_name_valid(mock_ground_csv):
+    # Testing the change we just made (ID 72)
+    assert get_ground_elem_type_name(mock_ground_csv, 72) == "Recon Tank"
+    assert get_ground_elem_type_name(mock_ground_csv, 1) == "Rifle Squad"
+
+def test_get_ground_elem_type_name_invalid(mock_ground_csv):
+    assert get_ground_elem_type_name(mock_ground_csv, 999) == "Unk (999)"
+
+def test_get_unit_type_name(mock_unit_csv):
+    # Example IDs based on typical WiTE2 unit.csv
+    assert isinstance(get_unit_type_name(mock_unit_csv, 1), str)
