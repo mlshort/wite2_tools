@@ -52,7 +52,7 @@ jobs:
       run: |
         # 1. Extract percentage. 
         # We add 'tr -dc 0-9' to strip any hidden characters or whitespace.
-        COVERAGE=$(grep "Total" reports/index.txt | awk '{print $NF}' | sed 's/%//' | tr -dc '0-9')
+        COVERAGE=$(grep "^Total:" reports/index.txt | awk '{print $2}' | sed 's/%//' | cut -d. -f1)
         # 2. Safety: If COVERAGE is empty, default it to 0 so the -gt comparison doesn't crash
         COVERAGE=${COVERAGE:-0}
         
