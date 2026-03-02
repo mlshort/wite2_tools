@@ -50,10 +50,13 @@ jobs:
       if: github.ref == 'refs/heads/main'
       id: vars
       run: |
-        # Extract percentage from the MyPy report
-        COVERAGE=$(grep "Total" reports/index.txt | awk '{print $NF}' | sed 's/%//')
-
-        # 2. Use Bash integer comparison instead of 'bc'
+        # 1. Extract percentage. 
+        # We add 'tr -dc 0-9' to strip any hidden characters or whitespace.
+        COVERAGE=$(grep "Total" reports/index.txt | awk '{print $NF}' | sed 's/%//' | tr -dc '0-9')
+        # 2. Safety: If COVERAGE is empty, default it to 0 so the -gt comparison doesn't crash
+        COVERAGE=${COVERAGE:-0}
+        
+        # 3. Use Bash integer comparison instead of 'bc'
         # Logic for badge color
         if [ "$COVERAGE" -gt 90 ]; then
           COLOR="brightgreen"
