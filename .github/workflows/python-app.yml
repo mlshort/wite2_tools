@@ -36,7 +36,8 @@ jobs:
     - name: Type check (MyPy)
       run: |
         mkdir -p reports
-        mypy src/ --txt-report reports || true
+        # Use the --linecoverage-report to get the summary table you were expecting
+        mypy src/ --linecoverage-report reports || true
 
     - name: Running Tests (Pytest)
       run: |
@@ -50,13 +51,28 @@ jobs:
       if: github.ref == 'refs/heads/main'
       id: vars
       run: |
-        # 1. Extract percentage. 
-        # We add 'tr -dc 0-9' to strip any hidden characters or whitespace.
-        COVERAGE=$(grep "^Total:" reports/index.txt | awk '{print $2}' | sed 's/%//' | cut -d. -f1)
-        # 2. Safety: If COVERAGE is empty, default it to 0 so the -gt comparison doesn't crash
+        REPORT_FILE="reports/index.txt"
+
+        if [ -f "$REPORT_FILE" ]; then
+          # 1. Parse the table: 
+          # We use awk to calculate the weighted average of imprecision
+          DATA=$(grep "|" "$REPORT_FILE" | grep "%" | sed 's/% imprecise//g' | sed 's/ LOC//g' | awk -F'|' '{print $2, $3}')
+          
+          # 2. Math: Σ(imprecision * lines) / Σ(lines)
+          AVG_IMPRECISION=$(echo "$DATA" | awk '{ imprec=$1; loc=$2; sum_imprec += (imprec * loc); sum_loc += loc } END { if (sum_loc > 0) print sum_imprec / sum_loc; else print 0 }')
+          
+          # 3. Precision (Badge Value) = 100 - Imprecision
+          # We round to the nearest whole number
+          COVERAGE=$(echo "100 - $AVG_IMPRECISION" | bc -l | xargs printf "%.0f\n")
+        else
+          echo "MyPy report not found!"
+          COVERAGE=0
+        fi
+        
+        # 4. Safety check
         COVERAGE=${COVERAGE:-0}
         
-        # 3. Use Bash integer comparison instead of 'bc'
+        # 5. Use Bash integer comparison instead of 'bc'
         # Logic for badge color
         if [ "$COVERAGE" -gt 90 ]; then
           COLOR="brightgreen"
