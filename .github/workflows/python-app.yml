@@ -36,8 +36,8 @@ jobs:
     - name: Type check (MyPy)
       run: |
         mkdir -p reports
-        # Use the --linecoverage-report to get the summary table you were expecting
-        mypy src/ --linecoverage-report reports || true
+        # Use --txt-report to ensure reports/index.txt is generated as a text table
+        mypy src/ --txt-report reports || true
 
     - name: Running Tests (Pytest)
       run: |
@@ -54,24 +54,24 @@ jobs:
         REPORT_FILE="reports/index.txt"
 
         if [ -f "$REPORT_FILE" ]; then
-          # 1. Parse the table: 
-          # We use awk to calculate the weighted average of imprecision
-          DATA=$(grep "|" "$REPORT_FILE" | grep "%" | sed 's/% imprecise//g' | sed 's/ LOC//g' | awk -F'|' '{print $2, $3}')
-          
-          # 2. Math: Σ(imprecision * lines) / Σ(lines)
-          AVG_IMPRECISION=$(echo "$DATA" | awk '{ imprec=$1; loc=$2; sum_imprec += (imprec * loc); sum_loc += loc } END { if (sum_loc > 0) print sum_imprec / sum_loc; else print 0 }')
-          
-          # 3. Precision (Badge Value) = 100 - Imprecision
-          # We round to the nearest whole number
-          COVERAGE=$(echo "100 - $AVG_IMPRECISION" | bc -l | xargs printf "%.0f\n")
+          echo "Report found! Extracting Total..."
+
+          # 1. Find the 'Total' line
+          # 2. Extract the 3rd column (e.g., '  3.12% imprecise ')
+          # 3. Strip away the text and spaces to leave just '3.12'
+          IMPRECISION=$(grep "Total" "$REPORT_FILE" | awk -F'|' '{print $3}' | sed 's/% imprecise//g' | tr -d ' ')
+
+          # 4. Subtract from 100. Use 'cut' to remove the decimals so Bash can compare it.
+          COVERAGE=$(echo "100 - $IMPRECISION" | bc -l | cut -d. -f1)
+          echo "Calculated Coverage: $COVERAGE%"
         else
           echo "MyPy report not found!"
           COVERAGE=0
         fi
-        
+
         # 4. Safety check
         COVERAGE=${COVERAGE:-0}
-        
+
         # 5. Use Bash integer comparison instead of 'bc'
         # Logic for badge color
         if [ "$COVERAGE" -gt 90 ]; then
