@@ -53,7 +53,7 @@ from .core.generate_ob_chains import generate_ob_chains
 from .core.group_units_by_ob import group_units_by_ob
 from .core.count_global_unit_inventory import count_global_unit_inventory
 from .core.identify_unused_devices import identify_unused_devices
-from .core import calc_unit_needed_support
+from .core import calc_unit_support
 from .auditing import (
     audit_ground_element_csv,
     audit_ob_csv,
@@ -291,9 +291,9 @@ def handle_scan_excess(paths: dict, args: argparse.Namespace) -> None:
                    'fuel': 'Fuel', 'vehicles': 'Vehicles'}
 
     _scan_excess_resource(paths["unit"],
-                          args.operation,
-                          need_map[args.operation],
-                          display_map[args.operation])
+                          args.resource,
+                          need_map[args.resource],
+                          display_map[args.resource])
 
 
 
@@ -331,7 +331,7 @@ COMMAND_MAP: Dict[str, Callable] = {
         a.active_only,
         a.fix_ghosts
         ),
-    "calc-support": lambda a, p: calc_unit_needed_support(
+    "calc-support": lambda a, p: calc_unit_support(
         p["ob"],
         p["unit"],
         p["ground"],

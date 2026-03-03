@@ -244,12 +244,12 @@ def _calc_unit_needed_support_for_row(
     }
 
 
-def calc_unit_needed_support(ob_file_path: str,
-                             unit_file_path: str,
-                             ground_file_path: str,
-                             unit_id: int) -> int:
+def calc_unit_support(ob_file_path: str,
+                      unit_file_path: str,
+                      ground_file_path: str,
+                      unit_id: int) -> int:
     """
-    Calculates total CV and supNeed for a specific Unit ID from unit.csv.
+    Calculates Support and Need for a specific Unit ID from unit.csv.
 
     Args:
         csv_path (str): Path to the *_unit.csv file.
