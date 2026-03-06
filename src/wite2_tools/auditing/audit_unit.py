@@ -186,13 +186,21 @@ def audit_unit_csv(unit_file_path: str,
     temp_file = None
     file_base = os.path.basename(unit_file_path)
 
+    if not os.path.exists(unit_file_path):
+        log.error("Error: The file '%s' was not found.", unit_file_path)
+        return -1
+
+    if not os.path.exists(ground_file_path):
+        log.error("Error: The file '%s' was not found.", ground_file_path)
+        return -1
+
     try:
         log.info("Task Start: Evaluating Unit file integrity: '%s'", file_base)
         # get the set of valid ground element ids
         valid_elem_ids: Set[int] = get_valid_ground_elem_ids(ground_file_path)
         valid_unit_ids: Set[int] = get_valid_unit_ids(unit_file_path, active_only)
 
-        unit_stream = get_csv_dict_stream(unit_file_path, 2)
+        unit_stream = get_csv_dict_stream(unit_file_path)
 
         # Initialize temp file if fix mode is enabled
         writer = None

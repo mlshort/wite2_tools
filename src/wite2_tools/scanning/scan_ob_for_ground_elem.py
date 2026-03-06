@@ -52,9 +52,10 @@ def scan_ob_for_ground_elem(ob_file_path: str,
     3. Prints the value of the column.
     """
     file = os.path.basename(ob_file_path)
+
     if not os.path.exists(ob_file_path):
         log.error("Error: The file '%s' was not found.", ob_file_path)
-        return 0
+        return -1
 
     matches_found = 0
 

@@ -16,7 +16,7 @@ log = get_logger(__name__)
 def identify_unused_devices(ground_file_path: str,
                             aircraft_file_path: str,
                             device_file_path: str,
-                            device_type: int)->None:
+                            device_type: int)->int:
     """
     Identifies devices of a specific type that are not present in any ground
     unit or aircraft.
@@ -27,15 +27,15 @@ def identify_unused_devices(ground_file_path: str,
 
     if not os.path.exists(ground_file_path):
         log.error("Error: The file '%s' was not found.", ground_file_path)
-        return
+        return -1
 
     if not os.path.exists(aircraft_file_path):
         log.error("Error: The file '%s' was not found.", aircraft_file_path)
-        return
+        return -1
 
     if not os.path.exists(device_file_path):
         log.error("Error: The file '%s' was not found.", device_file_path)
-        return
+        return -1
 
     ground_base_name = os.path.basename(ground_file_path)
     aircraft_base_name = os.path.basename(aircraft_file_path)
@@ -68,15 +68,15 @@ def identify_unused_devices(ground_file_path: str,
 
     except (OSError, IOError, ValueError, KeyError) as e:
         log.exception("identify_unused_devices failed: %s", e)
-        return
+        return -1
 
     if not devices_of_type:
         print(f"No devices of Type {device_type} found in the device file.")
-        return
+        return 0
 
     # 2. Identify all weapon IDs used in the ground and aircraft files (wpn 0 through wpn 9)
     used_weapon_ids = set()
-    wpn_cols = [f'wpn {i}' for i in range(MAX_SQUAD_SLOTS)]
+    wpn_cols:list[str] = [f'wpn {i}' for i in range(MAX_SQUAD_SLOTS)]
 
     for file_path in [ground_file_path, aircraft_file_path]:
         try:
@@ -112,3 +112,5 @@ def identify_unused_devices(ground_file_path: str,
             print(f"{dev_id:<8} | {dev_name}")
         print(f"\nTotal unused devices: {len(unused_list)}"
               f" for Type: {device_type}")
+
+    return len(unused_list)

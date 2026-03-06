@@ -142,7 +142,8 @@ def _check_squad_slots(ob_id: int,
     return issues
 
 
-def audit_ob_csv(ob_file_path: str, ground_file_path: str) -> int:
+def audit_ob_csv(ob_file_path: str,
+                 ground_file_path: str) -> int:
     """
     Performs a deep consistency check on a WiTE2 _ob CSV file.
 

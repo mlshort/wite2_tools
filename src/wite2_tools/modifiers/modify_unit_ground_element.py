@@ -47,6 +47,10 @@ def modify_unit_ground_element(unit_file_path: str,
         int: The total number of rows (units) successfully updated.
     """
 
+    if not os.path.exists(unit_file_path):
+        log.error("Error: The file '%s' was not found.", unit_file_path)
+        return -1
+
     log.info("Task Start: Replace WID[%d] with %d in '%s'",
              old_wid, new_wid, os.path.basename(unit_file_path))
 
@@ -76,4 +80,5 @@ def modify_unit_ground_element(unit_file_path: str,
     log.info("Task Complete: Modified %d rows containing the old WID[%d] to "
              "the new WID[%d].",
              total_updates, old_wid, new_wid)
+
     return total_updates

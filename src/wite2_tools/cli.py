@@ -45,7 +45,12 @@ from typing import Dict, Callable
 
 # Project Imports
 from wite2_tools.utils import get_logger
-from wite2_tools.scanning.scan_unit_for_excess import _scan_excess_resource
+from wite2_tools.scanning.scan_unit_for_excess import (
+    scan_units_for_excess_ammo,
+    scan_units_for_excess_fuel,
+    scan_units_for_excess_supplies,
+    scan_units_for_excess_vehicles
+)
 from .config import CONFIG_FILE_NAME, ENCODING_TYPE
 from .core.exceptions import DataIntegrityError
 from .core.find_orphaned_obs import find_orphaned_obs
@@ -205,7 +210,7 @@ def setup_parsers() -> argparse.ArgumentParser:
 
     # Analytics
     p_calc = subparsers.add_parser("calc-support",
-                                   help="Calculate unit needed support"
+                                   help="Calculate unit support and need"
     )
     p_calc.add_argument("target_uid", type=int,
                         help="Target Unit ID")
@@ -242,7 +247,16 @@ def setup_parsers() -> argparse.ArgumentParser:
     # --- Scanning ---
     p_excess = subparsers.add_parser("scan-excess",
                                      help="Scan unit resources")
-    p_excess.add_argument("--resource", required=True, help="ammo/fuel/etc")
+    p_excess.add_argument("resource",
+                          nargs="?",
+                          choices=['a','f','s','v'],
+                          default='a',
+                          help="(a)mmo/(f)uel/(s)upplies or (v)ehicles")
+    p_excess.add_argument("ratio",
+                          nargs="?",
+                          type=float,
+                          default=5.0,
+                          help="Ratio threshold (default: 5.0)")
     add_common(p_excess)
 
     # --- Modifiers ---
@@ -280,27 +294,31 @@ def setup_parsers() -> argparse.ArgumentParser:
 
     return base_parser
 
-def handle_scan_excess(paths: dict, args: argparse.Namespace) -> None:
+
+def handle_scan_excess(paths: Dict[str, str], args: argparse.Namespace) -> None:
     """
-    Helper to route excess scanning to the internal implementation.
-    Maps human-readable command names to internal resource keys.
+    Routes the scan-excess command to the correct resource scanner.
     """
-    need_map = {'ammo': 'aNeed', 'supplies': 'sNeed',
-                'fuel': 'fNeed', 'vehicles': 'vNeed'}
-    display_map = {'ammo': 'Ammo', 'supplies': 'Supplies',
-                   'fuel': 'Fuel', 'vehicles': 'Vehicles'}
+    resource = args.resource.lower()
+    ratio = args.ratio
+    unit_path = paths["unit"]
 
-    _scan_excess_resource(paths["unit"],
-                          args.resource,
-                          need_map[args.resource],
-                          display_map[args.resource])
+    if resource == "a":
+        scan_units_for_excess_ammo(unit_path, ratio)
+    elif resource == "s":
+        scan_units_for_excess_supplies(unit_path, ratio)
+    elif resource == "f":
+        scan_units_for_excess_fuel(unit_path, ratio)
+    elif resource == "v":
+        scan_units_for_excess_vehicles(unit_path, ratio)
+    else:
+        # Fallback if the user types an unsupported resource
+        print(f"Error: Unknown resource type '{resource}'. Choose from: (a)mmo, (s)upplies, (f)uel, (v)ehicles.")
 
-
-
-    # Dispatch Map replaces the massive if/elif chain
-    # Lambda delayed execution allows for fast startup and lazy imports
-    # Dispatch Map (To be expanded)
-    # -------------------------------------------------------------------------
+# Dispatch Map replaces the massive if/elif chain
+# Lambda delayed execution allows for fast startup and lazy imports
+# Dispatch Map (To be expanded)
+# -------------------------------------------------------------------------
 COMMAND_MAP: Dict[str, Callable] = {
     "config": lambda a, p: save_config(
         a.set_path,
@@ -324,6 +342,7 @@ COMMAND_MAP: Dict[str, Callable] = {
     "audit-toe": lambda a, p: audit_unit_ob_excess(
         p["unit"],
         p["ob"],
+        p["ground"],
         set(a.nat_codes)
         ),
     "audit-batch": lambda a, p: scan_and_evaluate_unit_files(

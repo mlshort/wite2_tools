@@ -114,7 +114,7 @@ def scan_unit_for_ground_elem(
     """
     if not os.path.exists(unit_file_path):
         log.error("Error: The file '%s' was not found.", unit_file_path)
-        return 0
+        return -1
 
     matches_found = 0
 

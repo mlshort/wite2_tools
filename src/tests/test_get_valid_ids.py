@@ -115,13 +115,13 @@ def test_get_valid_ob_upgrade_ids(mock_ob_csv):
     assert upgrade_ids == {20}
 
 
-def test_get_valid_ground_elem_ids(mock_ground_csv):
+def test_get_valid_ground_elem_ids(mock_ground_csv)->None:
     """Verifies extraction of Ground Element WIDs."""
     elem_ids = get_valid_ground_elem_ids(mock_ground_csv)
     assert elem_ids == {100}
 
 
-def test_get_valid_unit_ids(mock_unit_csv):
+def test_get_valid_unit_ids(mock_unit_csv)->None:
     """Verifies extraction of Unit IDs."""
     unit_ids = get_valid_unit_ids(mock_unit_csv, True)
     assert unit_ids == {500, 502}
@@ -139,4 +139,4 @@ def test_file_not_found_returns_empty_set()->None:
     assert get_valid_ground_elem_ids(fake_path) == set()
     assert get_valid_unit_ids(fake_path) == set()
 
-# reset
+

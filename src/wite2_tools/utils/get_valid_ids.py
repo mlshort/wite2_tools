@@ -47,7 +47,7 @@ from wite2_tools.utils.logger import get_logger
 from wite2_tools.utils.parsing import parse_int
 
 # Initialize the log for this specific module
-logger = get_logger(__name__)
+log = get_logger(__name__)
 
 
 @cache
@@ -59,7 +59,7 @@ def get_valid_ob_ids(ob_file_path: str) -> Set[int]:
     """
     valid_ob_ids: Set[int] = set()
     file_name = os.path.basename(ob_file_path)
-    logger.info("Building valid TOE(OB) ID cache from '%s'...", file_name)
+    log.info("Building valid TOE(OB) ID cache from '%s'...", file_name)
 
     try:
         ob_stream = get_csv_list_stream(ob_file_path)
@@ -73,12 +73,12 @@ def get_valid_ob_ids(ob_file_path: str) -> Set[int]:
             except (ValueError, IndexError):
                 continue
 
-        logger.info("  Cache built with %d valid TOE(OB) IDs.",
+        log.info("  Cache built with %d valid TOE(OB) IDs.",
                     len(valid_ob_ids))
         return valid_ob_ids
 
     except FileNotFoundError:
-        logger.error("_ob csv file not found:'%s'", ob_file_path)
+        log.error("_ob csv file not found:'%s'", ob_file_path)
         return set()
 
 
@@ -89,7 +89,7 @@ def get_valid_ob_upgrade_ids(ob_file_path: str) -> Set[int]:
     Caches the result to avoid repeated file I/O.
     """
     valid_ob_upgrade_ids: Set[int] = set()
-    logger.info("Building valid TOE(OB) upgrade ID cache from '%s'...",
+    log.info("Building valid TOE(OB) upgrade ID cache from '%s'...",
                 ob_file_path)
 
     try:
@@ -109,12 +109,12 @@ def get_valid_ob_upgrade_ids(ob_file_path: str) -> Set[int]:
                 # Skip malformed rows or empty lines
                 continue
 
-        logger.info("  Cache built with %d valid TOE(OB) upgrade IDs.",
+        log.info("  Cache built with %d valid TOE(OB) upgrade IDs.",
                     len(valid_ob_upgrade_ids))
         return valid_ob_upgrade_ids
 
     except FileNotFoundError:
-        logger.error("_ob csv file not found: %s", ob_file_path)
+        log.error("_ob csv file not found: %s", ob_file_path)
         return set()
 
 
@@ -126,7 +126,7 @@ def get_valid_ground_elem_ids(ground_file_path: str) -> Set[int]:
     """
     valid_elem_ids: Set[int] = set()
     file_name = os.path.basename(ground_file_path)
-    logger.info("Building valid ground element ID cache from '%s'...",
+    log.info("Building valid ground element ID cache from '%s'...",
                 file_name)
 
     try:
@@ -146,11 +146,11 @@ def get_valid_ground_elem_ids(ground_file_path: str) -> Set[int]:
                 # Skip malformed rows or empty lines
                 continue
 
-        logger.info("  Cache built with %d valid WIDs.", len(valid_elem_ids))
+        log.info("  Cache built with %d valid WIDs.", len(valid_elem_ids))
         return valid_elem_ids
 
     except FileNotFoundError:
-        logger.error("_ground.csv file not found:'%s'", ground_file_path)
+        log.error("_ground.csv file not found:'%s'", ground_file_path)
         return set()
 
 
@@ -185,7 +185,7 @@ def get_valid_unit_ids(unit_file_path: str,
                 valid_ids.add(uid)
 
     except (OSError, IOError, ValueError, KeyError, TypeError) as e:
-        logger.exception("Could not retrieve unit IDs from %s: %s",
+        log.exception("Could not retrieve unit IDs from %s: %s",
                          unit_file_path, e)
 
     return valid_ids

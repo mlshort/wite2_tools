@@ -69,6 +69,9 @@ def modify_unit_squads(unit_file_path: str,
     4. CHECKS if the value in 'sqd.num' == 'old_num_squads'.
     5. If it matches, REPLACES it with 'new_num_squads'.
     """
+    if not os.path.exists(unit_file_path):
+        log.error("Error: The file '%s' was not found.", unit_file_path)
+        return -1
 
     log.info("Starting update on '%s' (Target TOE(ID): %d, Target WID: %d)",
              os.path.basename(unit_file_path), target_ob_id, target_wid)
@@ -112,4 +115,5 @@ def modify_unit_squads(unit_file_path: str,
     total_updates = process_csv_in_place(unit_file_path, process_row)
     log.info("Finished. Total rows modified: %d", total_updates)
     print(f"Success! {total_updates} row(s) updated.")
+
     return total_updates

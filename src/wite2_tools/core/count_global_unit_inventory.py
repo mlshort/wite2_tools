@@ -89,12 +89,12 @@ def count_global_unit_inventory(
             # Cast the yielded item to satisfy static type checkers
             _, row = cast(tuple[int, dict], item)
             uid = parse_int(row.get("id"))
-            utype = parse_int(row.get("type"))
+            u_type = parse_int(row.get("type"))
             u_nat = parse_int(row.get("nat"))
 
             if nat_filter is not None and u_nat not in nat_filter:
                 continue
-            if utype == 0:
+            if u_type == 0:
                 continue
 
             # Iterate through the MAX_SQUAD_SLOTS potential squad slots (sqd.u0

@@ -120,6 +120,10 @@ def reorder_unit_squads(unit_file_path: str,
                   "(0-31).", target_slot)
         return 0
 
+    if not os.path.exists(unit_file_path):
+        log.error("Error: The file '%s' was not found.", unit_file_path)
+        return -1
+
     file_name = os.path.basename(unit_file_path)
     log.info("Reordering squads in '%s' | UNIT ID: %d | WID: %d | To Loc: %d",
              file_name, target_uid, target_wid, target_slot)

@@ -93,7 +93,7 @@ def test_generate_ob_chains_loop_protection(mock_workspace):
                "[80] Loop Div C -> 70 (LOOP)" in content
 
 
-def test_generate_ob_chains_csv_output(mock_workspace):
+def test_generate_ob_chains_csv_output(mock_workspace)->None:
     """Verifies that the CSV output file is structured correctly."""
     ob_file, csv_out, txt_out = mock_workspace
     generate_ob_chains(ob_file, csv_out, txt_out)
@@ -107,3 +107,13 @@ def test_generate_ob_chains_csv_output(mock_workspace):
 
         # Verify headers and data for Chain 1
         assert rows
+
+def test_generate_ob_chains_csv_file_not_found(mock_workspace)->None:
+    """
+    Verifies safe failure and error handling when the file does not exist.
+    """
+    ob_file, csv_out, txt_out = mock_workspace
+    issues = generate_ob_chains("does_not_exist.csv", csv_out, txt_out)
+
+    # The script is designed to return -1 when the path is missing
+    assert issues == -1

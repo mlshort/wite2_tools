@@ -42,7 +42,7 @@ from wite2_tools.utils.parsing import parse_int, parse_str
 
 
 # Initialize the log for this specific module
-logger = get_logger(__name__)
+log = get_logger(__name__)
 
 
 @dataclass(frozen=True)
@@ -69,17 +69,17 @@ def _build_ob_lookup(ob_file_path: str) -> Dict[int, ObName]:
     lookup: Dict[int, ObName] = {}
 
     if not os.path.exists(ob_file_path):
-        logger.error("TOE(OB) file not found: %s", ob_file_path)
+        log.error("TOE(OB) file not found: %s", ob_file_path)
         return lookup
 
     try:
         ob_stream = get_csv_dict_stream(ob_file_path)
 
         for _, row in ob_stream.rows:
-            ob_id = parse_int(row.get("id"))
+            ob_id:int = parse_int(row.get("id"))
             if ob_id != 0:
-                ob_name = parse_str(row.get('name'), '')
-                ob_suffix = parse_str(row.get('suffix'), '')
+                ob_name:str = parse_str(row.get('name'), '')
+                ob_suffix:str = parse_str(row.get('suffix'), '')
 
                 lookup[ob_id] = ObName(
                     name=ob_name,
@@ -87,7 +87,7 @@ def _build_ob_lookup(ob_file_path: str) -> Dict[int, ObName]:
                 )
 
     except (OSError, IOError, ValueError, KeyError) as e:
-        logger.error("Error building TOE(OB) lookup: %s", e)
+        log.error("Error building TOE(OB) lookup: %s", e)
 
     return lookup
 
@@ -166,7 +166,7 @@ def _build_ground_elem_lookup(ground_file_path: str) -> Dict[int, str]:
     lookup: Dict[int, str] = {}
 
     if not os.path.exists(ground_file_path):
-        logger.error("Ground file not found: '%s'", ground_file_path)
+        log.error("Ground file not found: '%s'", ground_file_path)
         return lookup
 
     try:
@@ -189,7 +189,7 @@ def _build_ground_elem_lookup(ground_file_path: str) -> Dict[int, str]:
                 continue
 
     except (OSError, IOError) as e:
-        logger.error("Error building ground lookup: %s", e)
+        log.error("Error building ground lookup: %s", e)
 
     return lookup
 

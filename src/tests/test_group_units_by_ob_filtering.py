@@ -6,13 +6,13 @@ from wite2_tools.core.group_units_by_ob import group_units_by_ob
 
 
 @pytest.fixture(autouse=True)
-def clear_caches():
+def clear_caches()->None:
     """Ensure the @cache is cleared before every test run."""
     group_units_by_ob.cache_clear()
 
 
 @pytest.fixture(name="mock_nat_unit_csv")
-def mock_nat_unit_csv(tmp_path:Path):
+def mock_nat_unit_csv(tmp_path:Path)->str:
     """Creates a mock _unit.csv with multiple nationalities."""
     content = (
         "id,name,type,nat\n"
@@ -27,7 +27,7 @@ def mock_nat_unit_csv(tmp_path:Path):
     return str(file_path)
 
 
-def test_group_units_with_single_nat_filter(mock_nat_unit_csv):
+def test_group_units_with_single_nat_filter(mock_nat_unit_csv:Path):
     """Verifies filtering for a single nationality (Germany)."""
     # Act: Filter for Nat 1
     result = group_units_by_ob(mock_nat_unit_csv, nat_codes=1)
@@ -40,7 +40,7 @@ def test_group_units_with_single_nat_filter(mock_nat_unit_csv):
     assert 20 not in result
 
 
-def test_group_units_with_multiple_nat_filter(mock_nat_unit_csv):
+def test_group_units_with_multiple_nat_filter(mock_nat_unit_csv:Path):
     """Verifies filtering for multiple nationalities (Germany and Italy)."""
     # FIX: Pass a tuple (1, 3) instead of a list [1, 3]
     result = group_units_by_ob(mock_nat_unit_csv, nat_codes=(1, 3))
@@ -52,7 +52,7 @@ def test_group_units_with_multiple_nat_filter(mock_nat_unit_csv):
     assert not any(u.uid == 3 for u in result[10])
 
 
-def test_group_units_no_filter(mock_nat_unit_csv):
+def test_group_units_no_filter(mock_nat_unit_csv:Path):
     """Verifies behavior when no nationality filter is applied."""
     # Act: No nation_id
     result = group_units_by_ob(mock_nat_unit_csv)

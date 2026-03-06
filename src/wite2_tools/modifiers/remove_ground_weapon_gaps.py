@@ -56,6 +56,9 @@ def remove_ground_weapon_gaps(ground_file_path: str) -> int:
         int: The total number of Ground Elements that had their weapon slots
             compacted.
     """
+    if not os.path.exists(ground_file_path):
+        log.error("Error: The file '%s' was not found.", ground_file_path)
+        return -1
 
     log.info("Task Start: Compacting empty weapon slots in '%s'",
              os.path.basename(ground_file_path))
@@ -112,4 +115,5 @@ def remove_ground_weapon_gaps(ground_file_path: str) -> int:
     log.info("Finished. Total Ground Elements compacted: %d", updates)
     print(f"Success! {updates} Ground Elements had their weapon slots"
           "compacted.")
+
     return updates

@@ -30,7 +30,7 @@ MAX_GND_WPN_SLOTS: Final = 10
 # GC41 is configured to run from 22 Jun 1941 till 2 Aug 1945
 # which is 216 turns
 MAX_GAME_TURNS: Final = 225
-EXCESS_RESOURCE_MULTIPLIER: Final = 5
+EXCESS_RESOURCE_MULTIPLIER: Final = 5.0
 
 # Map Coordinate Limits
 MIN_X: Final = 0

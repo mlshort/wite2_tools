@@ -17,9 +17,9 @@ def mock_ground_csv(tmp_path:Path) -> str:
     return str(file_path)
 
 
-def test_scan_unit_for_ground_elem_any_quantity(mock_unit_csv,
-                                                mock_ground_csv,
-                                                mock_ob_csv):
+def test_scan_unit_for_ground_elem_any_quantity(mock_unit_csv:Path,
+                                                mock_ground_csv:Path,
+                                                mock_ob_csv:Path):
     """
     Verifies finding an element regardless of how many squads are assigned.
     Note: mock_unit_csv and mock_ob_csv are provided by conftest.py
@@ -27,9 +27,9 @@ def test_scan_unit_for_ground_elem_any_quantity(mock_unit_csv,
     # In conftest.py, ID 42 is at 'sqd.u5' in Unit ID 100 with a
     # quantity of 10.
     matches = scan_unit_for_ground_elem(
-        unit_file_path=mock_unit_csv,
-        ground_file_path=mock_ground_csv,
-        ob_full_path=mock_ob_csv,
+        unit_file_path=str(mock_unit_csv),
+        ground_file_path=str(mock_ground_csv),
+        ob_full_path=str(mock_ob_csv),
         target_wid=42,
         target_num_squads=-1  # -1 means ANY quantity
     )
@@ -37,16 +37,16 @@ def test_scan_unit_for_ground_elem_any_quantity(mock_unit_csv,
     assert matches == 1
 
 
-def test_scan_unit_for_ground_elem_exact_quantity(mock_unit_csv,
-                                                  mock_ground_csv,
-                                                  mock_ob_csv):
+def test_scan_unit_for_ground_elem_exact_quantity(mock_unit_csv:Path,
+                                                  mock_ground_csv:Path,
+                                                  mock_ob_csv:Path):
     """Verifies the exact quantity filter logic."""
 
     # 1. Test with the CORRECT quantity (10)
     matches_correct = scan_unit_for_ground_elem(
-        unit_file_path=mock_unit_csv,
-        ground_file_path=mock_ground_csv,
-        ob_full_path=mock_ob_csv,
+        unit_file_path=str(mock_unit_csv),
+        ground_file_path=str(mock_ground_csv),
+        ob_full_path=str(mock_ob_csv),
         target_wid=42,
         target_num_squads=10
     )
@@ -54,9 +54,9 @@ def test_scan_unit_for_ground_elem_exact_quantity(mock_unit_csv,
 
     # 2. Test with the WRONG quantity (99)
     matches_wrong = scan_unit_for_ground_elem(
-        unit_file_path=mock_unit_csv,
-        ground_file_path=mock_ground_csv,
-        ob_full_path=mock_ob_csv,
+        unit_file_path=str(mock_unit_csv),
+        ground_file_path=str(mock_ground_csv),
+        ob_full_path=str(mock_ob_csv),
         target_wid=42,
         target_num_squads=99
     )

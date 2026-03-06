@@ -22,7 +22,7 @@ def test_scan_ob_for_ground_elem_success(mock_ob_csv, capsys):
     assert "'sqd 2'" in captured.out
 
 
-def test_scan_ob_for_ground_elem_no_matches(mock_ob_csv, capsys):
+def test_scan_ob_for_ground_elem_no_matches(mock_ob_csv, capsys)->None:
     """
     Verifies the scanner returns 0 and prints correctly when no match is found.
     """
@@ -38,4 +38,4 @@ def test_scan_ob_for_ground_elem_missing_file()->None:
     Verifies graceful failure when the file doesn't exist.
     """
     matches = scan_ob_for_ground_elem("does_not_exist.csv", 500)
-    assert matches == 0
+    assert matches == -1

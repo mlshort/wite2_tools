@@ -98,7 +98,7 @@ def scan_and_evaluate_unit_files(target_folder: str, active_only: bool,
           "row details.")
 
 
-def scan_and_evaluate_ob_files(target_folder: str) -> None:
+def scan_and_evaluate_ob_files(target_folder: str) -> int:
     """
     Scans a folder for CSV files containing '_ob','_ground' and runs
     consistency checks.
@@ -106,7 +106,7 @@ def scan_and_evaluate_ob_files(target_folder: str) -> None:
     if not os.path.exists(target_folder) or not os.path.isdir(target_folder):
         log.error("Scan failed: The directory '%s' does not exist.",
                   target_folder)
-        return
+        return -1
 
     log.info("--- Starting Batch TOE(OB) Evaluation in:'%s' ---",
              target_folder)
@@ -123,11 +123,11 @@ def scan_and_evaluate_ob_files(target_folder: str) -> None:
 
     if not ob_files:
         log.warning("No files found containing the '_ob' substring.")
-        return
+        return -1
 
     if not ground_files:
         log.warning("No files found containing the '_ground' substring.")
-        return
+        return -1
 
     total_issues = 0
     files_processed = 0
@@ -153,3 +153,5 @@ def scan_and_evaluate_ob_files(target_folder: str) -> None:
           f"{total_issues} issues found.")
     print("Check the latest log in your /logs folder for specific "
           "row details.")
+
+    return total_issues

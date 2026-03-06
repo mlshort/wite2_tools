@@ -81,6 +81,10 @@ def generate_ob_chains(
     all_ob_ids: set[int] = set()
     ob_upgrade_ids: set[int] = set()
 
+    if not os.path.exists(ob_file_path):
+        log.error("Error: The file '%s' was not found.", ob_file_path)
+        return -1
+
     # Standardize nation_id to a set for efficient lookup
     if nat_codes is not None:
         if isinstance(nat_codes, (int, str)):

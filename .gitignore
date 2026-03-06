@@ -53,3 +53,5 @@ src/sync_data_files.bat
 src/audit_toe.txt
 diff.txt
 src/reports/index.txt
+src/.coverage
+.coverage

@@ -32,6 +32,7 @@ Example:
     finds Ground Element 42, and moves it to the very first slot (index 0)
 
 """
+import os
 
 # Internal package imports
 from wite2_tools.constants import MAX_SQUAD_SLOTS
@@ -116,6 +117,10 @@ def reorder_ob_squads(ob_file_path: str,
         log.error("Validation Error: target_slot slot index %d is "
                   "out of bounds (0-31).", target_slot)
         return 0
+
+    if not os.path.exists(ob_file_path):
+        log.error("Error: The file '%s' was not found.", ob_file_path)
+        return -1
 
     log.info("Reordering squads in '%s' | TOE(ID): %d | Target WID: %d |"
              " To Slot Loc: %d",

@@ -1,25 +1,33 @@
 import csv
 import math
+import os
 from typing import Set
 
 from wite2_tools import get_csv_dict_stream
 from wite2_tools import ENCODING_TYPE
 from wite2_tools.utils import parse_int
+from wite2_tools.utils import get_logger
+
+# Initialize the log for this specific module
+log = get_logger(__name__)
 
 
-
-def apply_anti_armor_fix_with_validation(device_input_path: str,
+def apply_anti_armor_fix_with_validation(device_file_path: str,
                                          output_path: str,
                                          target_types: Set | None,
-                                         apply_fix: bool = False)->None:
+                                         apply_fix: bool = False)->int:
     """
     Applies the antiArmor = pen * 0.8 fix and validates the results.
     """
     # Track statistics for validation
     stats = {} # {type_id: {'min': val, 'max': val, 'count': 0}}
 
+    if not os.path.exists(device_file_path):
+        log.error("Error: The file '%s' was not found.", device_file_path)
+        return -1
+
     # Initialize the generator
-    dev_stream = get_csv_dict_stream(device_input_path)
+    dev_stream = get_csv_dict_stream(device_file_path)
 
     # 1. Grab the reader object first (the first yield in your generator)
     fieldnames = dev_stream.fieldnames
@@ -34,7 +42,7 @@ def apply_anti_armor_fix_with_validation(device_input_path: str,
             try:
                 dev_type = parse_int(row.get('type'), -1)
                 dev_pen = parse_int(row.get('pen'))
-
+                # following is experimental !!
                 # Apply fix for specified types
                 if target_types and dev_type in target_types and dev_pen > 0:
                     new_aa = math.floor((dev_pen * 0.8) + 0.5)
@@ -50,6 +58,7 @@ def apply_anti_armor_fix_with_validation(device_input_path: str,
                     stats[dev_type]['count'] += 1
 
                 writer.writerow(row)
+
             except (ValueError, TypeError):
                 writer.writerow(row)
 
@@ -67,6 +76,8 @@ def apply_anti_armor_fix_with_validation(device_input_path: str,
 
     print("="*50)
     print(f"Fixed file generated: {output_path}")
+
+    return len(stats)
 
 if __name__ == "__main__":
     INPUT_FILE = '1941 Campaign_device.csv'
