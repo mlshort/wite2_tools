@@ -14,7 +14,7 @@ Functions:
 from typing import List, Dict, Any
 
 from wite2_tools.generator import get_csv_list_stream
-from wite2_tools.constants import DeviceCol
+from wite2_tools.models import DevColumn
 from wite2_tools.utils import get_logger
 from wite2_tools.utils import parse_int
 
@@ -24,7 +24,7 @@ log = get_logger(__name__)
 
 def scan_devices_by_stat(
     device_file_path: str,
-    stat_col: DeviceCol,
+    stat_col: DevColumn,
     min_value: int
 ) -> List[Dict[str, Any]]:
     """
@@ -51,8 +51,8 @@ def scan_devices_by_stat(
 
             if val >= min_value:
                 device_info = {
-                    "id": row[DeviceCol.ID],
-                    "name": row[DeviceCol.NAME],
+                    "id": row[DevColumn.ID],
+                    "name": row[DevColumn.NAME],
                     "stat_value": val
                 }
                 matches.append(device_info)

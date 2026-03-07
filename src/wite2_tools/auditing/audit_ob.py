@@ -25,6 +25,7 @@ Command Line Usage:
     python -m wite2_tools.cli audit-ob [-h] [-d DATA_DIR]
 """
 import os
+from typing import Set
 
 # Internal package imports
 from wite2_tools.generator import get_csv_dict_stream
@@ -103,7 +104,7 @@ def _check_squad_slots(ob_id: int,
     and WID duplicates.
     """
     issues = 0
-    seen_wids_in_row = set()
+    seen_wids_in_row: Set[int] = set()
     ref = format_ref("TOE(OB)", ob_id, ob_name)
 
     for i in range(MAX_SQUAD_SLOTS):
@@ -157,9 +158,9 @@ def audit_ob_csv(ob_file_path: str,
              occurred.
     """
     issues_found = 0
-    seen_ob_ids: set[int] = set()
-    valid_elem_ids: set[int] = set()
-    valid_ob_ids: set[int] = set()
+    seen_ob_ids: Set[int] = set()
+    valid_elem_ids: Set[int] = set()
+    valid_ob_ids: Set[int] = set()
 
     if not os.path.exists(ob_file_path):
         log.error("Error: The file '%s' was not found.", ob_file_path)

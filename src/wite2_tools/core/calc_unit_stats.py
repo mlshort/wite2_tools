@@ -1,8 +1,7 @@
 """
     module still work-in-progress
 """
-from typing import Dict, Any, List, Union, Tuple, TypedDict
-import math
+from typing import Dict, Any, List, Tuple, TypedDict
 
 
 # Direct import to bypass __init__ export issues
@@ -14,10 +13,10 @@ from wite2_tools.generator import (
 )
 from wite2_tools.utils.parsing import parse_int, parse_str
 from wite2_tools.utils import get_ob_suffix, format_ref
+from wite2_tools.models import GndColumn
 from wite2_tools.constants import (
     MAX_SQUAD_SLOTS,
-    GroundColumn,
-    GroundElementType
+    GrdElementType
 )
 
 
@@ -273,13 +272,13 @@ def calc_unit_support(ob_file_path: str,
         # Find indices manually to be safe
         # id is index 0, name is index 1, type is index 3
         for _, g_row in gnd_stream.rows:
-            g_id = parse_int(g_row[GroundColumn.ID])
-            g_elem_type = parse_int(g_row[GroundColumn.TYPE])
+            g_id = parse_int(g_row[GndColumn.ID])
+            g_elem_type = parse_int(g_row[GndColumn.TYPE])
 
             if g_id == 0 or g_elem_type == 0:
                 continue
             ground_info[g_id] = (
-                g_row[GroundColumn.NAME],
+                g_row[GndColumn.NAME],
                 g_elem_type
             )
 
@@ -331,7 +330,7 @@ def calc_unit_support(ob_file_path: str,
                         if g_elem_type in ELEMENT_DATA and g_elem_qty > 0:
                             data = ELEMENT_DATA[g_elem_type]
 
-                            if g_elem_type == GroundElementType.SUPPORT:
+                            if g_elem_type == GrdElementType.SUPPORT:
                                calc_unit_spt += g_elem_qty
 
                             elem_type_sptNeed = data[2]
@@ -346,7 +345,7 @@ def calc_unit_support(ob_file_path: str,
 
                 if u_vehicles > 0:
                     slot_sptNeed = int(u_vehicles * sptNeed_per_truck / 10)
-                    vehicle_type = GroundElementType.VEHICLE
+                    vehicle_type = GrdElementType.VEHICLE
                     print(f"Slot {"-":2}: | {u_vehicles:4} | {"Vehicles":20} | {vehicle_type:4} "
                           f"| {sptNeed_per_truck/10:>8.2f} | {slot_sptNeed:6}")
 

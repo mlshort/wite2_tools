@@ -28,15 +28,6 @@ OB_COMBAT_CLASS_LOOKUP: dict[int, str] = {
 }
 
 
-def get_ob_combat_class_name(ob_class_val: int) -> str:
-    """
-    Retrieves the description for a specific Combat Class code.
-    Returns 'Unk ' if the code is not found.
-    """
-    result = OB_COMBAT_CLASS_LOOKUP.get(ob_class_val, f"Unk ({ob_class_val})")
-    return result
-
-
 OB_TYPE_LOOKUP: dict[int, str] = {
         0: "None",
         1: "Armor",
@@ -65,16 +56,6 @@ OB_TYPE_LOOKUP: dict[int, str] = {
         24: "Air Land",
         25: "Naval"
     }
-
-
-def get_ob_type_code_name(ob_type_code: int) -> str:
-    """
-    Not to be confused with 'get_ob_type_name', this one
-    retrieves the name for a specific TOE(OB) Type code.
-    Returns 'Unk ' if the code is not found.
-    """
-    result = OB_TYPE_LOOKUP.get(ob_type_code,  f"Unk ({ob_type_code})")
-    return result
 
 
 NAT_LOOKUP: dict[int, str] = {
@@ -196,14 +177,6 @@ NATION_LOOKUP: dict[int, str] = {
 }
 
 
-def get_country_name(nat_id: int) -> str:
-    """
-    Returns the nation name for a given ID.
-    Defaults to 'Unk ' if ID is not in the list.
-    """
-    return NATION_LOOKUP.get(nat_id, f"Unk ({nat_id})")
-
-
 # Explicitly declared lookup for Unit Status/Type
 # Key: Status Integer, Value: Status Description
 UNIT_SPECIAL_LOOKUP: dict[int, str] = {
@@ -216,14 +189,6 @@ UNIT_SPECIAL_LOOKUP: dict[int, str] = {
     6: "LW-Elite",
     7: "AL-Elite"
 }
-
-
-def get_unit_special_name(status_code: int) -> str:
-    """
-    Returns the string description for a given WiTE2 status code.
-    Defaults to 'Unk' if the code is not in the lookup table.
-    """
-    return UNIT_SPECIAL_LOOKUP.get(status_code, f"Unk ({status_code})")
 
 
 # Explicitly declared lookup for WiTE2 Device Types
@@ -261,14 +226,6 @@ DEVICE_TYPE_LOOKUP: dict[int, str] = {
     29: "Naval RADAR",
     30: "Armor"  # New to WiTE2
 }
-
-
-def get_device_type_name(device_code: int) -> str:
-    """
-    Retrieves the description for a specific Device Type code.
-    Returns 'Unk ' if the code is not found.
-    """
-    return DEVICE_TYPE_LOOKUP.get(device_code, f"Unk ({device_code})")
 
 
 # Explicitly declared lookup for WiTE2 HQ Types
@@ -417,13 +374,6 @@ GROUND_ELEMENT_TYPE_LOOKUP: dict[int, str] = {
 }
 
 
-def get_ground_elem_class_name(type_id: int) -> str:
-    """
-    Returns the string name for a Ground Element Type WID.
-    Handles undefined ranges gracefully.
-    """
-    return GROUND_ELEMENT_TYPE_LOOKUP.get(type_id, f"Unk ({type_id})")
-
 
 # Explicitly declared lookup for WiTE2 Device Sizes
 # Key: Size Integer, Value: Category Description
@@ -464,9 +414,4 @@ DEVICE_FACE_TYPE_LOOKUP: dict[int, str] = {
 }
 
 
-def get_device_face_type_name(face_code: int) -> str:
-    """
-    Retrieves the orientation description for a Device Face code.
-    Defaults to 'Unk' if the code is outside the 0-12 range.
-    """
-    return DEVICE_FACE_TYPE_LOOKUP.get(face_code, f"Unk ({face_code})")
+

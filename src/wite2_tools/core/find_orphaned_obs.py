@@ -48,7 +48,7 @@ from functools import cache
 
 # Internal package imports
 from wite2_tools.config import normalize_nat_codes, NatData, make_hashable
-from wite2_tools.core.unit import Unit
+from wite2_tools.core.unit import UnitData
 from wite2_tools.generator import get_csv_dict_stream
 from wite2_tools.utils import get_logger
 from wite2_tools.utils import format_header, format_list_item
@@ -102,10 +102,10 @@ def _parse_ob_data(ob_file_path: str,
 def _trace_unit_references(unit_file_path: str,
                            ob_file_path: str,
                            nat_codes: NatData,
-                           ob_id_upgrade: Dict[int, int])->Tuple[Set[int], Dict[int, Set[Unit]]]:
+                           ob_id_upgrade: Dict[int, int])->Tuple[Set[int], Dict[int, Set[UnitData]]]:
     """Parses unit file and traces the full TOE upgrade chain."""
     obs_ref_by_unit: Set[int] = set()
-    ob_to_units: Dict[int, Set[Unit]] = {}
+    ob_to_units: Dict[int, Set[UnitData]] = {}
 
     unit_stream = get_csv_dict_stream(unit_file_path)
 
@@ -124,7 +124,7 @@ def _trace_unit_references(unit_file_path: str,
                 ob_to_units[u_type] = set()
 
             u_full_name = f"{parse_str(row.get('name'), 'Unk')} {get_ob_suffix(ob_file_path, u_type)}"
-            ob_to_units[u_type].add(Unit(u_id, u_full_name, u_type, u_nat))
+            ob_to_units[u_type].add(UnitData(u_id, u_full_name, u_type, u_nat))
 
             # Trace upgrade chain
             curr = u_type
@@ -212,7 +212,7 @@ def find_orphaned_ob_ids2(ob_file_path: str,
 
     # set of TOE(OB) IDs directly referenced by units
     obs_ref_by_unit: Set[int] = set()
-    ob_to_units: Dict[int, Set[Unit]] = {}
+    ob_to_units: Dict[int, Set[UnitData]] = {}
 
     nat_filter = normalize_nat_codes(nat_codes)
 
@@ -291,7 +291,7 @@ def find_orphaned_ob_ids2(ob_file_path: str,
                 # if yes, then lets collect its data, if we haven't already
                 if utype not in ob_to_units:
                     ob_to_units[utype] = set()
-                a_unit = Unit(uid, ufull_name, utype, u_nat)
+                a_unit = UnitData(uid, ufull_name, utype, u_nat)
                 # since we have a non-zero unit type, this unit
                 # thinks it has an associated TOE(OB)
                 # let's go with that for now...
@@ -369,7 +369,7 @@ def find_orphaned_ob_ids2(ob_file_path: str,
 
             # Sort the IDs so the output is consistent and easy to read
             for inv_ob_id in sorted(inv_ref_ob_ids):
-                units_with_inv_ob_id: Set[Unit] = ob_to_units.get(inv_ob_id, set())
+                units_with_inv_ob_id: Set[UnitData] = ob_to_units.get(inv_ob_id, set())
 
                 if units_with_inv_ob_id:
                     num_units_with_inv_ob_ids += len(units_with_inv_ob_id)
@@ -429,7 +429,7 @@ def find_orphaned_ob_ids2(ob_file_path: str,
 
 def _report_results(orphans: Set[int],
                     invalid: Set[int],
-                    unit_map: Dict[int, Set[Unit]],
+                    unit_map: Dict[int, Set[UnitData]],
                     ob_path: str) -> None:
     """Handles console output for the orphan report."""
     if orphans:

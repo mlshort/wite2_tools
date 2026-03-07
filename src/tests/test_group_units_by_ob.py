@@ -3,7 +3,7 @@ from pathlib import Path
 
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
-from wite2_tools.core.group_units_by_ob import Unit
+from wite2_tools.core.group_units_by_ob import UnitData
 from wite2_tools.core.group_units_by_ob import group_units_by_ob
 
 # ==========================================
@@ -59,13 +59,13 @@ def test_group_units_by_ob_success(mock_unit_csv):
     result = group_units_by_ob(mock_unit_csv)
 
     # TOE(OB) 10 should contain two units
-    assert result[45] == [Unit(uid=10, name="1st Panzer",
+    assert result[45] == [UnitData(uid=10, name="1st Panzer",
                                utype=45, nat=1),
-                          Unit(uid=21, name="2nd Panzer",
+                          UnitData(uid=21, name="2nd Panzer",
                                utype=45, nat=1)]
 
     # TOE(OB) 30 should contain one unit
-    assert result[30] == [Unit(uid=33, name="3rd Infantry",
+    assert result[30] == [UnitData(uid=33, name="3rd Infantry",
                                utype=30, nat=2)]
 
 
@@ -95,7 +95,7 @@ def test_group_units_by_ob_aborts_on_malformed_data(mock_corrupted_unit_csv):
     # The 1st Panzer should be captured
     assert 10 in result
 
-    assert result[10] == [Unit(uid=1, name="1st Panzer",
+    assert result[10] == [UnitData(uid=1, name="1st Panzer",
                                utype=10, nat=1)]
 
     # The 'Bad Unit' shouldn't be returned

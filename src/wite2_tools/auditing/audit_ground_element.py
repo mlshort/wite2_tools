@@ -24,10 +24,10 @@ Example:
 import os
 
 # Internal package imports
+from wite2_tools.models import GndColumn
 from wite2_tools.constants import (
     MAX_GROUND_MEN,
-    GroundColumn,
-    GroundElementType
+    GrdElementType
 )
 
 from wite2_tools.generator import get_csv_list_stream
@@ -80,11 +80,11 @@ def _check_ground_stats(g_id: int,
     ref = format_ref("WID", g_id, g_name)
 
     try:
-        ground_type = parse_int(row[GroundColumn.TYPE])
-        ground_size = parse_int(row[GroundColumn.SIZE])
-        ground_men = parse_int(row[GroundColumn.MEN])
+        ground_type = parse_int(row[GndColumn.TYPE])
+        ground_size = parse_int(row[GndColumn.SIZE])
+        ground_men = parse_int(row[GndColumn.MEN])
 
-        elem = GroundElementType(ground_type)
+        elem = GrdElementType(ground_type)
         if elem.is_combat_element:
 
             if ground_size == 0:
@@ -126,9 +126,9 @@ def audit_ground_element_csv(ground_file_path: str) -> int:
     seen_ground_ids: set[int] = set()
 
     # Define the minimum indices required for a safe primary parse
-    idx_id = GroundColumn.ID
-    idx_name = GroundColumn.NAME
-    idx_type = GroundColumn.TYPE
+    idx_id = GndColumn.ID
+    idx_name = GndColumn.NAME
+    idx_type = GndColumn.TYPE
     MIN_REQUIRED_COLS = max(idx_id, idx_name, idx_type) + 1
 
     try:
@@ -166,8 +166,8 @@ def audit_ground_element_csv(ground_file_path: str) -> int:
                 issues_found += t_issues
 
                 if element_class_name:
-                    idx_size = GroundColumn.SIZE
-                    idx_men = GroundColumn.MEN
+                    idx_size = GndColumn.SIZE
+                    idx_men = GndColumn.MEN
                     REQUIRED_STAT_COLS = max(idx_size, idx_men) + 1
 
                     if row_len >= REQUIRED_STAT_COLS:

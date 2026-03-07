@@ -165,3 +165,12 @@ actual game files remain untouched during development.
 All operations automatically generate a timestamped log file
 (e.g., `wite2_20260217_1330.log`) in the local `\logs` directory.
 Analytical data (like TOE(OB) chains) are saved to the `\exports` directory.
+
+# Technical Decisions
+
+### CSV Parsing Strategy
+The toolkit uses a dual-parsing strategy for CSV data:
+- **Dict-based:** Used for files with unique headers for better readability.
+- **List-based:** Used for `_ground.csv` and similar files that contain
+duplicate header strings, ensuring data integrity by using indexed Enums
+(see `wite2_tools.models.GndColumn`).

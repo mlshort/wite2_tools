@@ -9,7 +9,7 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
-class Unit:
+class UnitData:
     """
     Immutable data structure representing a key WiTE2 Unit.
 
@@ -39,7 +39,7 @@ if __name__ == "__main__":
     from wite2_tools.utils.lookups import get_nat_abbr
 
     # Example: Creating a new German Panzer Division
-    my_unit = Unit(uid=1054, name="1st Panzer Div", utype=33, nat=1)
+    my_unit = UnitData(uid=1054, name="1st Panzer Div", utype=33, nat=1)
 
     print(f"Created Unit: {my_unit.name} (ID: {my_unit.uid})")
     print(f"Assigned TOE(OB): {my_unit.utype}")

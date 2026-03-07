@@ -14,6 +14,7 @@ __date__ = "2026-03-02"
 from . import auditing
 from . import core
 from . import modifiers
+from . import models
 from . import scanning
 from . import utils
 
@@ -23,12 +24,10 @@ from . config import (
     normalize_nat_codes,
     make_hashable
 )
+
 from . constants import (
     MAX_SQUAD_SLOTS,
-    MAX_GND_WPN_SLOTS,
-    GroundColumn,
-    UnitColumn,
-    ObColumn,
+    MAX_GND_WPN_SLOTS
 )
 from . paths import (
     CONF_OB_FULL_PATH,
@@ -47,6 +46,7 @@ __all__ = [
     'auditing',
     'core',
     'modifiers',
+    'models',
     'scanning',
     'utils',
     'ENCODING_TYPE',
@@ -55,9 +55,6 @@ __all__ = [
     'make_hashable',
     'MAX_SQUAD_SLOTS',
     'MAX_GND_WPN_SLOTS',
-    'GroundColumn',
-    'UnitColumn',
-    'ObColumn',
     'CONF_OB_FULL_PATH',
     'CONF_UNIT_FULL_PATH',
     'CONF_GROUND_FULL_PATH',

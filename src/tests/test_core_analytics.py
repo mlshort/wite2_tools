@@ -4,7 +4,7 @@ from pathlib import Path
 
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
-from wite2_tools.core.group_units_by_ob import Unit
+from wite2_tools.core.group_units_by_ob import UnitData
 from wite2_tools.core.group_units_by_ob import group_units_by_ob
 from wite2_tools.core.count_global_unit_inventory import (
     count_global_unit_inventory
@@ -55,12 +55,12 @@ def test_group_units_by_ob(mock_unit_csv):
     result = group_units_by_ob(mock_unit_csv)
 
     # TOE(OB) 10 should have two units
-    assert result[10] == [Unit(uid=1, name="1st Panzer",
+    assert result[10] == [UnitData(uid=1, name="1st Panzer",
                                utype=10, nat=1),
-                          Unit(uid=2, name="2nd Panzer",
+                          UnitData(uid=2, name="2nd Panzer",
                                utype=10, nat=1)]
     # TOE(OB) 20 should have one unit
-    assert result[20] == [Unit(uid=3, name="3rd Infantry",
+    assert result[20] == [UnitData(uid=3, name="3rd Infantry",
                                utype=20, nat=2)]
     # Type 0 should not be in the dictionary
     assert 0 not in result

@@ -41,7 +41,7 @@ from typing import cast, Optional, Union, Iterable, Dict, List
 from functools import cache
 
 # Internal package imports
-from wite2_tools.core.unit import Unit
+from wite2_tools.core.unit import UnitData
 from wite2_tools.generator import get_csv_dict_stream
 from wite2_tools.utils import (
     get_logger,
@@ -59,7 +59,7 @@ def group_units_by_ob(
     unit_file_path: str,
     active_only: bool = True,
     nat_codes: Optional[Union[int, str, Iterable[Union[int, str]]]] = None
-) -> Dict[int, list[Unit]]:
+) -> Dict[int, list[UnitData]]:
     """
     Groups units by TOE(OB) ID with optional nationality filtering.
 
@@ -76,7 +76,7 @@ def group_units_by_ob(
         dict[int, list[Unit]]: A dictionary mapping the TOE(OB) ID to a list of
                 matching Unit objects.
     """
-    ob_ids_to_units: Dict[int, List[Unit]] = defaultdict(list)
+    ob_ids_to_units: Dict[int, List[UnitData]] = defaultdict(list)
 
     # Standardize nation_id to a set for efficient lookup
     if nat_codes is not None:
@@ -109,7 +109,7 @@ def group_units_by_ob(
             uid = parse_int(row.get("id"))
             uname = parse_str(row.get('name'), 'Unk')
 
-            unit = Unit(uid=uid, name=uname, utype=utype, nat=u_nat)
+            unit = UnitData(uid=uid, name=uname, utype=utype, nat=u_nat)
             ob_ids_to_units[utype].append(unit)
 
         print_unit_table(ob_ids_to_units)
@@ -120,7 +120,7 @@ def group_units_by_ob(
     return dict(ob_ids_to_units)
 
 
-def print_unit_table(grouped_data: Dict[int, List[Unit]]) -> None:
+def print_unit_table(grouped_data: Dict[int, List[UnitData]]) -> None:
     """
     Prints a formatted table of all units organized by Type
     """

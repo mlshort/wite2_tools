@@ -35,10 +35,7 @@ from typing import Set
 from functools import cache
 
 # Internal package imports
-from wite2_tools.constants import (
-    GroundColumn,
-    ObColumn
-)
+from wite2_tools.models import ObColumn, GndColumn
 from wite2_tools.generator import (
     get_csv_list_stream,
     get_csv_dict_stream
@@ -64,13 +61,14 @@ def get_valid_ob_ids(ob_file_path: str) -> Set[int]:
     try:
         ob_stream = get_csv_list_stream(ob_file_path)
 
-        for _, row in ob_stream.rows:
+        for idx, row in ob_stream.rows:
             try:
                 ob_id = parse_int(row[ObColumn.ID])  # 'id' column
                 ob_type = parse_int(row[ObColumn.TYPE])  # 'type' column
                 if ob_id != 0 and ob_type != 0:
                     valid_ob_ids.add(ob_id)
             except (ValueError, IndexError):
+                log.debug("Skipping malformed row at index %d", idx)
                 continue
 
         log.info("  Cache built with %d valid TOE(OB) IDs.",
@@ -95,7 +93,7 @@ def get_valid_ob_upgrade_ids(ob_file_path: str) -> Set[int]:
     try:
         ob_stream = get_csv_list_stream(ob_file_path)
 
-        for _, row in ob_stream.rows:
+        for idx, row in ob_stream.rows:
             try:
                 ob_id = parse_int(row[ObColumn.ID])
                 if ob_id == 0:
@@ -107,6 +105,7 @@ def get_valid_ob_upgrade_ids(ob_file_path: str) -> Set[int]:
                     valid_ob_upgrade_ids.add(ob_upgrade)
             except (ValueError, IndexError):
                 # Skip malformed rows or empty lines
+                log.debug("Skipping malformed row at index %d", idx)
                 continue
 
         log.info("  Cache built with %d valid TOE(OB) upgrade IDs.",
@@ -133,17 +132,18 @@ def get_valid_ground_elem_ids(ground_file_path: str) -> Set[int]:
         # Use list generator to handle duplicate 'id' column names safely
         gnd_stream = get_csv_list_stream(ground_file_path)
 
-        for _, row in gnd_stream.rows:
+        for idx, row in gnd_stream.rows:
             try:
                 # Access by index to avoid duplicate header issues
-                wid = parse_int(row[GroundColumn.ID])
+                wid = parse_int(row[GndColumn.ID])
                 if wid == 0:
                     continue
-                ground_type = parse_int(row[GroundColumn.TYPE])
+                ground_type = parse_int(row[GndColumn.TYPE])
                 if ground_type != 0:
                     valid_elem_ids.add(wid)
             except (ValueError, IndexError):
                 # Skip malformed rows or empty lines
+                log.debug("Skipping malformed row at index %d", idx)
                 continue
 
         log.info("  Cache built with %d valid WIDs.", len(valid_elem_ids))
@@ -166,7 +166,7 @@ def get_valid_unit_ids(unit_file_path: str,
     Returns:
         A set of valid integer unit IDs.
     """
-    valid_ids: set[int] = set()
+    valid_ids: Set[int] = set()
 
     try:
         # start=2 accounts for WiTE2 headers

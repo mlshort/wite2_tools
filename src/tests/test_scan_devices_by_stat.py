@@ -4,7 +4,7 @@ import pytest
 from unittest.mock import patch
 
 from wite2_tools.config import ENCODING_TYPE
-from wite2_tools.constants import DeviceCol
+from wite2_tools.models import DevColumn
 from wite2_tools.scanning.scan_devices_by_stat import scan_devices_by_stat
 
 @pytest.fixture
@@ -21,8 +21,8 @@ def mock_device_csv(tmp_path: Path) -> str:
     # To be safe, we'll create a row with 100 empty strings.
     def create_row(dev_id: str, name: str, stat_val: str, stat_idx: int) -> list[str]:
         row = [""] * 100
-        row[DeviceCol.ID] = dev_id
-        row[DeviceCol.NAME] = name
+        row[DevColumn.ID] = dev_id
+        row[DevColumn.NAME] = name
         row[stat_idx] = stat_val
         return row
 
@@ -32,11 +32,11 @@ def mock_device_csv(tmp_path: Path) -> str:
         writer.writerow(["WiTE2", "Device", "Data"])
 
         # Device 1: Meets criteria (150 >= 100)
-        writer.writerow(create_row("1", "Pak 40", "150", DeviceCol.PEN))
+        writer.writerow(create_row("1", "Pak 40", "150", DevColumn.PEN))
         # Device 2: Fails criteria (50 < 100)
-        writer.writerow(create_row("2", "Pak 36", "50", DeviceCol.PEN))
+        writer.writerow(create_row("2", "Pak 36", "50", DevColumn.PEN))
         # Device 3: Meets criteria exactly (100 >= 100)
-        writer.writerow(create_row("3", "KwK 40", "100", DeviceCol.PEN))
+        writer.writerow(create_row("3", "KwK 40", "100", DevColumn.PEN))
 
     return str(csv_file)
 
@@ -44,7 +44,7 @@ def test_scan_devices_by_stat_finds_matches(mock_device_csv: str) -> None:
     """Tests that devices meeting or exceeding the threshold are returned."""
     results = scan_devices_by_stat(
         device_file_path=mock_device_csv,
-        stat_col=DeviceCol.PEN,
+        stat_col=DevColumn.PEN,
         min_value=100
     )
 
@@ -58,7 +58,7 @@ def test_scan_devices_by_stat_no_matches(mock_device_csv: str) -> None:
     """Tests that an empty list is returned if no devices meet the threshold."""
     results = scan_devices_by_stat(
         device_file_path=mock_device_csv,
-        stat_col=DeviceCol.PEN,
+        stat_col=DevColumn.PEN,
         min_value=999 # Impossible threshold
     )
 
@@ -69,7 +69,7 @@ def test_scan_devices_by_stat_file_not_found() -> None:
     # Running against a path we know doesn't exist
     results = scan_devices_by_stat(
         device_file_path="non_existent_file.csv",
-        stat_col=DeviceCol.PEN,
+        stat_col=DevColumn.PEN,
         min_value=100
     )
 
@@ -86,7 +86,7 @@ def test_scan_devices_by_stat_index_error(tmp_path: Path) -> None:
 
     results = scan_devices_by_stat(
         device_file_path=str(bad_csv),
-        stat_col=DeviceCol.PEN,
+        stat_col=DevColumn.PEN,
         min_value=10
     )
 

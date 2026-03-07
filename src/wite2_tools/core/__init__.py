@@ -20,7 +20,7 @@ from .find_orphaned_obs import (
 from .calc_unit_stats import calc_unit_support
 from .count_global_unit_inventory import count_global_unit_inventory
 from .identify_unused_devices import identify_unused_devices
-from .group_units_by_ob import group_units_by_ob, Unit
+from .group_units_by_ob import group_units_by_ob, UnitData
 
 # Accessible via "from wite2_tools.core import *"
 __all__ = [
@@ -33,5 +33,5 @@ __all__ = [
     "group_units_by_ob",
     "identify_unused_devices",
     "calc_unit_support",
-    "Unit"
+    "UnitData"
 ]

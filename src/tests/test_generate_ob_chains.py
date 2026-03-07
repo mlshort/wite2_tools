@@ -112,7 +112,7 @@ def test_generate_ob_chains_csv_file_not_found(mock_workspace)->None:
     """
     Verifies safe failure and error handling when the file does not exist.
     """
-    ob_file, csv_out, txt_out = mock_workspace
+    _, csv_out, txt_out = mock_workspace
     issues = generate_ob_chains("does_not_exist.csv", csv_out, txt_out)
 
     # The script is designed to return -1 when the path is missing

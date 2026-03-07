@@ -6,11 +6,14 @@ This module provides generator functions for efficiently reading and iterating
 over CSV files. It is designed to handle large datasets by yielding rows
 lazily rather than loading the entire file into memory.
 
-The module supports two modes of reading:
-1.  **List-based reading**: Returns rows as lists of strings, useful for
-    sequential data processing.
-2.  **Dictionary-based reading**: Returns rows as dictionaries mapped to
-    header names, useful for column-agnostic data access.
+Note on Implementation:
+----------------------
+Two distinct streaming methods are provided to handle WiTE2 data inconsistencies:
+1. `get_csv_dict_stream`: Preferred for most files (e.g., TOE(OB)); provides
+   header-based mapping.
+2. `get_csv_list_stream`: Required for files with duplicate column headers
+   (e.g., _ground.csv), where a standard `DictReader` would cause data loss
+   by overwriting keys.
 
 Configuration
 -------------

@@ -4,9 +4,8 @@ Type Name Resolution Utilities
 
 This module provides functions to resolve numerical type IDs into
 human-readable names by referencing external CSV data files
-(specifically TOE(OB) and Ground Element files).
 It is primarily used for converting raw data IDs from the WiTE2 context into
-descriptive strings for logging or display.
+descriptive strings for logging, reporting or display.
 
 Caching Mechanism
 -----------------
@@ -19,11 +18,26 @@ lookups query this cached dictionary instantly in O(1) time.
 
 Functions
 ---------
-* `get_ob_full_name`: Resolves an TOE(OB) ID to a full name (combining 'name'
+* `get_ob_name`: Resolves a TOE(OB) ID to its base name.
+* `get_ob_suffix`: Resolves a TOE(OB) ID to its suffix.
+* `get_ob_full_name`: Resolves a TOE(OB) ID to a full name (combining 'name'
                       and 'suffix').
 * `get_unit_type_name`: A wrapper alias for `get_ob_full_name` used for
                         semantic clarity.
-* `get_ground_elem_type_name`: Resolves a Ground Element ID to its name.
+* `get_ground_elem_type_name`: Resolves a Ground Element ID to its name via
+                               CSV lookup.
+* `get_ob_combat_class_name`: Retrieves the description for a specific Combat
+                              Class code.
+* `get_device_type_name`: Retrieves the description for a specific Device
+                          Type code.
+* `get_ob_type_code_name`: Retrieves the name for a specific TOE(OB) Type code.
+* `get_country_name`: Returns the nation name for a given ID.
+* `get_unit_special_name`: Returns the string description for a given WiTE2
+                           status code.
+* `get_ground_elem_class_name`: Returns the string name for a Ground Element
+                                Type WID.
+* `get_device_face_type_name`: Retrieves the orientation description for a
+                               Device Face code.
 """
 
 import os
@@ -32,13 +46,28 @@ from functools import cache
 from dataclasses import dataclass
 
 # Internal package imports
-from wite2_tools.constants import GroundColumn
+from wite2_tools.models import GndColumn
 from wite2_tools.generator import (
     get_csv_dict_stream,
     get_csv_list_stream,
 )
+
+# DEVELOPER NOTE:
+# _ground.csv contains duplicate header names (e.g., multiple "Weapon" cols).
+# To prevent DictReader from overwriting data, we must use get_csv_list_stream
+# and resolve indices via the GndColumn Enum.
+
 from wite2_tools.utils.logger import get_logger
 from wite2_tools.utils.parsing import parse_int, parse_str
+from wite2_tools.utils.lookups import (
+    OB_COMBAT_CLASS_LOOKUP,
+    OB_TYPE_LOOKUP,
+    NATION_LOOKUP,
+    UNIT_SPECIAL_LOOKUP,
+    DEVICE_TYPE_LOOKUP,
+    GROUND_ELEMENT_TYPE_LOOKUP,
+    DEVICE_FACE_TYPE_LOOKUP
+)
 
 
 # Initialize the log for this specific module
@@ -142,6 +171,25 @@ def get_ob_full_name(ob_file_path: str, ob_id_to_find: int) -> str:
     return f"Unk ({ob_id_to_find})"
 
 
+def get_ob_combat_class_name(ob_class_val: int) -> str:
+    """
+    Retrieves the description for a specific Combat Class code.
+    Returns 'Unk ' if the code is not found.
+    """
+    result = OB_COMBAT_CLASS_LOOKUP.get(ob_class_val, f"Unk ({ob_class_val})")
+    return result
+
+
+def get_ob_type_code_name(ob_type_code: int) -> str:
+    """
+    Not to be confused with 'get_ob_type_name', this one
+    retrieves the name for a specific TOE(OB) Type code.
+    Returns 'Unk ' if the code is not found.
+    """
+    result = OB_TYPE_LOOKUP.get(ob_type_code,  f"Unk ({ob_type_code})")
+    return result
+
+
 def get_unit_type_name(ob_file_path: str, unit_id_to_find: int) -> str:
     """
     A convenience wrapper. In WiTE2, a unit's type name is derived
@@ -178,11 +226,11 @@ def _build_ground_elem_lookup(ground_file_path: str) -> Dict[int, str]:
 
         for _, row in gnd_stream.rows:
             try:
-                # Ensure GroundColumn values are integers for list indexing
-                g_id = parse_int(row[GroundColumn.ID])
+                # Ensure GndColumn values are integers for list indexing
+                g_id = parse_int(row[GndColumn.ID])
                 if g_id != 0:
                     # Capture the name based on the specific column index
-                    g_name = parse_str(row[GroundColumn.NAME], "")
+                    g_name = parse_str(row[GndColumn.NAME], "")
                     lookup[g_id] = g_name
             except (ValueError, IndexError):
                 # ValueError: parse_int failed; IndexError: row is too short
@@ -204,3 +252,43 @@ def get_ground_elem_type_name(ground_file_path: str,
 
     # 2. Perform instant O(1) lookup
     return cached_dict.get(wid_to_find, f"Unk ({wid_to_find})")
+
+
+def get_device_type_name(device_code: int) -> str:
+    """
+    Retrieves the description for a specific Device Type code.
+    Returns 'Unk ' if the code is not found.
+    """
+    return DEVICE_TYPE_LOOKUP.get(device_code, f"Unk ({device_code})")
+
+
+def get_country_name(nat_id: int) -> str:
+    """
+    Returns the nation name for a given ID.
+    Defaults to 'Unk ' if ID is not in the list.
+    """
+    return NATION_LOOKUP.get(nat_id, f"Unk ({nat_id})")
+
+
+def get_unit_special_name(status_code: int) -> str:
+    """
+    Returns the string description for a given WiTE2 status code.
+    Defaults to 'Unk' if the code is not in the lookup table.
+    """
+    return UNIT_SPECIAL_LOOKUP.get(status_code, f"Unk ({status_code})")
+
+
+def get_ground_elem_class_name(type_id: int) -> str:
+    """
+    Returns the string name for a Ground Element Type WID.
+    Handles undefined ranges gracefully.
+    """
+    return GROUND_ELEMENT_TYPE_LOOKUP.get(type_id, f"Unk ({type_id})")
+
+
+def get_device_face_type_name(face_code: int) -> str:
+    """
+    Retrieves the orientation description for a Device Face code.
+    Defaults to 'Unk' if the code is outside the 0-12 range.
+    """
+    return DEVICE_FACE_TYPE_LOOKUP.get(face_code, f"Unk ({face_code})")

@@ -23,6 +23,7 @@ from .batch_evaluator import (
     scan_and_evaluate_unit_files,
     scan_and_evaluate_ob_files,
 )
+from .support_analysis import print_undersupported_units
 
 __all__ = [
     "audit_ob_csv",
@@ -30,5 +31,6 @@ __all__ = [
     "audit_ground_element_csv",
     "audit_unit_ob_excess",
     "scan_and_evaluate_unit_files",
-    "scan_and_evaluate_ob_files"
+    "scan_and_evaluate_ob_files",
+    "print_undersupported_units"
 ]

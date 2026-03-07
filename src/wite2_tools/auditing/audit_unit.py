@@ -46,9 +46,10 @@ from wite2_tools.constants import (
     MAX_Y,
     MAX_GAME_TURNS
 )
-from wite2_tools.utils import get_logger
-from wite2_tools.utils import get_valid_ground_elem_ids, get_valid_unit_ids
 from wite2_tools.utils import (
+    get_logger,
+    get_valid_ground_elem_ids,
+    get_valid_unit_ids,
     format_ref,
     format_coords,
     audit_msg,

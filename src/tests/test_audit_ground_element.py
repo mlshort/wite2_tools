@@ -4,7 +4,7 @@ import pytest
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.auditing import audit_ground_element_csv
-from wite2_tools.constants import GroundColumn
+from wite2_tools.models import GndColumn
 
 # ==========================================
 # FIXTURES (Setup)
@@ -20,11 +20,11 @@ def mock_ground_csv(tmp_path:Path)->str:
     def create_row(gid, name, gtype, men="10", size="1")->list[str]:
         # Initialize a row with 25 columns to exceed REQUIRED_STAT_COLS (22)
         row = ["0"] * 25
-        row[GroundColumn.ID] = str(gid)
-        row[GroundColumn.NAME] = name
-        row[GroundColumn.TYPE] = str(gtype)
-        row[GroundColumn.MEN] = str(men)   # Index 19
-        row[GroundColumn.SIZE] = str(size)  # Index 21
+        row[GndColumn.ID] = str(gid)
+        row[GndColumn.NAME] = name
+        row[GndColumn.TYPE] = str(gtype)
+        row[GndColumn.MEN] = str(men)   # Index 19
+        row[GndColumn.SIZE] = str(size)  # Index 21
         return row
 
     header = ["id", "name", "cost", "type", "symbol", "rate", "range", "acc",
@@ -45,7 +45,7 @@ def mock_ground_csv(tmp_path:Path)->str:
 
         # ISSUE 2: MISSING TYPE
         row4 = create_row(102, "Ghost Tank", "")
-        row4[GroundColumn.TYPE] = ""
+        row4[GndColumn.TYPE] = ""
         writer.writerow(row4)
 
         # ISSUE 3: UNKNOWN TYPE 9999
