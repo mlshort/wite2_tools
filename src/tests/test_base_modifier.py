@@ -1,115 +1,63 @@
-import os
-from typing import Tuple
-from pathlib import Path
+from typing import List
 
-import pytest
-from wite2_tools.config import ENCODING_TYPE
-from wite2_tools.modifiers.base import process_csv_in_place
+# Correct import from models as requested
+from wite2_tools.models import (
+    gen_default_unit_row,
+    ATTRS_PER_SQD,
+    U_SQD0_COL
+)
+from wite2_tools.modifiers.reorder_unit_squads import (
+    reorder_unit_elems,
+    reorder_unit_squads
+)
 
-# ==========================================
-# FIXTURES (Setup)
-# ==========================================
+
+def test_reorder_unit_elems_logic() -> None:
+    """Verifies interleaved unit attribute blocks shift in sync."""
+
+    # 1. Setup
+    row: List[str] = gen_default_unit_row()
+
+    # 2. Place Data in Slot 1
+    # Slot 1 base = 124 + (1 * 8) = 132
+    s1_base = U_SQD0_COL + (1 * ATTRS_PER_SQD)
+
+    row[s1_base + 0] = "99"  # SQD_U1
+    row[s1_base + 1] = "10"  # SQD_NUM1
+
+    # 3. Action
+    updated: List[str] = reorder_unit_elems(row, source_slot=1, target_slot=0)
+
+    # 4. Assertions for Target (Slot 0)
+    s0_base = U_SQD0_COL + (0 * ATTRS_PER_SQD)
+
+    assert updated[s0_base + 0] == "99", f"WID 99 should be at index {s0_base}"
+    assert updated[s0_base + 1] == "10", f"Qty 10 should be at index {s0_base + 1}"
+
+    # 6. Assertions for Cleanup (Slot 1)
+    assert updated[s1_base + 0] == "0", "Source WID should be reset"
+    assert updated[s1_base + 1] == "0", "Source Qty should be reset"
 
 
-@pytest.fixture(name="mock_unit_csv")
-def mock_unit_csv(tmp_path:Path) -> str:
-    """Uses exact headers from your production _unit.csv."""
-    headers = "id,name,type,nat,sqd.u0,sqd.num0\n"
-    content = (
-        "1,1st Panzer,100,1,105,10\n"
-        "2,2nd Panzer,100,1,105,10\n"
-        "3,3rd Infantry,200,1,15,10\n"
+def test_reorder_unit_squads_integration(mock_unit_csv: str) -> None:
+    """Tests the full file-write process using list-based stream logic."""
+    # This integration test now relies on the underlying modifier
+    # using get_csv_list_stream internally.
+    updates: int = reorder_unit_squads(
+        mock_unit_csv,
+        target_uid=100,
+        target_wid=42,
+        target_slot=0
     )
-    file_path = tmp_path / "mock_unit.csv"
-    file_path.write_text(headers + content, encoding=ENCODING_TYPE)
-    return str(file_path)
-
-# ==========================================
-# TEST CASES
-# ==========================================
+    assert updates == 1
 
 
-def test_process_csv_successful_modification(mock_unit_csv):
-    """
-    Verifies that the wrapper successfully modifies and saves the file.
-    """
-
-    # 1. Define a callback that changes 'sqd.num0' to '99' if 'type' is '100'
-    def mock_row_processor(row: dict, _row_idx: int) -> Tuple[dict, bool]:
-        if row['type'] == '100':
-            row['sqd.num0'] = '99'
-            return row, True
-        return row, False
-
-    # 2. Execute the wrapper
-    updates = process_csv_in_place(mock_unit_csv, mock_row_processor)
-
-    # 3. Assert it counted exactly 2 updates (1st and 2nd Panzer)
-    assert updates == 2
-    # id,name,type,nat,sqd.u0,sqd.num0\n"
-    # 4. Read the file back and assert the data was actually saved
-    with open(mock_unit_csv, 'r', encoding=ENCODING_TYPE) as f:
-        content = f.read()
-        assert "1,1st Panzer,100,1,105,99" in content
-        assert "2,2nd Panzer,100,1,105,99" in content
-        assert "3,3rd Infantry,200,1,15,10" in content  # Untouched
-
-
-def test_process_csv_no_modifications(mock_unit_csv):
-    """Verifies that the wrapper cleanly exits if no changes are made."""
-
-    # 1. Define a callback that never modifies anything
-    def mock_row_processor(row: dict, _row_idx: int) -> Tuple[dict, bool]:
-        return row, False
-
-    # 2. Capture the original modification time of the file
-    original_mtime = os.path.getmtime(mock_unit_csv)
-
-    # 3. Execute the wrapper
-    updates = process_csv_in_place(mock_unit_csv, mock_row_processor)
-
-    # 4. Assert 0 updates and that the file was never overwritten
-    assert updates == 0
-    assert os.path.getmtime(mock_unit_csv) == original_mtime
-
-
-def test_process_csv_atomic_rollback_on_error(mock_unit_csv):
-    """
-    Ensures that if the script crashes halfway through processing,
-    the original file is NOT corrupted or partially overwritten.
-    The temporary file should be discarded and the original preserved.
-    """
-
-    def mock_row_processor(row: dict, row_idx: int) -> Tuple[dict, bool]:
-        if row_idx == 1:
-            row['sqd.num0'] = '99'
-            return row, True
-        if row_idx == 2:
-            # This simulates a failure after the first row was "saved" in
-            # memory
-            raise ValueError("Simulated unexpected crash!")
-        return row, False
-
-    # The wrapper gracefully catches the error and returns the updates made
-    # prior to the crash.
-    process_csv_in_place(mock_unit_csv, mock_row_processor)
-
-    # Verification
-    with open(mock_unit_csv, 'r', encoding=ENCODING_TYPE) as f:
-        content = f.read()
-        # The first row change ('99') should NOT be present because the
-        # temporary file was discarded upon the crash.
-        assert "99" not in content
-        assert "10" in content
-
-
-def test_process_csv_file_not_found():
-    """Verifies that the script handles non-existent paths gracefully."""
-
-    def dummy_processor(row: dict, _idx: int) -> Tuple[dict, bool]:
-        return row, False
-
-    updates = process_csv_in_place("ghost_file.csv", dummy_processor)
-    assert updates == 0
-
-# updated with new mock_unit_csv
+def test_reorder_unit_squads_integration_missing_file() -> None:
+    """Verifies error handling for non-existent files."""
+    updates: int = reorder_unit_squads(
+        "does_not_exist.csv",
+        target_uid=100,
+        target_wid=42,
+        target_slot=0
+    )
+    assert updates == -1

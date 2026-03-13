@@ -1,4 +1,4 @@
-import pytest
+
 from wite2_tools.utils.formatting import (
     format_ref,
     format_coords,
@@ -7,8 +7,7 @@ from wite2_tools.utils.formatting import (
     completion_msg,
     audit_msg,
     BULLET,
-    SUCCESS_MARK,
-    CRITICAL_MARK
+    SUCCESS_MARK
 )
 
 def test_format_ref()->None:
@@ -43,7 +42,7 @@ def test_completion_msg()->None:
     assert "5 matches/rows processed" in msg
     assert "in _unit.csv" in msg
 
-def test_audit_msg():
+def test_audit_msg()->None:
     """Verifies audit results for both success and failure states."""
     # Test Success (0 issues)
     success = audit_msg("_ob.csv", 0, 100)

@@ -5,7 +5,7 @@
 ![MyPy Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/mlshort/65b562e5180666321b1616e1a2e0033c/raw/mypy-coverage.json)
 
 
-**Version:** 0.5.0
+**Version:** 0.6.0
 **Author:** Mark L. Short
 
 A specialized, Python-based toolkit for managing, modifying, and analyzing
@@ -91,7 +91,7 @@ unless explicitly overridden via optional arguments.
 instead of `python` in your Command Prompt or PowerShell).*
 
 Once installed, you can access the toolkit from your terminal via the unified
-command-line interface `wite2-tools` (or by running the module directly with
+command-line interface `wite2_tools` (or by running the module directly with
 `python -m wite2_tools.cli`).
 
 ### 1. Generation Tools (`gen-*`)
@@ -99,7 +99,7 @@ Tools for generating reports and cross-referencing data.
 * **`gen-orphans`**: Identifies unreferenced (orphaned) TOE(OB) templates and
   finds units pointing to invalid TOE(OB) IDs. Includes full upgrade-chain
   tracing.
-  * *Example:* `python -m wite2-tools.cli gen-orphans --nat-codes 1 3`
+  * *Example:* `python -m wite2_tools.cli gen-orphans --nat-codes 1 3`
   (Filters the scan to Germany(1) and Italy(3) nationality codes).
 * **`gen-inventory`**: Generates a comprehensive inventory report of elements.
 * **`gen-groups`**: Analyzes and maps organizational groups.
@@ -131,7 +131,7 @@ Tools for quickly finding specific data points or anomalies.
 **CLI Examples:**
 ```cmd
 python -m wite2_tools.cli config
-python -m wite2-tools.cli config --set-path "C:\DevProjects\wite2_tools\TestMods"
+python -m wite2_tools.cli config --set-path "C:\DevProjects\wite2_tools\TestMods"
 python -m wite2_tools.cli scan-excess --operation fuel
 python -m wite2_tools.cli gen-chains --nat-codes 1 3
 ```
@@ -140,7 +140,7 @@ python -m wite2_tools.cli gen-chains --nat-codes 1 3
 If you provide a custom file path that contains spaces, you **must** wrap it in
 double quotes for the Windows command line to read it properly:
 ```cmd
-python -m wite2_tools.cli compact-weapons --ground-file "C:\My WiTE2 Mods\MyCustomMod_ground.csv"
+python -m wite2_tools.cli mod-compact-wpns --ground-file "C:\My WiTE2 Mods\MyCustomMod_ground.csv"
 ```
 
 ---

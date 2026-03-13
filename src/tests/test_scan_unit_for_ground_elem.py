@@ -1,31 +1,19 @@
-import pytest
 from pathlib import Path
 
 # Internal package imports
-from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.scanning.scan_unit_for_ground_elem import (
     scan_unit_for_ground_elem
 )
 
 
-@pytest.fixture(name="mock_ground_csv")
-def mock_ground_csv(tmp_path:Path) -> str:
-    """Minimal ground file required for the scanner's name lookups."""
-    content = "id,name,other,type\n42,Tiger I,x,1\n"
-    file_path = tmp_path / "mock_ground.csv"
-    file_path.write_text(content, encoding=ENCODING_TYPE)
-    return str(file_path)
-
 
 def test_scan_unit_for_ground_elem_any_quantity(mock_unit_csv:Path,
                                                 mock_ground_csv:Path,
-                                                mock_ob_csv:Path):
+                                                mock_ob_csv:Path) -> None:
     """
     Verifies finding an element regardless of how many squads are assigned.
     Note: mock_unit_csv and mock_ob_csv are provided by conftest.py
     """
-    # In conftest.py, ID 42 is at 'sqd.u5' in Unit ID 100 with a
-    # quantity of 10.
     matches = scan_unit_for_ground_elem(
         unit_file_path=str(mock_unit_csv),
         ground_file_path=str(mock_ground_csv),
@@ -34,12 +22,12 @@ def test_scan_unit_for_ground_elem_any_quantity(mock_unit_csv:Path,
         target_num_squads=-1  # -1 means ANY quantity
     )
 
-    assert matches == 1
+    assert matches == 2
 
 
 def test_scan_unit_for_ground_elem_exact_quantity(mock_unit_csv:Path,
                                                   mock_ground_csv:Path,
-                                                  mock_ob_csv:Path):
+                                                  mock_ob_csv:Path) -> None:
     """Verifies the exact quantity filter logic."""
 
     # 1. Test with the CORRECT quantity (10)

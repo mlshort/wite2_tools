@@ -1,9 +1,10 @@
 from enum import IntEnum
+from typing import Final, List, Dict
 
 # pylint: disable=invalid-name
 class DevColumn(IntEnum):
     """
-    Device Column indices for WiTE2's _device.csv file.
+    Device Column indices for WiTE2's _device.csv file (25 Columns).
     """
     ID = 0
     NAME = 1
@@ -73,3 +74,55 @@ class DevColumn(IntEnum):
 # blast (13) than shells of the same caliber (10), likely to simulate the
 # thinner walls of rocket casings which allowed for more explosive filler and
 # a larger burst radius at the expense of penetration.
+
+
+NUM_COLS : Final[int] = len(DevColumn)
+
+ID_COL : Final[int]        = DevColumn.ID
+NAME_COL : Final[int]      = DevColumn.NAME
+TYPE_COL : Final[int]      = DevColumn.TYPE
+LOAD_COST_COL : Final[int] = DevColumn.LOAD_COST
+PEN_COL : Final[int]       = DevColumn.PEN
+
+
+
+def gen_device_column_names() -> List[str]:
+    """
+    Generates the 25 headers for a _device.csv file.
+    """
+    return [
+        'id', 'name', 'type', 'sym', 'loadCost', 'range', 'effect', 'pen',
+        'acc', 'ceiling', 'antiArmor', 'antiSoft', 'warhead', 'antiAir',
+        'rg', 'rof', 'heat', 'hvap', 'blast', 'dudRate', 'counterDev',
+        'counterDT', 'counterVal', 'counterTVal', 'effCeiling'
+    ]
+
+
+def gen_default_device_row(device_id: int = 0,
+                           name: str = "") -> List[str]:
+    """
+    Generates a default 25-column row for a _device.csv file.
+
+    Args:
+        device_id (int): The ID for the Device (Column 0). Defaults to 0.
+        name (str): The name of the Device (Column 1). Defaults to empty.
+
+    Returns:
+        List[str]: A list containing the ID, Name, and 23 zeroes.
+    """
+    row: List[str] = [str(device_id), name]
+
+    # Append 23 zeroes to fill out the remaining combat statistics
+    row.extend(["0"] * 23)
+
+    return row
+
+
+def gen_default_device_dict(device_id: int = 0,
+                            name: str = "") -> Dict[str, str]:
+    """Generates a default Device dictionary mapped to schema headers."""
+    headers = gen_device_column_names()
+    default_row_list = gen_default_device_row(device_id, name)
+
+    # Zip the 25 headers together with the 25 default values
+    return dict(zip(headers, default_row_list))

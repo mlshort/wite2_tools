@@ -1,8 +1,29 @@
+"""
+_ground.csv (Ground Element) Mapping Reference:
+| Constant       | CSV Header | Index | Notes                         |
+|----------------|------------|-------|-------------------------------|
+| ID_COL         | id         | 0     | Unique Identifier             |
+| NAME_COL       | name       | 1     | Display Name                  |
+| TYPE_COL       | type       | 3     | Element Classification        |
+| MEN_COL        | men        | 21    | Crew/Squad size (for Audits)  |
+| WPN_0_COL      | wpn 0      | 32    | FK: _device.csv -> id         |
+| WPN_NUM_0_COL  | wpnNum 0   | 42    | Quantity of weapon/device     |
+
+Note: Ground elements link up to _ob.csv slots and down to _device.csv weapons.
+"""
 from enum import IntEnum
+from typing import Final, List
 
 class GndColumn(IntEnum):
     """
-    Ground Column indexes for WiTE2's _ground.csv files
+    Ground Column indices for WiTE2 _ground.csv files (92 Columns).
+
+    The Ground Element schema defines physical characteristics and
+    combat capabilities. It is organized into:
+    1. Identification (0-5)
+    2. Mobility & Protection (6-18): Armor, Speed, and Reliability.
+    3. Production (19-31): Build costs, limits, and crew requirements.
+    4. Armament Slots (32-71): 10 slots for IDs, Quantities, Ammo, and ROF.
     """
     ID = 0
     NAME = 1
@@ -72,3 +93,65 @@ class GndColumn(IntEnum):
     WPN_FACE_0, WPN_FACE_1, WPN_FACE_2, WPN_FACE_3 = 82, 83, 84, 85
     WPN_FACE_4, WPN_FACE_5, WPN_FACE_6, WPN_FACE_7 = 86, 87, 88, 89
     WPN_FACE_8, WPN_FACE_9 = 90, 91
+
+NUM_COLS : Final[int] = len(GndColumn)
+WPN_SLOTS : Final[int] = 10
+ATTR_PER_WPN : Final[int] = 6
+# Aliasing indices to avoid repeated .value calls
+#: Unique ID for the ground element.
+ID_COL: Final[int]    = GndColumn.ID
+NAME_COL: Final[int]  = GndColumn.NAME
+TYPE_COL: Final[int]  = GndColumn.TYPE
+NAT_COL : Final[int]  = GndColumn.NAT
+
+SIZE_COL: Final[int]  = GndColumn.SIZE
+#: The number of men required/present in the element (Critical for Strength Audits).
+MEN_COL: Final[int]   = GndColumn.MEN
+#: Maps to _device.csv -> id (The primary weapon carried)
+WPN0_COL: Final[int]  = GndColumn.WPN_0
+
+def gen_gnd_column_names() -> List[str]:
+    """
+    Generates the mapping for the GndColumn IntEnum.
+    """
+
+    # 1. Base properties (Columns 0 to 31)
+    cols: List[str] = [
+        'id', 'name', 'id', 'type', 'sym', 'nat', 'maxLoad', 'loadCost',
+        'year', 'last', 'lastMonth', 'range', 'speed', 'dur', 'size',
+        'relib', 'armor', 'sideArmor', 'topArmor', 'month', 'buildLimit',
+        'men', 'upgrade', 'fuelUse', 'supplyUse', 'buildCost', 'pool',
+        'maxImport', 'importFrom', 'photo', 'expRate', 'scrapAfterYear'
+    ]
+
+    # 2. Dynamically generate the numbered weapon slots (Columns 32 to 91)
+    prefixes = ['wpn', 'wpnNum', 'wpnAmmo', 'wpnRof', 'wpnAcc', 'wpnFace']
+
+    for prefix in prefixes:
+        # Assuming 10 slots (0 through 9) based on the WiTE2 CSV schema
+        for i in range(WPN_SLOTS):
+            cols.append(f"{prefix} {i}")
+
+    return cols
+
+
+def gen_default_gnd_row(elem_id: int = 0,
+                        name: str = "") -> List[str]:
+    """
+    Generates a default 92-column row for a _ground.csv file.
+
+    Args:
+        elem_id (int): The ID for the ground element (Column 0). Defaults to 0.
+        name (str): The name of the element (Column 1). Defaults to empty.
+
+    Returns:
+        List[str]: A list containing the ID, Name, and 90 zeroes.
+    """
+    # Create the base row with the ID and Name
+    row: List[str] = [str(elem_id), name]
+
+    # Append 90 zeroes to fill out the remaining 90 columns
+    # (Properties, Limits, and the 10x Weapon Slots)
+    row.extend(["0"] * 90)
+
+    return row

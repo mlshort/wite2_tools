@@ -44,10 +44,10 @@ Example:
 """
 import csv
 import os
-from typing import Optional, Union, Iterable, cast, List
+from typing import cast, List, Dict, Set
 
 # Internal package imports
-from wite2_tools.config import ENCODING_TYPE
+from wite2_tools.config import ENCODING_TYPE, NatData, normalize_nat_codes
 from wite2_tools.generator import get_csv_dict_stream
 from wite2_tools.utils import (
     get_logger,
@@ -59,11 +59,12 @@ from wite2_tools.utils import (
 log = get_logger(__name__)
 
 
+# pylint: disable= too-many-locals, too-many-branches, too-many-statements
 def generate_ob_chains(
     ob_file_path: str,
     csv_output_path: str,
     txt_output_path: str,
-    nat_codes: Optional[Union[int, str, Iterable[Union[int, str]]]] = None
+    nat_codes: NatData = None
 ) -> int:
     """
     Generates TOE(OB) upgrade chains, optionally filtered by a specific
@@ -76,23 +77,17 @@ def generate_ob_chains(
                       column value to filter by.
     :return: The total number of chains generated.
     """
-    ob_id_to_name_map: dict[int, str] = {}
-    ob_id_to_upgrade_map: dict[int, int] = {}
-    all_ob_ids: set[int] = set()
-    ob_upgrade_ids: set[int] = set()
+    ob_id_to_name_map: Dict[int, str] = {}
+    ob_id_to_upgrade_map: Dict[int, int] = {}
+    all_ob_ids: Set[int] = set()
+    ob_upgrade_ids: Set[int] = set()
 
-    if not os.path.exists(ob_file_path):
+    if not os.path.isfile(ob_file_path):
         log.error("Error: The file '%s' was not found.", ob_file_path)
         return -1
 
     # Standardize nation_id to a set for efficient lookup
-    if nat_codes is not None:
-        if isinstance(nat_codes, (int, str)):
-            nat_filter = {int(nat_codes)}
-        else:
-            nat_filter = {int(n) for n in nat_codes}
-    else:
-        nat_filter = None
+    nat_filter = normalize_nat_codes(nat_codes)
 
     log.info("Starting TOE(OB) Upgrade Chain Generation from '%s'",
              os.path.basename(ob_file_path))
@@ -102,7 +97,7 @@ def generate_ob_chains(
 
     for item in ob_stream.rows:
         # Cast the yielded item to satisfy static type checkers
-        _, row = cast(tuple[int, dict], item)
+        _, row = cast(tuple[int, Dict[str,str]], item)
 
         try:
             # Early Exit: Filter by nationality
@@ -147,7 +142,7 @@ def generate_ob_chains(
 
         chain: List[int | str] = []
         curr = root
-        visited: set[int] = set()  # Safety check for infinite loops in data
+        visited: Set[int] = set()  # Safety check for infinite loops in data
 
         while curr != 0 and curr in ob_id_to_name_map:
             if curr in visited:

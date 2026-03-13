@@ -12,8 +12,8 @@ Key Capabilities:
 * Batch Processing: Automated scanning of multiple target files.
 """
 
-__version__ = "0.5.0"
-__date__ = "2026-03-02"
+__version__ = "0.6.0"
+__date__ = "2026-03-11"
 
 from .audit_unit import audit_unit_csv
 from .audit_ob import audit_ob_csv

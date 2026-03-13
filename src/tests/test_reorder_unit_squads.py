@@ -1,46 +1,62 @@
-
-# Internal package imports
-from wite2_tools.constants import MAX_SQUAD_SLOTS
+from typing import List
+from wite2_tools.models import (
+    UnitColumn,
+    gen_default_unit_row,
+    ATTRS_PER_SQD
+)
 from wite2_tools.modifiers.reorder_unit_squads import (
     reorder_unit_elems,
     reorder_unit_squads
 )
 
+def test_reorder_unit_elems_logic() -> None:
+    """Verifies all 8 unit attributes shift in sync using UnitColumn offsets."""
 
-def test_reorder_unit_elems_logic():
-    """Verifies all 8 unit attributes shift in sync."""
-    # We must provide all prefixes the function loops over
-    prefixes = ["sqd.u", "sqd.num", "sqd.dis", "sqd.dam",
-                "sqd.fat", "sqd.fired", "sqd.exp", "sqd.expAccum"]
-    row = {}
-    for p in prefixes:
-        for i in range(MAX_SQUAD_SLOTS):
-            row[f"{p}{i}"] = "0"
+    # 1. Initialize a 'row' as a list (matching get_csv_list_stream output)
+    row: List[str] = gen_default_unit_row()
 
-    # Setup: ID 99 at slot 1
-    row["sqd.u1"] = "99"
-    row["sqd.num1"] = "10"
+    # Calculate exact offsets for Slot 1 by jumping over 8 columns
+    u_idx_1 = UnitColumn.SQD_U0 + (1 * ATTRS_PER_SQD)
+    num_idx_1 = UnitColumn.SQD_NUM0 + (1 * ATTRS_PER_SQD)
 
-    # Move from 1 to 0
-    updated = reorder_unit_elems(row, 1, 0)
+    row[u_idx_1] = "99"
+    row[num_idx_1] = "10"
 
-    assert updated["sqd.u0"] == "99"
-    assert updated["sqd.num0"] == "10"
-    assert updated["sqd.u1"] == "0"
+    # 3. Action: Move from slot 1 to slot 0
+    # The function manipulates the list based on these 8-column chunks
+    updated = reorder_unit_elems(row, source_slot=1, target_slot=0)
+
+    # 4. Assertions using Schema Offsets for Target (Slot 0)
+    u_idx_0 = UnitColumn.SQD_U0 + (0 * ATTRS_PER_SQD)
+    num_idx_0 = UnitColumn.SQD_NUM0 + (0 * ATTRS_PER_SQD)
+
+    assert updated[u_idx_0] == "99", f"Expected WID 99 at index {u_idx_0}"
+    assert updated[num_idx_0] == "10", f"Expected Qty 10 at index {num_idx_0}"
+
+    # 5. Assertions for Source Cleanup (Slot 1)
+    assert updated[u_idx_1] == "0", "Source WID should be vacated"
+    assert updated[num_idx_1] == "0", "Source Qty should be vacated"
 
 
-def test_reorder_unit_squads_integration(mock_unit_csv):
-    """Tests the full file-write process with real dot-notation headers."""
+def test_reorder_unit_squads_integration(mock_unit_csv: str) -> None:
+    """Tests the full file-write process using the list-stream logic."""
     # Target ID 42 is at slot 5 in the conftest fixture
-    updates = reorder_unit_squads(mock_unit_csv, target_uid=100,
-                                  target_wid=42,
-                                  target_slot=0)
+    # The internal logic of reorder_unit_squads should now use get_csv_list_stream
+    updates: int = reorder_unit_squads(
+        mock_unit_csv,
+        target_uid=100,
+        target_wid=42,
+        target_slot=0
+    )
     assert updates == 1
 
-def test_reorder_unit_squads_integration_missing_file():
-    """Tests the full file-write process with real dot-notation headers."""
-    # Target ID 42 is at slot 5 in the conftest fixture
-    updates = reorder_unit_squads("does_not_exist.csv", target_uid=100,
-                                  target_wid=42,
-                                  target_slot=0)
+
+def test_reorder_unit_squads_integration_missing_file() -> None:
+    """Tests error handling when the file path is invalid."""
+    updates: int = reorder_unit_squads(
+        "does_not_exist.csv",
+        target_uid=100,
+        target_wid=42,
+        target_slot=0
+    )
     assert updates == -1

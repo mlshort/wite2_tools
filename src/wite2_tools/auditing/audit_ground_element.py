@@ -22,9 +22,16 @@ Example:
 """
 
 import os
+from typing import Set, List, Final
 
 # Internal package imports
-from wite2_tools.models import GndColumn
+from wite2_tools.models import (
+    G_ID_COL,
+    G_TYPE_COL,
+    G_NAME_COL,
+    G_SIZE_COL,
+    G_MEN_COL
+)
 from wite2_tools.constants import (
     MAX_GROUND_MEN,
     GrdElementType
@@ -34,8 +41,8 @@ from wite2_tools.generator import get_csv_list_stream
 from wite2_tools.utils import (
     get_logger,
     get_ground_elem_class_name,
-    parse_int,
-    parse_str
+    parse_row_int,
+    parse_row_str
 )
 from wite2_tools.utils.formatting import format_ref, audit_msg
 
@@ -45,7 +52,7 @@ log = get_logger(__name__)
 
 def _check_ground_type(g_id: int,
                        g_name: str,
-                       raw_type: str) -> tuple[int, str]:
+                       g_type: int) -> tuple[int, str]:
     """
     Validates the type ID and returns (issues_found, element_class_name).
     """
@@ -53,7 +60,7 @@ def _check_ground_type(g_id: int,
     ref = format_ref("WID", g_id, g_name)
 
     try:
-        ground_type = int(raw_type)
+        ground_type = int(g_type)
         if ground_type == 0:
             return 0, ""  # Skip inactive
 
@@ -67,22 +74,22 @@ def _check_ground_type(g_id: int,
 
     except (ValueError, TypeError):
         log.error("%s: 'type' value '%s' is not a valid integer.",
-                  ref, raw_type)
+                  ref, g_type)
         return 1, ""
 
 
 def _check_ground_stats(g_id: int,
                         g_name: str,
                         element_class_name: str,
-                        row: str | list[str]) -> int:
+                        row: List[str]) -> int:
     """Validates physical size and manpower assignments safely."""
     issues = 0
     ref = format_ref("WID", g_id, g_name)
 
     try:
-        ground_type = parse_int(row[GndColumn.TYPE])
-        ground_size = parse_int(row[GndColumn.SIZE])
-        ground_men = parse_int(row[GndColumn.MEN])
+        ground_type = parse_row_int(row, G_TYPE_COL)
+        ground_size = parse_row_int(row, G_SIZE_COL)
+        ground_men = parse_row_int(row, G_MEN_COL)
 
         elem = GrdElementType(ground_type)
         if elem.is_combat_element:
@@ -118,38 +125,36 @@ def audit_ground_element_csv(ground_file_path: str) -> int:
     Scans a _ground CSV file for consistency and
     logically based on the ground_element_type_lookup.
     """
-    if not os.path.exists(ground_file_path):
+    if not os.path.isfile(ground_file_path):
         log.error("Audit failed: File not found at %s", ground_file_path)
         return -1
 
     issues_found: int = 0
-    seen_ground_ids: set[int] = set()
+    seen_ground_ids: Set[int] = set()
 
     # Define the minimum indices required for a safe primary parse
-    idx_id = GndColumn.ID
-    idx_name = GndColumn.NAME
-    idx_type = GndColumn.TYPE
-    MIN_REQUIRED_COLS = max(idx_id, idx_name, idx_type) + 1
+    # pylint: disable=invalid-name
+    MIN_REQUIRED_COLS : Final[int] = max(G_ID_COL, G_NAME_COL, G_TYPE_COL) + 1
 
     try:
         file_name = os.path.basename(ground_file_path)
-        log.info("--- Starting Ground Element Audit: '%s' ---", file_name)
+        log.info("Task Start: Ground Element Audit: '%s'", file_name)
         # Use list generator to handle duplicate 'id' column names safely
         gnd_stream = get_csv_list_stream(ground_file_path)
 
-        for row_idx, row in gnd_stream.rows:
+        for idx, row in gnd_stream.rows:
             row_len = len(row)
 
             # Structural Safety Check
             if row_len < MIN_REQUIRED_COLS:
                 log.error("Row %d: Truncated data (Len %d < Req %d).",
-                          row_idx, row_len, MIN_REQUIRED_COLS)
+                          idx, row_len, MIN_REQUIRED_COLS)
                 issues_found += 1
                 continue
 
             try:
-                g_id = parse_int(row[idx_id])
-                g_name = parse_str(row[idx_name], "Unk")
+                g_id = parse_row_int(row, G_ID_COL)
+                g_name = parse_row_str(row, G_NAME_COL, "Unk")
                 ref = format_ref("WID", g_id, g_name)
 
                 # 1. Uniqueness Check
@@ -160,17 +165,18 @@ def audit_ground_element_csv(ground_file_path: str) -> int:
                 seen_ground_ids.add(g_id)
 
                 # 2. Type and Stat Validation
+                g_type = parse_row_int(row, G_TYPE_COL)
                 t_issues, element_class_name = _check_ground_type(
-                    g_id, g_name, row[idx_type]
+                    g_id, g_name, g_type
                 )
                 issues_found += t_issues
 
                 if element_class_name:
-                    idx_size = GndColumn.SIZE
-                    idx_men = GndColumn.MEN
-                    REQUIRED_STAT_COLS = max(idx_size, idx_men) + 1
+                    # pylint: disable=invalid-name
+                    REQUIRED_COLS : int = max(G_SIZE_COL,
+                                              G_MEN_COL) + 1
 
-                    if row_len >= REQUIRED_STAT_COLS:
+                    if row_len >= REQUIRED_COLS:
                         issues_found += _check_ground_stats(
                             g_id, g_name, element_class_name, row
                         )
@@ -180,7 +186,7 @@ def audit_ground_element_csv(ground_file_path: str) -> int:
 
             except (IndexError, KeyError, ValueError) as e:
                 log.error("Row %d: Failed due to %s",
-                          row_idx, type(e).__name__)
+                          idx, type(e).__name__)
                 issues_found += 1
 
         log.info(audit_msg(file_name, issues_found, len(seen_ground_ids)))

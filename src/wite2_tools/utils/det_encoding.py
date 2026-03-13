@@ -13,8 +13,8 @@ Example:
     $ python -m wite2_tools.cli detect-encoding "C:\\My Mods\\_ground.csv"
     Detects Encoding for _ground.csv: ISO-8859-1
 """
-import chardet
 from pathlib import Path
+import chardet
 
 
 def detect_encoding(file_path: Path)-> str | None :

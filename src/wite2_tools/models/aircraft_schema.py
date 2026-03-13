@@ -1,5 +1,6 @@
 from enum import IntEnum
-from typing import Any
+from typing import List, Dict
+from typing import Any, Final
 
 class AcColumn(IntEnum):
     """
@@ -143,6 +144,8 @@ class AcColumn(IntEnum):
     WS4_SORTIE_FUEL_MOD, WS4_END_MOD = 318, 319
     WS4_ALT_MOD, WS4_SPD_MOD = 320, 321
 
+
+# pylint: disable=too-few-public-methods
 class Aircraft:
     """
     A dynamic object representation of a WiTE2 Aircraft.
@@ -171,3 +174,83 @@ class Aircraft:
             if normalized_key == normalized_request:
                 return val
         raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{item}'")
+
+
+NUM_COLS : Final[int] = len(AcColumn)
+
+ID_COL : Final[int] = AcColumn.ID
+
+
+
+def gen_aircraft_column_names() -> List[str]:
+    """Generates the 322 headers for a _aircraft.csv file dynamically."""
+
+    # 1. Base Properties (Columns 0 to 36)
+    cols: List[str] = [
+        'id', 'name', 'maxAlt', 'nat', 'sym', 'maxSpeed', 'maxSpeedAlt',
+        'zeroAltSpeed', 'maxAltSpeed', 'cruSpeed', 'climb', 'maxLoad',
+        'endurance', 'range', 'year', 'mvr', 'armor', 'durab', 'month',
+        'type', 'blank', 'upgrade', 'crew', 'sortieAmmo', 'sortieFuel',
+        'buildCost', 'pool', 'buildLimit', 'maxImport', 'importFrom',
+        'lastYear', 'lastMonth', 'relib', 'photo', 'expRate', 'engineNum',
+        'airProfile'
+    ]
+
+    # 2. Built-in Weapon Slots (Columns 37 to 66)
+    prefixes = ['wpn', 'wpnNum', 'wpnFace']
+    for prefix in prefixes:
+        for i in range(10):
+            cols.append(f"{prefix} {i}")
+
+    # 3. External Weapon Sets (ws0 through ws4) (Columns 67 to 321)
+    for ws in range(5):
+        # 10 weapon slots per Loadout
+        for i in range(10):
+            cols.extend([
+                f"ws{ws}.wpn {i}",
+                f"ws{ws}.wpnNum {i}",
+                f"ws{ws}.wpnFace {i}",
+                f"ws{ws}.wpnAcc {i}"
+            ])
+        # 7 Modifiers/Properties per Loadout
+        cols.extend([
+            f"ws{ws}.year", f"ws{ws}.month", f"ws{ws}.lastYear",
+            f"ws{ws}.lastMonth", f"ws{ws}.mvrMod", f"ws{ws}.climbMod",
+            f"ws{ws}.sortieAmmoMod", f"ws{ws}.sortieFuelMod",
+            f"ws{ws}.endMod", f"ws{ws}.altMod", f"ws{ws}.spdMod"
+        ])
+
+    return cols
+
+def gen_default_aircraft_row(aircraft_id: int = 0,
+                             name: str = "",
+                             nat: int = 0) -> List[str]:
+    """
+    Generates a default 322-column row for a _aircraft.csv file.
+
+    Args:
+        aircraft_id (int): The ID for the Aircraft (Column 0). Defaults to 0.
+        name (str): The name of the Aircraft (Column 1). Defaults to empty.
+        nat (int): The nationality ID (Column 3). Defaults to 0.
+
+    Returns:
+        List[str]: A list containing the ID, Name, 1 zero, Nationality, and 318 zeroes.
+    """
+    # Create the base row: [ID, Name, maxAlt (0), Nat]
+    row: List[str] = [str(aircraft_id), name, "0", str(nat)]
+
+    # Append 318 zeroes to fill out the remaining columns
+    row.extend(["0"] * 318)
+
+    return row
+
+
+def gen_default_aircraft_dict(aircraft_id: int = 0,
+                              name: str = "",
+                              nat: int = 0) -> Dict[str, str]:
+    """Generates a default Aircraft dictionary mapped to schema headers."""
+    headers = gen_aircraft_column_names()
+    default_row_list = gen_default_aircraft_row(aircraft_id, name, nat)
+
+    # Zip the 322 headers together with the 322 default values
+    return dict(zip(headers, default_row_list))

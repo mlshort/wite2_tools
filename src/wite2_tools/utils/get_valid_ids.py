@@ -31,17 +31,22 @@ Main Functions:
                               the scenario.
 """
 import os
-from typing import Set
+from typing import Set, Final
 from functools import cache
 
 # Internal package imports
-from wite2_tools.models import ObColumn, GndColumn
+from wite2_tools.models import (
+    O_ID_COL, O_TYPE_COL, O_UPGRADE_COL,
+    G_ID_COL, G_TYPE_COL,
+    U_ID_COL, U_TYPE_COL
+)
+
 from wite2_tools.generator import (
-    get_csv_list_stream,
-    get_csv_dict_stream
+    CSVListStream,
+    get_csv_list_stream
 )
 from wite2_tools.utils.logger import get_logger
-from wite2_tools.utils.parsing import parse_int
+from wite2_tools.utils.parsing import parse_row_int
 
 # Initialize the log for this specific module
 log = get_logger(__name__)
@@ -62,9 +67,10 @@ def get_valid_ob_ids(ob_file_path: str) -> Set[int]:
         ob_stream = get_csv_list_stream(ob_file_path)
 
         for idx, row in ob_stream.rows:
+
             try:
-                ob_id = parse_int(row[ObColumn.ID])  # 'id' column
-                ob_type = parse_int(row[ObColumn.TYPE])  # 'type' column
+                ob_id = parse_row_int(row, O_ID_COL)  # 'id' column
+                ob_type = parse_row_int(row, O_TYPE_COL)  # 'type' column
                 if ob_id != 0 and ob_type != 0:
                     valid_ob_ids.add(ob_id)
             except (ValueError, IndexError):
@@ -79,6 +85,11 @@ def get_valid_ob_ids(ob_file_path: str) -> Set[int]:
         log.error("_ob csv file not found:'%s'", ob_file_path)
         return set()
 
+    except (OSError, IOError) as e:
+        log.exception("File System Error: Could not read %s: %s",
+                         ob_file_path, e)
+        return set()
+
 
 @cache
 def get_valid_ob_upgrade_ids(ob_file_path: str) -> Set[int]:
@@ -91,18 +102,21 @@ def get_valid_ob_upgrade_ids(ob_file_path: str) -> Set[int]:
                 ob_file_path)
 
     try:
-        ob_stream = get_csv_list_stream(ob_file_path)
+        ob_stream: CSVListStream = get_csv_list_stream(ob_file_path)
 
         for idx, row in ob_stream.rows:
+
             try:
-                ob_id = parse_int(row[ObColumn.ID])
+                ob_id: int = parse_row_int(row, O_ID_COL)
+                # Skip invalid IDs
                 if ob_id == 0:
                     continue
-                ob_type = parse_int(row[ObColumn.TYPE])
-                ob_upgrade = parse_int(row[ObColumn.UPGRADE])
+                ob_type: int = parse_row_int(row, O_TYPE_COL)
+                ob_upgrade: int = parse_row_int(row, O_UPGRADE_COL)
 
                 if ob_type != 0 and ob_upgrade != 0:
                     valid_ob_upgrade_ids.add(ob_upgrade)
+
             except (ValueError, IndexError):
                 # Skip malformed rows or empty lines
                 log.debug("Skipping malformed row at index %d", idx)
@@ -116,6 +130,11 @@ def get_valid_ob_upgrade_ids(ob_file_path: str) -> Set[int]:
         log.error("_ob csv file not found: %s", ob_file_path)
         return set()
 
+    except (OSError, IOError) as e:
+        log.exception("File System Error: Could not read %s: %s",
+                         ob_file_path, e)
+        return set()
+
 
 @cache
 def get_valid_ground_elem_ids(ground_file_path: str) -> Set[int]:
@@ -124,21 +143,31 @@ def get_valid_ground_elem_ids(ground_file_path: str) -> Set[int]:
     Caches the result to avoid repeated file I/O.
     """
     valid_elem_ids: Set[int] = set()
-    file_name = os.path.basename(ground_file_path)
+    file_name: str = os.path.basename(ground_file_path)
     log.info("Building valid ground element ID cache from '%s'...",
                 file_name)
 
+    # The minimum number of columns required to process this row
+    # pylint: disable=invalid-name
+    MIN_REQUIRED_COLS: Final[int] = max(G_ID_COL, G_TYPE_COL) + 1
     try:
         # Use list generator to handle duplicate 'id' column names safely
-        gnd_stream = get_csv_list_stream(ground_file_path)
+        gnd_stream: CSVListStream = get_csv_list_stream(ground_file_path)
 
         for idx, row in gnd_stream.rows:
+
+            # 2. Defensive check: Skip rows that are too short for our indices
+            if len(row) < MIN_REQUIRED_COLS:
+                # Log only on debug to avoid flooding the console for empty lines
+                log.debug("Skipping malformed row %d: insufficient columns.", idx)
+                continue
+
             try:
                 # Access by index to avoid duplicate header issues
-                wid = parse_int(row[GndColumn.ID])
+                wid = parse_row_int(row, G_ID_COL)
                 if wid == 0:
                     continue
-                ground_type = parse_int(row[GndColumn.TYPE])
+                ground_type = parse_row_int(row, G_TYPE_COL)
                 if ground_type != 0:
                     valid_elem_ids.add(wid)
             except (ValueError, IndexError):
@@ -153,9 +182,14 @@ def get_valid_ground_elem_ids(ground_file_path: str) -> Set[int]:
         log.error("_ground.csv file not found:'%s'", ground_file_path)
         return set()
 
+    except (OSError, IOError) as e:
+        log.exception("File System Error: Could not read %s: %s",
+                         ground_file_path, e)
+        return set()
 
+@cache
 def get_valid_unit_ids(unit_file_path: str,
-                       active_only: bool = False) -> set[int]:
+                       active_only: bool = False) -> Set[int]:
     """
     Extracts a set of valid unit IDs from a _unit.csv file.
 
@@ -168,24 +202,48 @@ def get_valid_unit_ids(unit_file_path: str,
     """
     valid_ids: Set[int] = set()
 
+    # The minimum number of columns required to process this row
+    # pylint: disable=invalid-name
+    MIN_REQUIRED_COLS: Final[int] = max(U_ID_COL, U_TYPE_COL) + 1
+
     try:
-        # start=2 accounts for WiTE2 headers
-        unit_stream = get_csv_dict_stream(unit_file_path, 2)
+        unit_stream: CSVListStream = get_csv_list_stream(unit_file_path)
 
-        for _, row in unit_stream.rows:
-            uid = parse_int(row.get("id"))
+        for idx, row in unit_stream.rows:
 
-            # If filtering by active, skip Type 0 units
-            if active_only:
-                utype = parse_int(row.get("type"))
-                if utype == 0:
-                    continue
+            # 2. Defensive check: Skip rows that are too short for our indices
+            if len(row) < MIN_REQUIRED_COLS:
+                # Log only on debug to avoid flooding the console for empty lines
+                log.debug("Skipping malformed row %d: insufficient columns.", idx)
+                continue
+            try:
+                uid: int = parse_row_int(row, U_ID_COL)
 
-            if uid != 0:
-                valid_ids.add(uid)
+                # If filtering by active, skip Type 0 units
+                if active_only:
+                    utype: int = parse_row_int(row, U_TYPE_COL)
+                    if utype == 0:
+                        continue
 
-    except (OSError, IOError, ValueError, KeyError, TypeError) as e:
-        log.exception("Could not retrieve unit IDs from %s: %s",
+                if uid != 0:
+                    valid_ids.add(uid)
+
+            except (ValueError, TypeError) as e:
+                # This catches cases where data exists but isn't a valid number
+                log.warning("Row %d: Failed to parse ID or Type. Error: %s",
+                            idx, e)
+                continue
+
+    except IndexError as e:
+        # This catches any structural index issues not caught by the length check
+        log.exception("Structural Error: Index out of bounds in %s: %s",
+                      unit_file_path, e)
+
+    except FileNotFoundError:
+        log.error("_ground.csv file not found:'%s'", unit_file_path)
+
+    except (OSError, IOError) as e:
+        log.exception("File System Error: Could not read %s: %s",
                          unit_file_path, e)
 
     return valid_ids

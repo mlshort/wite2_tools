@@ -29,7 +29,7 @@ Command Line Usage:
 import csv
 import os
 from tempfile import NamedTemporaryFile
-from typing import Set, Any
+from typing import Set, Any, Dict
 
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
@@ -68,7 +68,9 @@ def is_greater_than_zero(value: Any) -> bool:
         return False
 
 
-def _check_coords(uid: int, uname: str, row: dict) -> int:
+def _check_coords(uid: int,
+                  uname: str,
+                  row: Dict[str, str]) -> int:
     """Helper to validate all coordinate sets (x, y, tx, ty, etc.)."""
     issues = 0
     coord_pairs = [('x', 'y'), ('tx', 'ty'), ('ax', 'ay'), ('ptx', 'pty')]
@@ -93,8 +95,8 @@ def _check_coords(uid: int, uname: str, row: dict) -> int:
 
 def _check_squads(uid: int,
                   uname: str,
-                  row: dict,
-                  valid_elem_ids: set,
+                  row: Dict[str, str],
+                  valid_elem_ids: Set,
                   fix_ghosts: bool) -> tuple[int, int]:
     """Helper to validate squad integrity and detect ghost squads."""
     issues = 0
@@ -118,13 +120,16 @@ def _check_squads(uid: int,
             if fix_ghosts:
                 row[sqd_num_col] = "0"
                 fixed += 1
+                log.info("FIXED: Ghost squad in %s slot %d",
+                         uname, i)
+
     return issues, fixed
 
-
+# pylint: disable=too-many-arguments
 def _check_hq_and_delay(uid: int,
                         uname: str,
-                        row: dict,
-                        valid_active_unit_ids: set,
+                        row: Dict[str, str],
+                        valid_active_unit_ids: Set,
                         relink_orphans: bool,
                         fallback_hq: int) -> tuple[int, int]:
     """Helper to validate HQ attachment logic and deployment delays."""
@@ -163,6 +168,7 @@ def _check_hq_and_delay(uid: int,
     return issues, fixed
 
 
+# pylint: disable= too-many-locals, too-many-branches, too-many-statements
 def audit_unit_csv(unit_file_path: str,
                    ground_file_path: str,
                    active_only: bool = True,
@@ -187,11 +193,11 @@ def audit_unit_csv(unit_file_path: str,
     temp_file = None
     file_base = os.path.basename(unit_file_path)
 
-    if not os.path.exists(unit_file_path):
+    if not os.path.isfile(unit_file_path):
         log.error("Error: The file '%s' was not found.", unit_file_path)
         return -1
 
-    if not os.path.exists(ground_file_path):
+    if not os.path.isfile(ground_file_path):
         log.error("Error: The file '%s' was not found.", ground_file_path)
         return -1
 
@@ -281,12 +287,16 @@ def audit_unit_csv(unit_file_path: str,
 
     except (OSError, IOError, ValueError, KeyError, TypeError) as e:
         log.exception("Critical error during _unit.csv evaluation: %s", e)
-        if temp_file and os.path.exists(temp_file.name):
+        if temp_file and os.path.isfile(temp_file.name):
             try:
                 temp_file.close()
                 os.remove(temp_file.name)
             except OSError:
                 pass
         return -1
+
+    finally:
+        for handler in log.handlers:
+            handler.flush()
 
     return issues_found

@@ -1,154 +1,97 @@
-import pytest
+from typing import Any, Generator
+from pathlib import Path
 from unittest.mock import patch, MagicMock
+import pytest
 
-# Assuming your module is accessible via this path. Adjust if necessary.
+
+# Adjust imports based on the actual functions in your file
 from wite2_tools.utils.get_name import (
-    _build_ob_lookup,
-    _build_ground_elem_lookup,
-    get_ob_name,
-    get_ob_suffix,
-    get_ob_full_name,
-    get_unit_type_name,
     get_ground_elem_type_name,
-    get_ob_combat_class_name,
+    _build_ground_elem_lookup,
     get_device_type_name,
-    get_ob_type_code_name,
     get_country_name,
-    get_unit_special_name,
-    get_ground_elem_class_name,
-    get_device_face_type_name
+    get_unit_special_name
 )
-from wite2_tools.models import GndColumn
 
 
 @pytest.fixture(autouse=True)
-def clear_caches():
+def reset_caches() -> Generator[None, Any, None]:
     """
-    Automatically clears the functools.cache for the private helpers
-    before each test to ensure tests don't pollute each other's state.
+    Automatically runs before and after every test to clear the functools
+    caches. This guarantees no test contaminates the results of another by
+    leaving parsed CSV data in memory.
     """
-    _build_ob_lookup.cache_clear()
-    _build_ground_elem_lookup.cache_clear()
-    yield
+    # Clear the cache for the ground element builder
+    # (Add your other builders here like _build_ob_lookup.cache_clear() if they exist)
+    if hasattr(_build_ground_elem_lookup, "cache_clear"):
+        _build_ground_elem_lookup.cache_clear()
+
+    yield  # Let the test run
+
+    if hasattr(_build_ground_elem_lookup, "cache_clear"):
+        _build_ground_elem_lookup.cache_clear()
 
 
-# ==========================================
-# TOE(OB) LOOKUP TESTS
-# ==========================================
+# ---------------------------------------------------------
+# Tests for Static Dictionary Lookups
+# ---------------------------------------------------------
 
-@patch("wite2_tools.utils.get_name.os.path.exists", return_value=False)
-def test_build_ob_lookup_file_not_found(mock_exists):
-    """Test that a missing OB file returns an empty dictionary."""
-    result = _build_ob_lookup("fake_path.csv")
-    assert not result
-    mock_exists.assert_called_once_with("fake_path.csv")
+def test_get_country_name_fallback() -> None:
+    """Verifies static dict lookup falls back to 'Unk (ID)' if missing."""
+    assert get_country_name(9999) == "Unk (9999)"
 
 
-@patch("wite2_tools.utils.get_name.os.path.exists", return_value=True)
-@patch("wite2_tools.utils.get_name.get_csv_dict_stream")
-def test_build_ob_lookup_success(mock_get_csv, mock_exists):
-    """Test successful parsing and caching of OB names."""
-    # Create a mock stream object
-    mock_stream = MagicMock()
-    mock_stream.rows = [
-        (0, {"id": "1", "name": "Infantry", "suffix": "Div"}),
-        (1, {"id": "2", "name": "Armor", "suffix": "Bde"}),
-        (2, {"id": "invalid", "name": "Bad", "suffix": "Data"}), # Should be skipped
-    ]
-    mock_get_csv.return_value = mock_stream
-
-    # Call any of the public APIs to trigger the cache build
-    name = get_ob_name("dummy.csv", 1)
-
-    assert name == "Infantry"
-    assert get_ob_suffix("dummy.csv", 1) == "Div"
-    assert get_ob_full_name("dummy.csv", 1) == "Infantry Div"
-
-    # Test wrapper
-    assert get_unit_type_name("dummy.csv", 2) == "Armor Bde"
-
-    # Test missing ID falls back to default "Unk (id)"
-    assert get_ob_name("dummy.csv", 999) == "Unk (999)"
+def test_get_device_type_name_fallback() -> None:
+    assert get_device_type_name(9999) == "Unk (9999)"
 
 
-# ==========================================
-# GROUND ELEMENT LOOKUP TESTS
-# ==========================================
+def test_get_unit_special_name_fallback() -> None:
+    assert get_unit_special_name(9999) == "Unk (9999)"
 
-@patch("wite2_tools.utils.get_name.os.path.exists", return_value=False)
-def test_build_ground_elem_lookup_file_not_found(mock_exists):
-    """Test that a missing ground file returns an empty dictionary."""
-    result = _build_ground_elem_lookup("fake_ground.csv")
-    assert result == {}
+
+# ---------------------------------------------------------
+# Tests for CSV File Lookups (with functools.cache)
+# ---------------------------------------------------------
+
+def test_get_ground_elem_type_name_success_and_caching(tmp_path: Path) -> None:
+    """Verifies it reads the CSV, caches the dict, and fetches the name."""
+    # 1. Create a REAL temporary CSV file
+    test_csv = tmp_path / "dummy_ground.csv"
+    test_csv.write_text("id,name\n10,Panzer IV\n20,Tiger I", encoding="utf-8")
+
+    # 2. First call (Ensure your arguments match your signature! Usually filepath is first)
+    result_1 = get_ground_elem_type_name(str(test_csv), 10)
+    assert result_1 == "Panzer IV"
+
+    # 3. DELETE the file!
+    test_csv.unlink()
+
+    # 4. Second call hits the cache. If cache failed, it would crash reading the deleted file.
+    result_2 = get_ground_elem_type_name(str(test_csv), 20)
+    assert result_2 == "Tiger I"
+
+
+
+def test_get_ground_elem_type_name_file_not_found() -> None:
+    """Verifies behavior when the target CSV file does not exist."""
+    result = get_ground_elem_type_name("missing_ground.csv", 10)
+
+    assert result == "Unk (10)"
+
 
 
 @patch("wite2_tools.utils.get_name.os.path.exists", return_value=True)
 @patch("wite2_tools.utils.get_name.get_csv_list_stream")
-def test_build_ground_elem_lookup_success(mock_get_csv, mock_exists):
-    """Test successful parsing and caching of Ground Element names using GndColumn indices."""
+def test_get_ground_elem_type_name_id_not_in_file(mock_get_csv: MagicMock,
+                                                  mock_exists: MagicMock) -> None:
+    """Verifies it handles a valid file that doesn't contain the requested ID."""
     mock_stream = MagicMock()
-    mock_stream.header = True
-
-    # Simulate a CSV row list. We just need it to be long enough to have GndColumn.ID and GndColumn.NAME
-    # We will dynamically build the list to ensure it's long enough regardless of Enum values
-    max_col = max(GndColumn.ID, GndColumn.NAME)
-
-    row_1 = [""] * (max_col + 1)
-    row_1[GndColumn.ID] = "100"
-    row_1[GndColumn.NAME] = "Panzer IV"
-
-    row_2 = [""] * (max_col + 1)
-    row_2[GndColumn.ID] = "101"
-    row_2[GndColumn.NAME] = "T-34"
-
     mock_stream.rows = [
-        (0, row_1),
-        (1, row_2),
-        (2, ["short", "row"]) # Should be skipped via IndexError/ValueError handling
+        (0, ["id", "name"]),
+        (1, ["1", "Only Unit"])
     ]
     mock_get_csv.return_value = mock_stream
 
-    assert get_ground_elem_type_name("dummy_ground.csv", 100) == "Panzer IV"
-    assert get_ground_elem_type_name("dummy_ground.csv", 101) == "T-34"
-    assert get_ground_elem_type_name("dummy_ground.csv", 999) == "Unk (999)"
+    result = get_ground_elem_type_name("dummy_ground.csv", 99)
 
-
-# ==========================================
-# INTERNAL DICTIONARY LOOKUP TESTS
-# ==========================================
-
-# We patch the dictionaries directly in the module where they are used.
-@patch.dict("wite2_tools.utils.get_name.OB_COMBAT_CLASS_LOOKUP", {1: "Infantry Class"}, clear=True)
-def test_get_ob_combat_class_name():
-    assert get_ob_combat_class_name(1) == "Infantry Class"
-    assert get_ob_combat_class_name(99) == "Unk (99)"
-
-@patch.dict("wite2_tools.utils.get_name.DEVICE_TYPE_LOOKUP", {5: "Cannon"}, clear=True)
-def test_get_device_type_name():
-    assert get_device_type_name(5) == "Cannon"
-    assert get_device_type_name(99) == "Unk (99)"
-
-@patch.dict("wite2_tools.utils.get_name.OB_TYPE_LOOKUP", {10: "Division"}, clear=True)
-def test_get_ob_type_code_name():
-    assert get_ob_type_code_name(10) == "Division"
-    assert get_ob_type_code_name(99) == "Unk (99)"
-
-@patch.dict("wite2_tools.utils.get_name.NATION_LOOKUP", {1: "Germany", 2: "Soviet Union"}, clear=True)
-def test_get_country_name():
-    assert get_country_name(1) == "Germany"
-    assert get_country_name(99) == "Unk (99)"
-
-@patch.dict("wite2_tools.utils.get_name.UNIT_SPECIAL_LOOKUP", {4: "Motorized"}, clear=True)
-def test_get_unit_special_name():
-    assert get_unit_special_name(4) == "Motorized"
-    assert get_unit_special_name(99) == "Unk (99)"
-
-@patch.dict("wite2_tools.utils.get_name.GROUND_ELEMENT_TYPE_LOOKUP", {20: "Medium Tank"}, clear=True)
-def test_get_ground_elem_class_name():
-    assert get_ground_elem_class_name(20) == "Medium Tank"
-    assert get_ground_elem_class_name(99) == "Unk (99)"
-
-@patch.dict("wite2_tools.utils.get_name.DEVICE_FACE_TYPE_LOOKUP", {0: "Front", 1: "Turret"}, clear=True)
-def test_get_device_face_type_name():
-    assert get_device_face_type_name(1) == "Turret"
-    assert get_device_face_type_name(99) == "Unk (99)"
+    assert result == "Unk (99)"

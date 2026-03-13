@@ -1,32 +1,28 @@
+"""
+_ob.csv (TOE) Mapping Reference:
+| Constant       | CSV Header | Index | Notes                         |
+|----------------|------------|-------|-------------------------------|
+| ID_COL         | id         | 0     | Unique Identifier             |
+| NAME_COL       | name       | 1     | Display Name                  |
+| SUFFIX_COL     | suffix     | 2     | Unit Naming Suffix            |
+| UPGRADE_COL    | upgrade    | 9     | FK: _ob.csv -> id (Next TOE)  |
+| SQD0_COL       | sqd 0      | 15    | FK: _ground.csv -> id         |
+| SQD_NUM0_COL   | sqdNum 0   | 47    | Quantity of Ground Element    |
+
+Note: The OB file contains exactly 79 columns (0-78) covering 32 slots.
+"""
 from enum import IntEnum
-from typing import Dict, List, Any
+from typing import List, Any, Final
 
-from wite2_tools.constants import MAX_SQUAD_SLOTS
-
-def _generate_ob_columns() -> Dict[str, int]:
-    """Generates the column dictionary for OB files dynamically."""
-    cols: List[str] = [
-        "ID", "NAME", "SUFFIX", "NAT", "FIRST_YEAR", "FIRST_MONTH",
-        "LAST_YEAR", "LAST_MONTH", "TYPE", "UPGRADE", "OB_CLASS",
-        "ICON", "DIVIDE_MULTI_ROLE", "MTZ_TYPE", "FORM_SIZE"
-    ]
-
-    # Append SQD_0 through SQD_31
-    for i in range(MAX_SQUAD_SLOTS):
-        cols.append(f"SQD_{i}")
-
-    # Append SQD_NUM_0 through SQD_NUM_31
-    for i in range(MAX_SQUAD_SLOTS):
-        cols.append(f"SQD_NUM_{i}")
-
-    return {name: i for i, name in enumerate(cols)}
-
-# Expose the Enum just like we did for Unit
-# ObColumn = IntEnum("ObColumn", _generate_ob_columns())
 
 class ObColumn(IntEnum):
     """
-    TOE(OB) Column indexes for WiTE2's _ob.csv files
+    TOE(OB) Column indices for WiTE2 _ob.csv files (79 Columns).
+
+    The OB (Order of Battle) schema is divided into three logical zones:
+    1. Metadata (0-14): ID, Name, Upgrade logic, and Form Size.
+    2. Ground Element Slots (15-46): 32 columns containing Ground IDs.
+    3. Quantities (47-78): 32 columns containing the TOE strength for each slot.
     """
     ID = 0
     NAME = 1
@@ -62,10 +58,83 @@ class ObColumn(IntEnum):
     SQD_NUM_30, SQD_NUM_31 = 77, 78
 
 
+NUM_COLS : Final[int] = len(ObColumn)
+SQD_SLOTS : Final[int] = 32
+
+#: The unique ID for this TOE definition.
+ID_COL: Final[int]       = ObColumn.ID
+NAME_COL : Final[int]    = ObColumn.NAME
+SUFFIX_COL : Final[int]  = ObColumn.SUFFIX
+NAT_COL : Final[int]     = ObColumn.NAT
+TYPE_COL: Final[int]     = ObColumn.TYPE
+#: The ID of the TOE this unit will eventually upgrade into.
+UPGRADE_COL: Final[int]  = ObColumn.UPGRADE
+
+FIRSTYEAR_COL : Final[int]  = ObColumn.FIRST_YEAR
+FIRSTMONTH_COL : Final[int] = ObColumn.FIRST_MONTH
+LASTYEAR_COL : Final[int]   = ObColumn.LAST_YEAR
+LASTMONTH_COL : Final[int]  = ObColumn.LAST_MONTH
+
+#: Starting index for Ground Element ID slots (Maps to _ground.csv -> id).
+ELEM_BASE: Final[int]    = ObColumn.SQD_0
+#: Starting index for Quantity slots
+NUM_BASE: Final[int]     = ObColumn.SQD_NUM_0
+SQD0_COL: Final[int]     = ObColumn.SQD_0
+SQD_NUM0_COL: Final[int] = ObColumn.SQD_NUM_0
+
+
+def gen_ob_column_names() -> List[str]:
+    """
+    Generates the column name list for OB files dynamically.
+    """
+    cols: List[str] = [
+        "id", "name", "suffix", "nat", "firstYear", "firstMonth",
+        "lastYear", "lastMonth", "type", "upgrade", "obClass",
+        "icon", "divideMultiRole", "mtzType", "formSize"
+    ]
+
+    # Append SQD_0 through SQD_31
+    for i in range(SQD_SLOTS):
+        cols.append(f"sqd {i}")
+
+    # Append SQD_NUM_0 through SQD_NUM_31
+    for i in range(SQD_SLOTS):
+        cols.append(f"sqdNum {i}")
+
+    return cols
+
+
+def gen_default_ob_row(ob_id: int = 0,
+                       name: str = "",
+                       suffix: str = "") -> List[str]:
+    """
+    Generates a default 79-column row for an _ob.csv file.
+
+    Args:
+        ob_id (int): The ID for the OB (Column 0). Defaults to 0.
+        name (str): The name of the OB (Column 1). Defaults to empty.
+        suffix (str): The suffix string (Column 2). Defaults to empty.
+
+    Returns:
+        List[str]: A list containing the ID, Name, Suffix, and 76 zeroes.
+    """
+    # Create the base row with the ID, Name, and Suffix
+    row: List[str] = [str(ob_id), name, suffix]
+
+    # Append 76 zeroes to fill out the remaining columns
+    # (12 remaining base properties + 32 'sqd' slots + 32 'sqdNum' slots)
+    row.extend(["0"] * 76)
+
+    return row
+
+# pylint: disable= too-few-public-methods
 class OB:
     """
-    A dynamic object representation of a WiTE2 Order of Battle (OB).
-    Automatically converts CSV string numbers into integers for math/logic.
+    A dynamic representation of a WiTE2 Order of Battle (TOE).
+
+    This class transforms raw CSV row dictionaries into objects with
+    type-hinted attributes. It supports fuzzy attribute lookup (e.g.,
+    ob.sqd0 or ob.SQD_0) via __getattr__.
     """
     # Type hints for standard OB fields to keep Pylance happy
     ID: int

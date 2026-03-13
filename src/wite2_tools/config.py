@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Final, Iterable, Union, TypeAlias, Set
+from typing import Any, Mapping, Final, Iterable, Union, TypeAlias, Set, Optional
 
 ENCODING_TYPE : Final = "ISO-8859-1"
 CONFIG_FILE_NAME : Final = "settings.ini"
@@ -6,15 +6,21 @@ CONFIG_FILE_NAME : Final = "settings.ini"
 
 NatData: TypeAlias = Union[int, str, Iterable[Union[int, str]], None]
 
-def normalize_nat_codes(codes: NatData) -> Set[int]:
+
+def normalize_nat_codes(codes: NatData) -> Optional[Set[int]]:
     """
-    Standardizes nationality input into a set of integers.
+    Standardizes nationality input into a set of integers, removing any 0.
     """
     if codes is None:
-        return set()
+        return None
+
+    # Handle single integer or string inputs
     if isinstance(codes, (int, str)):
-        return {int(codes)}
-    return {int(c) for c in codes}
+        val = int(codes)
+        return {val} if val != 0 else None
+
+    # Handle iterables (lists, sets, etc.), converting to int and filtering out 0
+    return {int(c) for c in codes if int(c) != 0}
 
 
 def make_hashable(obj: Any) -> Any:
@@ -24,8 +30,8 @@ def make_hashable(obj: Any) -> Any:
     """
     if isinstance(obj, (list, tuple)):
         return tuple(make_hashable(i) for i in obj)
-    elif isinstance(obj, Mapping):
+    if isinstance(obj, Mapping):
         return tuple((k, make_hashable(v)) for k, v in sorted(obj.items()))
-    elif isinstance(obj, set):
+    if isinstance(obj, set):
         return tuple(make_hashable(i) for i in sorted(obj))
     return obj

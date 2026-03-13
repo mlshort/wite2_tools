@@ -1,3 +1,5 @@
+from pathlib import Path
+from pytest import CaptureFixture
 
 # Internal package imports
 from wite2_tools.scanning.scan_ob_for_ground_elem import (
@@ -5,14 +7,15 @@ from wite2_tools.scanning.scan_ob_for_ground_elem import (
 )
 
 
-def test_scan_ob_for_ground_elem_success(mock_ob_csv, capsys):
+def test_scan_ob_for_ground_elem_success(mock_ob_csv: Path,
+                                         capsys: CaptureFixture[str])->None:
     """
     Verifies the TOE(OB) scanner finds target ground elements across the 32
     slots.
     Note: mock_ob_csv fixture is provided by conftest.py
     """
     # In conftest.py, ID 500 is placed at "sqd 2" of TOE(OB) ID 10
-    matches = scan_ob_for_ground_elem(mock_ob_csv, 500)
+    matches = scan_ob_for_ground_elem(str(mock_ob_csv), 500)
 
     assert matches == 1
 
@@ -22,11 +25,12 @@ def test_scan_ob_for_ground_elem_success(mock_ob_csv, capsys):
     assert "'sqd 2'" in captured.out
 
 
-def test_scan_ob_for_ground_elem_no_matches(mock_ob_csv, capsys)->None:
+def test_scan_ob_for_ground_elem_no_matches(mock_ob_csv: Path,
+                                            capsys: CaptureFixture[str])->None:
     """
     Verifies the scanner returns 0 and prints correctly when no match is found.
     """
-    matches = scan_ob_for_ground_elem(mock_ob_csv, 9999)
+    matches = scan_ob_for_ground_elem(str(mock_ob_csv), 9999)
 
     assert matches == 0
     captured = capsys.readouterr()

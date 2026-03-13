@@ -33,48 +33,61 @@ Example:
 
 """
 import os
+from typing import List, Tuple
 
 # Internal package imports
-from wite2_tools.constants import MAX_SQUAD_SLOTS
+from wite2_tools.constants import MIN_SQUAD_SLOTS, MAX_SQUAD_SLOTS
 from wite2_tools.utils import (
     get_logger,
-    parse_int
+    parse_row_int
 )
 from wite2_tools.modifiers.base import process_csv_in_place
+from wite2_tools.models import (
+    O_ID_COL,
+    O_SQD0_COL,
+    O_SQD_NUM0_COL
+)
 
 
 # Initialize the log for this specific module
 log = get_logger(__name__)
 
 
-def reorder_ob_elems(row: dict, squad_col: str, squad_num_col: str,
-                     source_slot: int, target_slot: int) -> dict:
+def reorder_ob_elems(row: List[str],
+                     source_slot: int,
+                     target_slot: int) -> List[str]:
     """
-    Moves elements at 'source_slot' to 'target_slot' and shifts others for
-    all associated squad columns.
+    Moves OB elements and their quantities from 'source_slot' to 'target_slot'
+    using list indices mapped from the OBColumn IntEnum.
 
     Args:
-        row (dict): The dictionary representing a single CSV row.
-        squad_col (str): The column prefix for the element ID.
-        squad_num_col (str): The column prefix for the element quantity.
-        source_slot (int): The current index of the squad element.
-        target_slot (int): The destination index for the squad element.
+        row (list): The list representing a single CSV row.
+        source_slot (int): The current offset (0-9).
+        target_slot (int): The destination offset (0-9).
 
     Returns:
-        dict: The modified row dictionary.
+        list: The modified row list.
     """
-    squad_keys = [f"{squad_col}{i}" for i in range(MAX_SQUAD_SLOTS)]
-    num_keys = [f"{squad_num_col}{i}" for i in range(MAX_SQUAD_SLOTS)]
+    # OB files typically focus on two blocks: The Element ID and the Quantity
+    attribute_bases = [
+        O_SQD0_COL,
+        O_SQD_NUM0_COL
+    ]
 
-    squad_vals = [row[k] for k in squad_keys]
-    num_vals = [row[k] for k in num_keys]
+    for base_enum in attribute_bases:
+        # Get the starting integer index from the Enum
+        start_idx = base_enum
+        end_idx = start_idx + MAX_SQUAD_SLOTS
 
-    squad_vals.insert(target_slot, squad_vals.pop(source_slot))
-    num_vals.insert(target_slot, num_vals.pop(source_slot))
+        # Extract the window (the 10 slots for IDs or 10 slots for Numbers)
+        vals = row[start_idx:end_idx]
 
-    for i in range(MAX_SQUAD_SLOTS):
-        row[squad_keys[i]] = squad_vals[i]
-        row[num_keys[i]] = num_vals[i]
+        # Reorder the values in the temporary list
+        # pop() picks it up, insert() puts it down at the new index
+        vals.insert(target_slot, vals.pop(source_slot))
+
+        # Slice assignment: Update the original row efficiently
+        row[start_idx:end_idx] = vals
 
     return row
 
@@ -113,39 +126,51 @@ def reorder_ob_squads(ob_file_path: str,
         - Compatible with `csv.reader` (list-based) to safely handle files that
           may contain duplicate column headers.
     """
-    if not 0 <= target_slot <= 31:
-        log.error("Validation Error: target_slot slot index %d is "
-                  "out of bounds (0-31).", target_slot)
+
+    # Validation
+    if not MIN_SQUAD_SLOTS <= target_slot < MAX_SQUAD_SLOTS:
+        log.error("Validation Error: target_slot index %d is "
+                  "out of bounds.", target_slot)
         return 0
 
-    if not os.path.exists(ob_file_path):
+    if not os.path.isfile(ob_file_path):
         log.error("Error: The file '%s' was not found.", ob_file_path)
         return -1
 
-    log.info("Reordering squads in '%s' | TOE(ID): %d | Target WID: %d |"
-             " To Slot Loc: %d",
+    log.info("Reordering squads in '%s' | TOE(ID): %d | Target WID: %d | To Slot: %d",
              ob_file_path, target_ob_id, target_wid, target_slot)
 
-    # Define the specific logic for processing an TOE(OB) row
-    def process_row(row: dict, _: int) -> tuple[dict, bool]:
-        ob_id = parse_int(row.get("id"))
-        if target_ob_id == ob_id:
+    # 1. Define the List-based row processor
+    def process_row(row: List[str], row_idx: int) -> Tuple[List[str], bool]:
+        # Skip header row (row index 0)
+        if row_idx == 0:
+            return row, False
+
+        # Use ObColumn IntEnum for direct index access
+        try:
+            ob_id = parse_row_int(row, O_ID_COL)
+        except (IndexError, ValueError):
+            return row, False
+
+        if ob_id == target_ob_id:
+            # Calculate the range for squad IDs (sqd 0 through sqd 9)
+            start_idx = O_SQD0_COL
+
             for i in range(MAX_SQUAD_SLOTS):
-                current_sqd_col = f"sqd {i}"
+                # Access the WID directly by index
+                wid = parse_row_int(row, start_idx + i)
 
-                if current_sqd_col in row:
-                    wid = parse_int(row.get(current_sqd_col))
+                if wid == target_wid:
+                    if i != target_slot:
+                        # Use the refactored list-based helper
+                        row = reorder_ob_elems(row, i, target_slot)
 
-                    if wid == target_wid:
-                        if i != target_slot:
-                            row = reorder_ob_elems(row, "sqd ",
-                                                   "sqdNum ", i,
-                                                   target_slot)
-                            log.debug("TOE(OB) ID[%d]: Moved squad from"
-                                      " slot %d to %d", ob_id, i, target_slot)
-                            return row, True  # Row was modified
-                        break
-        return row, False  # Row was untouched
+                        log.debug("TOE(OB) ID[%d]: Moved squad from slot %d to %d",
+                                  ob_id, i, target_slot)
+                        return row, True
+                    break # Found the WID but it's already in the target slot
 
-    # Execute via the shared wrapper
+        return row, False
+
+    # 2. Execute via the shared list-stream wrapper
     return process_csv_in_place(ob_file_path, process_row)

@@ -48,24 +48,39 @@ from functools import cache
 
 # Internal package imports
 from wite2_tools.config import normalize_nat_codes, NatData, make_hashable
-from wite2_tools.core.unit import UnitData
-from wite2_tools.generator import get_csv_dict_stream
+from wite2_tools.models.unit import UnitData
+from wite2_tools.generator import get_csv_list_stream
+from wite2_tools.models import (
+    U_NAT_COL,
+    U_ID_COL,
+    U_TYPE_COL,
+    U_NAME_COL,
+    O_ID_COL,
+    O_TYPE_COL,
+    O_NAME_COL,
+    O_SUFFIX_COL,
+    O_NAT_COL,
+    O_UPGRADE_COL
+)
 from wite2_tools.utils import get_logger
 from wite2_tools.utils import format_header, format_list_item
 from wite2_tools.utils import (
     get_ob_full_name,
     get_ob_suffix,
-    parse_int,
-    parse_str
+    parse_row_int,
+    parse_row_str
 )
+
 
 # Initialize the logger for this specific module
 log = get_logger(__name__)
 
 
-
 def _parse_ob_data(ob_file_path: str,
-                   nat_codes: NatData )->Tuple[Set[int], Set[int], Dict[int, str], Dict[int, int]]:
+                   nat_codes: NatData )->Tuple[Set[int],
+                                               Set[int],
+                                               Dict[int, str],
+                                               Dict[int, int]]:
     """
     Parses the OB file and returns structured data for cross-referencing.
     """
@@ -74,25 +89,28 @@ def _parse_ob_data(ob_file_path: str,
     ob_id_to_name: Dict[int, str] = {}
     ob_id_upgrade: Dict[int, int] = {}
 
-    ob_stream = get_csv_dict_stream(ob_file_path)
+    ob_stream = get_csv_list_stream(ob_file_path)
 
     for _, row in ob_stream.rows:
-        ob_nat: int = parse_int(row.get('nat'))
+
+        ob_nat: int = parse_row_int(row, O_NAT_COL)
 
         nat_filter = normalize_nat_codes(nat_codes)
-        if nat_codes is not None and ob_nat not in nat_filter:
+        if nat_filter is not None and ob_nat not in nat_filter:
             continue
 
-        ob_id: int = parse_int(row.get('id'))
+        ob_id: int = parse_row_int(row, O_ID_COL)
         if ob_id == 0:
             continue
 
         all_obs.add(ob_id)
-        ob_id_to_name[ob_id] = f"{parse_str(row.get('name'))} {parse_str(row.get('suffix'))}"
+        ob_name = parse_row_str(row, O_NAME_COL).strip()
+        ob_suffix = parse_row_str(row, O_SUFFIX_COL).strip()
+        ob_id_to_name[ob_id] = f"{ob_name} {ob_suffix}"
 
-        if parse_int(row.get('type')) != 0:
+        if parse_row_int(row, O_TYPE_COL) != 0:
             active_obs.add(ob_id)
-            upgrade_id:int = parse_int(row.get('upgrade'))
+            upgrade_id:int = parse_row_int(row, O_UPGRADE_COL)
             if upgrade_id != 0:
                 ob_id_upgrade[ob_id] = upgrade_id
 
@@ -102,28 +120,35 @@ def _parse_ob_data(ob_file_path: str,
 def _trace_unit_references(unit_file_path: str,
                            ob_file_path: str,
                            nat_codes: NatData,
-                           ob_id_upgrade: Dict[int, int])->Tuple[Set[int], Dict[int, Set[UnitData]]]:
-    """Parses unit file and traces the full TOE upgrade chain."""
+                           ob_id_upgrade: Dict[int, int]
+                           )->Tuple[Set[int], Dict[int, Set[UnitData]]]:
+    """
+    Parses unit file and traces the full TOE upgrade chain.
+    """
     obs_ref_by_unit: Set[int] = set()
     ob_to_units: Dict[int, Set[UnitData]] = {}
 
-    unit_stream = get_csv_dict_stream(unit_file_path)
+    nat_filter = normalize_nat_codes(nat_codes)
+
+    unit_stream = get_csv_list_stream(unit_file_path)
 
     for _, row in unit_stream.rows:
-        u_nat: int = parse_int(row.get('nat'))
+        u_nat: int = parse_row_int(row, U_NAT_COL)
 
-        nat_filter = normalize_nat_codes(nat_codes)
-        if nat_codes is not None and u_nat not in nat_filter:
+        if nat_filter is not None and u_nat not in nat_filter:
             continue
 
-        u_id: int = parse_int(row.get('id'))
-        u_type: int = parse_int(row.get('type'))
+        u_id: int = parse_row_int(row, U_ID_COL)
+        u_type: int = parse_row_int(row, U_TYPE_COL)
 
         if u_id != 0 and u_type != 0:
             if u_type not in ob_to_units:
                 ob_to_units[u_type] = set()
 
-            u_full_name = f"{parse_str(row.get('name'), 'Unk')} {get_ob_suffix(ob_file_path, u_type)}"
+            u_name = parse_row_str(row, U_NAME_COL, 'Unk').strip()
+            u_suffix = get_ob_suffix(ob_file_path, u_type)
+            u_full_name = f"{u_name} {u_suffix}"
+
             ob_to_units[u_type].add(UnitData(u_id, u_full_name, u_type, u_nat))
 
             # Trace upgrade chain
@@ -154,9 +179,15 @@ def find_orphaned_obs(ob_file_path: str,
     Returns:
         Set[int]: A set of OB IDs that are safely removable (orphans).
     """
-    if not all(os.path.exists(f) for f in [ob_file_path, unit_file_path]):
-        log.error("Required CSV files not found.")
+
+    if not os.path.isfile(ob_file_path):
+        log.error("Error: The file '%s' was not found.", ob_file_path)
         return set()
+
+    if not os.path.isfile(unit_file_path):
+        log.error("Error: The file '%s' was not found.", unit_file_path)
+        return set()
+
 
    # nat_filter = normalize_nat_codes(nat_codes)
 
@@ -177,14 +208,19 @@ def find_orphaned_obs(ob_file_path: str,
 
         log.info("Analysis complete for Nat Filter %s. Found %d orphans.",
                  nat_codes, len(orphaned_ob_ids))
+
         return orphaned_ob_ids
 
-    except (ValueError, OSError, KeyError) as exc:
+    except (OSError, IOError) as e:
+        log.exception("File System Error: Could not read '%s'", e)
+        return set()
+
+    except (ValueError, KeyError) as exc:
         log.exception("Cross-reference failed: %s", exc)
         return set()
 
-
-
+# following is legacy code that may be formally removed later
+# pylint: disable=too-many-branches, too-many-statements, too-many-locals
 def find_orphaned_ob_ids2(ob_file_path: str,
                           unit_file_path: str,
                           nat_codes: NatData = None) -> Set[int]:
@@ -195,11 +231,11 @@ def find_orphaned_ob_ids2(ob_file_path: str,
     """
     verbose_orphans: bool = True
 
-    if not os.path.exists(ob_file_path):
+    if not os.path.isfile(ob_file_path):
         log.error("Error: The file '%s' was not found.", ob_file_path)
         return set()
 
-    if not os.path.exists(unit_file_path):
+    if not os.path.isfile(unit_file_path):
         log.error("Error: The file '%s' was not found.", unit_file_path)
         return set()
 
@@ -241,22 +277,22 @@ def find_orphaned_ob_ids2(ob_file_path: str,
 #    - id (int): Primary Key
 #    - type (int): _unit.type Foreign Key -> _ob.id
 #    - nat (int): Nat Code
-
         # 1. Parse the TOE(OB) file
-        ob_stream = get_csv_dict_stream(ob_file_path)
+        ob_stream = get_csv_list_stream(ob_file_path)
 
         for _, row in ob_stream.rows:
-            ob_nat: int = parse_int(row.get('nat'))
+
+            ob_nat: int = parse_row_int(row, O_NAT_COL)
 
             if nat_filter is not None and ob_nat not in nat_filter:
                 continue
 
-            ob_id: int = parse_int(row.get('id'))
-            ob_type: int = parse_int(row.get('type'))
-            ob_upgrade: int = parse_int(row.get('upgrade'))
+            ob_id: int = parse_row_int(row, O_ID_COL)
+            ob_type: int = parse_row_int(row, O_TYPE_COL)
+            ob_upgrade: int = parse_row_int(row, O_UPGRADE_COL)
             # Combine ob_name and ob_suffix
-            ob_name: str = parse_str(row.get('name'))
-            ob_suffix: str = parse_str(row.get('suffix'))
+            ob_name: str = parse_row_str(row, O_NAME_COL)
+            ob_suffix: str = parse_row_str(row, O_SUFFIX_COL)
             ob_full_name: str = f"{ob_name} {ob_suffix}"
 
             if ob_id != 0:
@@ -269,20 +305,21 @@ def find_orphaned_ob_ids2(ob_file_path: str,
                         ob_id_upgrade[ob_id] = ob_upgrade
 
         # 2. Parse the Unit file
-        unit_stream = get_csv_dict_stream(unit_file_path)
+        unit_stream = get_csv_list_stream(unit_file_path)
         ref_upgraded_id_count = 0
 
         for _, row in unit_stream.rows:
-            u_nat: int = parse_int(row.get('nat'))
+
+            u_nat: int = parse_row_int(row, U_NAT_COL)
 
             if nat_filter is not None and u_nat not in nat_filter:
                 continue
 
-            uid: int = parse_int(row.get('id'))
+            uid: int = parse_row_int(row, U_ID_COL)
 
             # utype is the FK to ob_id / TOE(OB)
-            utype: int = parse_int(row.get('type'))
-            uname: str = parse_str(row.get('name'), 'Unk')
+            utype: int = parse_row_int(row, U_TYPE_COL)
+            uname: str = parse_row_str(row, U_NAME_COL, 'Unk')
             usuffix: str = get_ob_suffix(ob_file_path, utype)
             ufull_name: str = f"{uname} {usuffix}"
 
@@ -300,7 +337,7 @@ def find_orphaned_ob_ids2(ob_file_path: str,
                 obs_ref_by_unit.add(utype)
                 current_upgrade = utype
                 while current_upgrade in ob_id_upgrade:
-                    next_upgrade = ob_id_upgrade[current_upgrade]
+                    next_upgrade:int = ob_id_upgrade[current_upgrade]
 
                     # If we've already marked this as referenced,
                     # the rest of the chain is also covered
@@ -419,11 +456,13 @@ def find_orphaned_ob_ids2(ob_file_path: str,
 
         return orphaned_ob_ids
 
-    except (ValueError, IOError, KeyError) as e:
+    except (OSError, IOError) as e:
+        log.exception("File System Error: Could not read '%s'", e)
+        return set()
+
+    except (ValueError, KeyError) as e:
         log.exception(
-            "An error occurred during cross-reference: %s",
-            e
-        )
+            "An error occurred during cross-reference: %s", e)
         return set()
 
 
@@ -451,7 +490,8 @@ def _report_results(orphans: Set[int],
 @cache
 def _get_cached_orphans(ob_file_path: str,
                         unit_file_path: str,
-                        nat_codes: Union[int, str, Tuple[int, ...], None]) -> Set[int]:
+                        nat_codes: Union[int, str, Tuple[int, ...], None]
+                        ) -> Set[int]:
     """
     Private helper: Runs the heavy orphan logic and caches the resulting set.
     """

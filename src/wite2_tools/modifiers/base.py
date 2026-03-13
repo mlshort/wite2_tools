@@ -24,11 +24,11 @@ Core Features:
 import csv
 import os
 from tempfile import NamedTemporaryFile
-from typing import Callable, Tuple, cast
+from typing import Callable, Tuple, cast, List
 
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
-from wite2_tools.generator import get_csv_dict_stream
+from wite2_tools.generator import get_csv_list_stream
 from wite2_tools.utils import get_logger
 
 # Initialize the log for this specific module
@@ -36,48 +36,45 @@ log = get_logger(__name__)
 
 
 def process_csv_in_place(file_path: str,
-                         row_processor: Callable[[dict, int],
-                                                 Tuple[dict, bool]]) -> int:
+                         row_processor: Callable[[List, int],
+                                                 Tuple[List, bool]]) -> int:
     """
     A boilerplate wrapper that safely processes a CSV file in-place using a
-    temporary file.
+    temporary file and a List Stream (more memory efficient).
 
     Args:
         file_path: The absolute path to the CSV file.
-        row_processor: A callback function that takes (row_dict, row_index) and
-                       returns a tuple of (modified_row_dict,
-                       was_modified_bool).
+        row_processor: A callback function that takes (row_list, row_index) and
+                       returns a tuple of (modified_row_list, was_modified_bool).
     Returns:
         The total number of rows that were modified.
     """
-    if not os.path.exists(file_path):
+    if not os.path.isfile(file_path):
         log.error("File Error: The file '%s' was not found.", file_path)
         return 0
 
     update_count = 0
+    # Use NamedTemporaryFile to ensure we don't corrupt the source if the script crashes
     temp_file = NamedTemporaryFile(mode='w', delete=False,
                                    dir=os.path.dirname(file_path),
                                    newline='', encoding=ENCODING_TYPE)
 
     try:
-        stream = get_csv_dict_stream(file_path)
-
-        # 1. Extract and cast the reader object (first yield)
-        header = stream.fieldnames
+        # SWITCH: Use list stream instead of dict stream
+        stream = get_csv_list_stream(file_path)
 
         with temp_file as outfile:
-            writer = csv.DictWriter(outfile,
-                                    fieldnames=header)  # type: ignore
-            writer.writeheader()
+            # SWITCH: Use csv.writer instead of csv.DictWriter
+            writer = csv.writer(outfile)
 
-            # 2. Catch the item rather than unpacking it directly in the loop
+            # List streams usually include the header as the first yielded row or
+            # through the stream's row generator. We iterate through the stream:
             for item in stream.rows:
 
-                # 3. Explicitly tell the type checker this is now the tuple
-                # yield
-                row_idx, row = cast(tuple[int, dict], item)
+                # Explicitly cast for type checkers: (row_index, row_data_list)
+                row_idx, row = cast(tuple[int, List], item)
 
-                # Pass the row to the custom logic callback
+                # Pass the list to the custom logic callback
                 row, was_modified = row_processor(row, row_idx)
 
                 if was_modified:
@@ -93,6 +90,7 @@ def process_csv_in_place(file_path: str,
         else:
             log.info("Success: Processing complete. Total rows updated: %d.",
                      update_count)
+            # Atomic swap of the temp file with the original file
             os.replace(temp_file.name, file_path)
 
     except (OSError, IOError, ValueError, KeyError, TypeError) as e:

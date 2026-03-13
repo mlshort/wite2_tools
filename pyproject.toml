@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wite2_tools"
-version = "0.5.0"
+version = "0.6.0"
 description = "A specialized toolkit for analyzing and modifying War in the East 2 data files."
 readme = "ReadMe.md"
 requires-python = ">=3.13"
@@ -18,7 +18,7 @@ dependencies = [
     "chardet>=5.2.0"
 ]
 [project.scripts]
-wite2-tools = "wite2_tools.cli:main"
+wite2_tools = "wite2_tools.cli:main"
 
 [project.optional-dependencies]
 dev = [
@@ -47,6 +47,11 @@ ignore_missing_imports = true
 # (This allows you to run 'mypy .' locally and see the same report)
 txt_report = "reports"
 
-[[tool.mypy.overrides]]
-module = "tests.*"
-ignore_errors = true
+#[[tool.mypy.overrides]]
+#module = "tests.*"
+#ignore_errors = true
+
+[tool.pylint.messages_control]
+disable = [
+    "missing-function-docstring",
+]

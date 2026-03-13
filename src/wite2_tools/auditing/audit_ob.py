@@ -25,30 +25,49 @@ Command Line Usage:
     python -m wite2_tools.cli audit-ob [-h] [-d DATA_DIR]
 """
 import os
-from typing import Set
+from typing import Set, Dict, List
 
 # Internal package imports
-from wite2_tools.generator import get_csv_dict_stream
+from wite2_tools.generator import CSVListStream, get_csv_list_stream
 from wite2_tools.constants import MAX_SQUAD_SLOTS
 from wite2_tools.utils import (
     get_logger,
-    parse_int,
-    parse_str,
+    parse_row_int,
+    parse_row_str,
     get_valid_ground_elem_ids,
     format_ref
+)
+from wite2_tools.models import (
+    O_ID_COL,
+    O_NAME_COL,
+    O_TYPE_COL,
+    O_UPGRADE_COL,
+    O_SQD0_COL,
+    O_SQD_NUM0_COL,
+    O_FIRSTYEAR_COL,
+    O_FIRSTMONTH_COL,
+    O_LASTYEAR_COL,
+    O_LASTMONTH_COL
 )
 
 # Initialize the log for this specific module
 log = get_logger(__name__)
 
 
-def _check_chronology(ob_id: int, ob_name: str, row: dict) -> int:
+def is_date_invalid(f_yr:int, f_mo:int, l_yr:int, l_mo:int) -> bool:
+    if l_yr < f_yr:
+        return True
+    if l_yr == f_yr and l_mo < f_mo:
+        return True
+    return False
+
+def _check_chronology(ob_id: int, ob_name: str, row: List[str]) -> int:
     """Validates the historical introduction and expiration dates."""
     issues = 0
-    f_year = parse_int(row.get('firstYear'))
-    f_month = parse_int(row.get('firstMonth'))
-    l_year = parse_int(row.get('lastYear'))
-    l_month = parse_int(row.get('lastMonth'))
+    f_year  = parse_row_int(row,O_FIRSTYEAR_COL)
+    f_month = parse_row_int(row,O_FIRSTMONTH_COL)
+    l_year  = parse_row_int(row,O_LASTYEAR_COL)
+    l_month = parse_row_int(row,O_LASTMONTH_COL)
 
     ref = format_ref("TOE(OB)", ob_id, ob_name)
 
@@ -74,11 +93,11 @@ def _check_chronology(ob_id: int, ob_name: str, row: dict) -> int:
 
 def _check_upgrade_path(ob_id: int,
                         ob_name: str,
-                        row: dict,
-                        valid_ob_ids: set[int]) -> int:
+                        row: List[str],
+                        valid_ob_ids: Set[int]) -> int:
     """Validates the TOE upgrade paths to prevent loops and dead-ends."""
     issues = 0
-    upgrade_id = parse_int(row.get('upgrade'))
+    upgrade_id = parse_row_int(row,O_UPGRADE_COL)
 
     ref = format_ref("TOE(OB)", ob_id, ob_name)
 
@@ -97,8 +116,8 @@ def _check_upgrade_path(ob_id: int,
 
 def _check_squad_slots(ob_id: int,
                        ob_name: str,
-                       row: dict,
-                       valid_elem_ids: set[int]) -> int:
+                       row: List[str],
+                       valid_elem_ids: Set[int]) -> int:
     """
     Validates all 32 equipment slots for negative quantities, ghosts,
     and WID duplicates.
@@ -108,11 +127,11 @@ def _check_squad_slots(ob_id: int,
     ref = format_ref("TOE(OB)", ob_id, ob_name)
 
     for i in range(MAX_SQUAD_SLOTS):
-        sqd_id_col = f"sqd.u{i}"
-        sqd_num_col = f"sqd.num{i}"
+        sqd_id_col = O_SQD0_COL + i
+        sqd_num_col = O_SQD_NUM0_COL + i
 
-        sqd_id = parse_int(row.get(sqd_id_col))
-        qty = parse_int(row.get(sqd_num_col))
+        sqd_id = parse_row_int(row,sqd_id_col)
+        qty = parse_row_int(row,sqd_num_col)
 
         if qty < 0:
             log.error("%s: %s has negative quantity (%d).",
@@ -143,6 +162,34 @@ def _check_squad_slots(ob_id: int,
     return issues
 
 
+def _check_for_loops(upgrade_map: Dict[int, int],
+                     ob_names: dict[int, str]) -> int:
+    """
+    Traces every upgrade path to ensure it eventually ends at 0.
+    Returns the number of loops found.
+    """
+    issues = 0
+    for start_id in upgrade_map:
+        visited = set()
+        current_id:int = start_id
+        path:List[str] = []
+
+        while current_id != 0:
+            if current_id in visited:
+                # Loop detected!
+                path_str = " -> ".join(f"[{i}]" for i in path + [current_id])
+                log.error("TOE(OB) Upgrade Loop Detected: %s", path_str)
+                issues += 1
+                break
+
+            visited.add(current_id)
+            path.append(str(current_id))
+            # Move to the next ID in the chain, default to 0 (end) if ID is missing
+            current_id = upgrade_map.get(current_id, 0)
+
+    return issues
+
+
 def audit_ob_csv(ob_file_path: str,
                  ground_file_path: str) -> int:
     """
@@ -158,40 +205,43 @@ def audit_ob_csv(ob_file_path: str,
              occurred.
     """
     issues_found = 0
+    upgrade_map: dict[int, int] = {}
+    ob_names: dict[int, str] = {}
     seen_ob_ids: Set[int] = set()
     valid_elem_ids: Set[int] = set()
     valid_ob_ids: Set[int] = set()
 
-    if not os.path.exists(ob_file_path):
+    if not os.path.isfile(ob_file_path):
         log.error("Error: The file '%s' was not found.", ob_file_path)
         return -1
 
-    if not os.path.exists(ground_file_path):
+    if not os.path.isfile(ground_file_path):
         log.error("Error: The file '%s' was not found.", ground_file_path)
         return -1
 
     try:
-        ob_file_base_name = os.path.basename(ob_file_path)
+        ob_file_base_name: str = os.path.basename(ob_file_path)
         valid_elem_ids = get_valid_ground_elem_ids(ground_file_path)
 
         # 1. PRE-PASS: Collect all valid TOE(OB) IDs for upgrade checking
-        ob_gen_pre = get_csv_dict_stream(ob_file_path, 2)
-
+        ob_gen_pre: CSVListStream = get_csv_list_stream(ob_file_path)
         for _, r in ob_gen_pre.rows:
-            valid_ob_ids.add(parse_int(r.get("id")))
+            ob_id = parse_row_int(r, O_ID_COL)
+            if ob_id != 0:
+                valid_ob_ids.add(ob_id)
+                ob_names[ob_id] = parse_row_str(r, O_NAME_COL, "Unk")
+                upgrade_map[ob_id] = parse_row_int(r, O_UPGRADE_COL)
 
         # 2. MAIN PASS
-        ob_stream = get_csv_dict_stream(ob_file_path, 2)
-
-        fieldnames = ob_stream.fieldnames
-        header_len = len(fieldnames) if fieldnames else 0
+        ob_stream: CSVListStream = get_csv_list_stream(ob_file_path)
+        header_len = len(ob_stream.header)
 
         log.info("Checking consistency on: '%s'", ob_file_base_name)
 
         for _, row in ob_stream.rows:
-            ob_id = parse_int(row.get("id"))
-            ob_type = parse_int(row.get("type"))
-            ob_name = parse_str(row.get('name'), 'Unk')
+            ob_id = parse_row_int(row,O_ID_COL)
+            ob_type = parse_row_int(row,O_TYPE_COL)
+            ob_name = parse_row_str(row,O_NAME_COL, 'Unk')
 
             # Duplicate ID Check
             if ob_id in seen_ob_ids:
@@ -200,8 +250,10 @@ def audit_ob_csv(ob_file_path: str,
             seen_ob_ids.add(ob_id)
 
             # Row Length Check
-            if len(row) != header_len:
-                log.error("TOE(OB) ID[%d]: Column count mismatch.", ob_id)
+            row_len: int = len(row)
+            if row_len != header_len:
+                log.error("TOE(OB) ID[%d]: Column count mismatch. %d vs %d",
+                          ob_id, header_len, row_len)
                 issues_found += 1
 
             # Only check active OBs
@@ -214,13 +266,16 @@ def audit_ob_csv(ob_file_path: str,
             issues_found += _check_squad_slots(ob_id, ob_name, row,
                                                valid_elem_ids)
 
+        # 3. UPGRADE LOOP PASS: Catch multi-level circular references
+        issues_found += _check_for_loops(upgrade_map, ob_names)
+
         # Output formatting bug fixed here (swapped variables)
         if issues_found == 0:
             log.info("%d OBs Checked - _ob.csv Consistency Check Passed.",
                      len(seen_ob_ids))
         else:
             log.info("%d OBs Checked - _ob.csv Consistency Check Failed: %d "
-                     "issues identified.",
+                     "issue(s) identified.",
                      len(seen_ob_ids), issues_found)
 
     except (OSError, IOError, ValueError, KeyError, TypeError) as e:

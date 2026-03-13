@@ -31,12 +31,14 @@ Example:
 """
 
 import os
+from typing import List
 
 # Internal package imports
 from wite2_tools.constants import MAX_SQUAD_SLOTS
 from wite2_tools.utils import get_logger
-from wite2_tools.utils import parse_int
+from wite2_tools.utils import parse_int, parse_row_int
 from wite2_tools.modifiers.base import process_csv_in_place
+from wite2_tools.models import UnitColumn, U_ID_COL, U_TYPE_COL
 
 # Initialize the logger for this specific module
 log = get_logger(__name__)
@@ -69,7 +71,7 @@ def modify_unit_squads(unit_file_path: str,
     4. CHECKS if the value in 'sqd.num' == 'old_num_squads'.
     5. If it matches, REPLACES it with 'new_num_squads'.
     """
-    if not os.path.exists(unit_file_path):
+    if not os.path.isfile(unit_file_path):
         log.error("Error: The file '%s' was not found.", unit_file_path)
         return -1
 
@@ -77,37 +79,40 @@ def modify_unit_squads(unit_file_path: str,
              os.path.basename(unit_file_path), target_ob_id, target_wid)
 
     # Define the specific logic for processing a Unit row
-    def process_row(row: dict, _: int) -> tuple[dict, bool]:
+    def process_row(row: List[str], _: int) -> tuple[List[str], bool]:
         was_modified = False
-        uid: int = parse_int(row.get("id"))
+        uid: int = parse_int(row[U_ID_COL])
         # _unit.'type' maps to _ob.id
-        utype: int = parse_int(row.get("type"))
+        utype: int = parse_int(row[U_TYPE_COL])
 
         # 1. Check ob_id
         if utype == target_ob_id:
             # 2. Check sqd.u0 through sqd.u31
             for i in range(MAX_SQUAD_SLOTS):
-                sqd_id_col: str = f"sqd.u{i}"
-                sqd_num_col: str = f"sqd.num{i}"
 
-                # 3. If wid matches
-                wid: int = parse_int(row.get(sqd_id_col))
-                if wid == target_wid:
-                    num_squads: int = parse_int(row.get(sqd_num_col))
+                sqd_id_col: int = UnitColumn.SQD_U0 + (i * 8)
+                sqd_num_col: int = UnitColumn.SQD_NUM0 + (i * 8)
 
-                    # 4. CONDITIONAL CHECK: Does it equal the exact old amount?
-                    if num_squads == old_num_squads:
-                        # 5. UPDATE VALUE
-                        row[sqd_num_col] = str(new_num_squads)
-                        was_modified = True
-                        log.info("Unit ID[%d]: Updated WID %s from %d to %d",
-                                 uid, sqd_num_col,
-                                 old_num_squads, new_num_squads)
-                    else:
-                        log.debug("Unit ID[%d]: WID match at %s, but %s was "
-                                  "%d (Expected '%d')",
-                                  uid, sqd_id_col, sqd_num_col,
-                                  num_squads, old_num_squads)
+                # BOUNDARY CHECK: Ensure the row is long enough before accessing!
+                if sqd_id_col < len(row) and sqd_num_col < len(row):
+                    # 3. If wid matches
+                    wid: int = parse_row_int(row, sqd_id_col)
+                    if wid == target_wid:
+                        num_squads: int = parse_row_int(row, sqd_num_col)
+
+                        # 4. CONDITIONAL CHECK: Does it equal the exact old amount?
+                        if num_squads == old_num_squads:
+                            # 5. UPDATE VALUE
+                            row[sqd_num_col] = str(new_num_squads)
+                            was_modified = True
+                            log.info("Unit ID[%d]: Updated WID %s from %d to %d",
+                                    uid, sqd_num_col,
+                                    old_num_squads, new_num_squads)
+                        else:
+                            log.debug("Unit ID[%d]: WID match at %s, but %s was "
+                                    "%d (Expected '%d')",
+                                    uid, sqd_id_col, sqd_num_col,
+                                    num_squads, old_num_squads)
 
         return row, was_modified
 

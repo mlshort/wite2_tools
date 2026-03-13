@@ -20,14 +20,16 @@ Core Capabilities:
   ID-to-string lookup caching.
 """
 
-__version__ = "0.5.0"
-__date__ = "2026-03-02"
+__version__ = "0.6.0"
+__date__ = "2026-03-11"
 
 # Expose common configuration so other modules can access it easily
 from .logger import get_logger
 from .parsing import (
     parse_int,
-    parse_str
+    parse_row_int,
+    parse_str,
+    parse_row_str
 )
 from .lookups import (
     get_nat_abbr,
@@ -68,7 +70,9 @@ from .formatting import (
 __all__ = [
     "get_logger",
     "parse_int",
+    "parse_row_int",
     "parse_str",
+    "parse_row_str",
     "get_nat_abbr",
     "get_ob_type_code_name",
     "get_device_type_name",

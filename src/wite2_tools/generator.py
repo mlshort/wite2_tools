@@ -28,7 +28,7 @@ Functions
     (for metadata access), followed by enumerated tuples of (index, row_dict).
 """
 import csv
-from typing import Generator, Union, List, Dict, Tuple
+from typing import List, Dict, Tuple
 from collections.abc import Iterator
 from dataclasses import dataclass
 
@@ -49,7 +49,7 @@ def get_csv_dict_stream(filename: str,
     reader = csv.DictReader(file)
     fieldnames = reader.fieldnames or []
 
-    def row_gen() -> Iterator[Tuple[int, dict[str, str]]]:
+    def row_gen() -> Iterator[Tuple[int, Dict[str, str]]]:
         try:
             for index, row in enumerate(reader, start=enum_start):
                 yield index, row
@@ -60,12 +60,43 @@ def get_csv_dict_stream(filename: str,
 
 @dataclass
 class CSVListStream:
+    """
+    A data class representing a streamed CSV file.
+
+    Attributes:
+        header (List[str]): The column headers extracted from the first row of the CSV.
+        rows (Iterator[Tuple[int, List[str]]]): A lazy iterator that yields tuples.
+            Each tuple contains the row index and the row data (as a list of strings).
+    """
     header: List[str]
     rows: Iterator[Tuple[int, List[str]]]
 
 
-def get_csv_list_stream(filename: str, enum_start: int = 1) -> CSVListStream:
-    # throws OSError upon failue
+def get_csv_list_stream(filename: str,
+                        enum_start: int = 1) -> CSVListStream:
+    """
+    Opens a CSV file and creates a streamable data structure of its contents.
+
+    This function reads the first row as the header and creates a lazy generator
+    for the remaining rows. The file remains open while the generator is consumed
+    and is safely closed in a `finally` block once the iterator is exhausted.
+    Handles empty files gracefully.
+
+    Args:
+        filename (str): The path to the CSV file to open.
+        enum_start (int, optional): The starting index for row enumeration.
+                                    Defaults to 1.
+
+    Returns:
+        CSVListStream: An object containing the header list and the row iterator.
+            If the file is completely empty, returns an empty header and an empty
+            iterator.
+
+    Raises:
+        OSError: If there is a failure opening the file
+            (e.g., file not found, permission denied).
+    """
+    # throws OSError upon failure
     file = open(filename, mode='r', newline='', encoding=ENCODING_TYPE)
     reader = csv.reader(file)
     try:
@@ -75,6 +106,12 @@ def get_csv_list_stream(filename: str, enum_start: int = 1) -> CSVListStream:
         return CSVListStream(header=[], rows=iter([]))
 
     def row_gen()->Iterator[Tuple[int, List[str]]]:
+        """
+        Generates enumerated rows from the CSV reader and ensures the file is closed.
+
+        Yields:
+            Tuple[int, List[str]]: The row index and the row contents.
+        """
         try:
             for index, row in enumerate(reader, start=enum_start):
                 yield index, row
@@ -82,45 +119,3 @@ def get_csv_list_stream(filename: str, enum_start: int = 1) -> CSVListStream:
             file.close() # Clean up resource
 
     return CSVListStream(header=header, rows=row_gen())
-
-
-def read_csv_list_generator(
-    filename: str,
-    enum_start: int = 1
-) -> Generator[Union[List[str], Tuple[int, List[str]]], None, None]:
-    """
-    Yields the header list first, then index and row lists.
-    """
-    with open(filename, mode='r', newline='', encoding=ENCODING_TYPE) as file:
-        reader = csv.reader(file)
-
-        # Manually extract the first row as the header
-        try:
-            header: List[str] = next(reader)
-        except StopIteration:
-            return  # Handle empty file
-
-        # Yield the header list (replaces the DictReader object for fieldnames
-        # access)
-        yield header
-
-        # Yield rows as lists with their index
-        for index, row in enumerate(reader, start=enum_start):
-            yield index, row
-
-
-def read_csv_dict_generator(
-    filename: str,
-    enum_start: int = 1
-) -> Generator[Union[csv.DictReader, Tuple[int, Dict[str, str]]], None, None]:
-    """
-    Yields the DictReader object first, then index, row dictionaries.
-    """
-    with open(filename, mode='r', newline='', encoding=ENCODING_TYPE) as file:
-        reader = csv.DictReader(file)
-
-        # Yield the reader for fieldnames access
-        yield reader
-
-        for index, row in enumerate(reader, start=enum_start):
-            yield index, row

@@ -20,12 +20,14 @@ Arguments:
     new_wid (int): The new Ground Element WID value.
 """
 import os
+from typing import List, Tuple
 
 # Internal package imports
 from wite2_tools.constants import MAX_SQUAD_SLOTS
 from wite2_tools.utils import get_logger
 from wite2_tools.utils import parse_int
 from wite2_tools.modifiers.base import process_csv_in_place
+from wite2_tools.models import UnitColumn
 
 # Initialize the log for this specific module
 log = get_logger(__name__)
@@ -47,7 +49,7 @@ def modify_unit_ground_element(unit_file_path: str,
         int: The total number of rows (units) successfully updated.
     """
 
-    if not os.path.exists(unit_file_path):
+    if not os.path.isfile(unit_file_path):
         log.error("Error: The file '%s' was not found.", unit_file_path)
         return -1
 
@@ -55,23 +57,25 @@ def modify_unit_ground_element(unit_file_path: str,
              old_wid, new_wid, os.path.basename(unit_file_path))
 
     # Define the specific logic for processing a Unit row
-    def process_row(row: dict, _: int) -> tuple[dict, bool]:
+    def process_row(row: List[str], _: int) -> Tuple[List[str], bool]:
         was_modified = False
 
         # Check sqd.u0 through sqd.u31
         for i in range(MAX_SQUAD_SLOTS):
-            sqd_id_col = f"sqd.u{i}"
+            sqd_id_col = UnitColumn.SQD_U0 + (i * 8)
 
-            wid = parse_int(row.get(sqd_id_col))
+            # BOUNDARY CHECK: Ensure the row is long enough before accessing!
+            if sqd_id_col < len(row) :
+                wid = parse_int(row[sqd_id_col])
 
-            if wid != 0:
-                try:
-                    # Treat values as integers for comparison
-                    if wid == old_wid:
-                        row[sqd_id_col] = str(new_wid)
-                        was_modified = True
-                except ValueError:
-                    continue
+                if wid != 0:
+                    try:
+                        # Treat values as integers for comparison
+                        if wid == old_wid:
+                            row[sqd_id_col] = str(new_wid)
+                            was_modified = True
+                    except ValueError:
+                        continue
 
         return row, was_modified
 

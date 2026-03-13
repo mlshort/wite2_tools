@@ -28,7 +28,7 @@ Example:
     and the quantity assigned.
 """
 import os
-from typing import cast
+from typing import cast, Dict
 
 # Internal package imports
 from wite2_tools.constants import MAX_SQUAD_SLOTS
@@ -53,7 +53,7 @@ def scan_ob_for_ground_elem(ob_file_path: str,
     """
     file = os.path.basename(ob_file_path)
 
-    if not os.path.exists(ob_file_path):
+    if not os.path.isfile(ob_file_path):
         log.error("Error: The file '%s' was not found.", ob_file_path)
         return -1
 
@@ -74,7 +74,7 @@ def scan_ob_for_ground_elem(ob_file_path: str,
 
         # Iterate through every row using explicit type casting
         for item in ob_stream.rows:
-            _, row = cast(tuple[int, dict], item)
+            _, row = cast(tuple[int, Dict[str,str]], item)
 
             # Convert to numbers for math comparison
             ob_type = parse_int(row.get("type"))

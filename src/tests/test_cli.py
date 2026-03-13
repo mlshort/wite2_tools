@@ -8,6 +8,7 @@ within the Dispatch Map and handle errors gracefully.
 import sys
 import unittest
 from unittest.mock import patch, MagicMock, ANY
+from typing import List
 
 # Internal package imports
 from wite2_tools.cli import main, setup_parsers
@@ -26,7 +27,7 @@ class TestCLIDispatcher(unittest.TestCase):
     @patch("wite2_tools.cli.audit_ground_element_csv")
     def test_dispatch_audit_ground(self, mock_audit: MagicMock) -> None:
         """Verifies 'audit-ground' routes correctly to the auditor."""
-        test_args: list[str] = ["cli.py", "audit-ground"]
+        test_args: List[str] = ["cli.py", "audit-ground"]
 
         with patch.object(sys, "argv", test_args):
             main()
@@ -37,7 +38,7 @@ class TestCLIDispatcher(unittest.TestCase):
     @patch("wite2_tools.cli.audit_unit_ob_excess")
     def test_dispatch_audit_toe(self, mock_audit: MagicMock) -> None:
         """Verifies that 'audit-toe' routes correctly to the auditor with nat code sets."""
-        test_args: list[str] = ["cli.py", "audit-toe", "--nat", "1", "3"]
+        test_args: List[str] = ["cli.py", "audit-toe", "--nat", "1", "3"]
 
         with patch.object(sys, "argv", test_args):
             main()
@@ -55,7 +56,7 @@ class TestCLIDispatcher(unittest.TestCase):
     def test_dispatch_scan_excess(self, mock_handle_scan: MagicMock) -> None:
         """Verifies 'scan-excess' routes correctly using positional arguments."""
         # 'f' is fuel, '10.0' is the ratio threshold
-        test_args: list[str] = ["cli.py", "scan-excess", "f", "10.0"]
+        test_args: List[str] = ["cli.py", "scan-excess", "f", "10.0"]
 
         with patch.object(sys, "argv", test_args):
             main()
@@ -66,7 +67,7 @@ class TestCLIDispatcher(unittest.TestCase):
     @patch("wite2_tools.cli.reorder_unit_squads")
     def test_dispatch_mod_reorder_unit(self, mock_reorder: MagicMock) -> None:
         """Verifies 'mod-reorder-unit' maps the positional arguments accurately."""
-        test_args: list[str] = [
+        test_args: List[str] = [
             "cli.py", "mod-reorder-unit",
             "100",  # target_uid
             "500",  # target_wid
@@ -83,7 +84,7 @@ class TestCLIDispatcher(unittest.TestCase):
     @patch("wite2_tools.cli.modify_unit_squads")
     def test_dispatch_mod_update_num(self, mock_modify: MagicMock) -> None:
         """Verifies 'mod-update-num' maps the flagged numerical arguments accurately."""
-        test_args: list[str] = [
+        test_args: List[str] = [
             "cli.py", "mod-update-num",
             "--ob-id", "50",
             "--wid", "120",
@@ -105,7 +106,7 @@ class TestCLIDispatcher(unittest.TestCase):
         # Force the worker function to throw a generic Exception
         mock_audit.side_effect = Exception("Data Corrupt")
 
-        test_args: list[str] = ["cli.py", "audit-toe"]
+        test_args: List[str] = ["cli.py", "audit-toe"]
 
         with patch.object(sys, "argv", test_args):
             main()

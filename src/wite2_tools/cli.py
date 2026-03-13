@@ -79,21 +79,18 @@ from .scanning import (
 )
 
 
-paths: Dict[str,str] = {}
-args = None
-
 # Initialize the log for this specific module
 log = get_logger(__name__)
 
 
-def get_config_defaults() -> dict[str, str]:
+def get_config_defaults() -> Dict[str, str]:
     """
     Reads data_dir and scenario_name from settings.ini.
     Returns a dictionary of defaults.
     """
     config = configparser.ConfigParser()
     defaults = {"data_dir": ".", "scenario_name": ""}
-    if os.path.exists(CONFIG_FILE_NAME):
+    if os.path.isfile(CONFIG_FILE_NAME):
         config.read(CONFIG_FILE_NAME)
         # Ensure we check for the section to avoid falling back to defaults
         # when the file exists but the section is missing.
@@ -109,7 +106,7 @@ def get_config_scenario_name()->str:
     """Retrieves the scenario name from the config file."""
     scen_name = ""
     config = configparser.ConfigParser()
-    if os.path.exists(CONFIG_FILE_NAME):
+    if os.path.isfile(CONFIG_FILE_NAME):
         config.read(CONFIG_FILE_NAME)
         # Ensure we check for the section to avoid falling back to defaults
         # when the file exists but the section is missing.
@@ -123,7 +120,7 @@ def save_config(data_dir: str | None = None, scenario: str | None = None)->None:
     Updates settings.ini with new persistent defaults.
     """
     config = configparser.ConfigParser()
-    if os.path.exists(CONFIG_FILE_NAME):
+    if os.path.isfile(CONFIG_FILE_NAME):
         config.read(CONFIG_FILE_NAME)
     if "Paths" not in config:
         config["Paths"] = {}
@@ -135,7 +132,7 @@ def save_config(data_dir: str | None = None, scenario: str | None = None)->None:
         config.write(f)
 
 
-def resolve_paths(data_dir: str) -> dict[str, str]:
+def resolve_paths(data_dir: str) -> Dict[str, str]:
     """
     Resolves standard WiTE2 file names from a target directory.
 
@@ -143,7 +140,7 @@ def resolve_paths(data_dir: str) -> dict[str, str]:
         data_dir (str): The directory containing the WiTE2 CSV files.
 
     Returns:
-        dict[str, str]: A dictionary mapping file keys ('unit', 'ob',
+        Dict[str, str]: A dictionary mapping file keys ('unit', 'ob',
                         'ground') to their absolute or relative paths.
 
     """
@@ -157,7 +154,7 @@ def resolve_paths(data_dir: str) -> dict[str, str]:
         "aircraft": os.path.join(data_dir, scen_name + "_aircraft.csv")
     }
 
-
+# pylint: disable=too-many-locals,too-many-statements
 def setup_parsers() -> argparse.ArgumentParser:
     """
     Configures the argument parsing for all subcommands.
@@ -192,12 +189,18 @@ def setup_parsers() -> argparse.ArgumentParser:
     #=========================
     # CONFIG COMMANDS
     #=========================
-    p_conf = subparsers.add_parser("config", help="Manage settings.ini")
+    p_conf = subparsers.add_parser("config",
+                                   help="Manage settings.ini")
     p_conf.add_argument("--set-path", help="Set default data directory")
     p_conf.add_argument("--set-scenario", help="Set scenario prefix")
 
     # Auditing
-    subparsers.add_parser("audit-ground", help="Audit _ground.csv")
+    p_audit_devices = subparsers.add_parser("audit-devices",
+        help="Identify devices defined in ground elements but never used in Units or OBs.")
+    add_common(p_audit_devices)
+
+    subparsers.add_parser("audit-ground",
+                          help="Audit _ground.csv")
 
     p_au = subparsers.add_parser("audit-unit",
                                  help="Audit _unit.csv")
@@ -208,38 +211,30 @@ def setup_parsers() -> argparse.ArgumentParser:
 
     subparsers.add_parser("audit-ob", help="Audit _ob.csv")
 
-    # Analytics
-    p_calc = subparsers.add_parser("calc-support",
-                                   help="Calculate unit support and need"
-    )
-    p_calc.add_argument("target_uid", type=int,
-                        help="Target Unit ID")
-
-    # --- Auditing ---
     p_toe = subparsers.add_parser("audit-toe",
                                   help="Audit unit TOE excess")
     add_common(p_toe)
 
-    p_audit_devices = subparsers.add_parser("audit-devices",
-        help="Identify devices defined in ground elements but never used in Units or OBs."
-        )
-    add_common(p_audit_devices)
+
+    # Analytics
+    p_calc = subparsers.add_parser("calc-support",
+                                   help="Calculate unit support and need")
+    p_calc.add_argument("target_uid", type=int,
+                        help="Target Unit ID")
+
 
     # --- Generation ---
-    p_orphans = subparsers.add_parser(
-        "gen-orphans", help="Find units with missing OB references"
-    )
+    p_orphans = subparsers.add_parser("gen-orphans",
+                                      help="Find units with missing OB references")
     add_common(p_orphans)
 
-    p_groups = subparsers.add_parser(
-        "gen-groups", help="Group units by their assigned OB ID"
-    )
+    p_groups = subparsers.add_parser("gen-groups",
+                                     help="Group units by their assigned OB ID")
     p_groups.add_argument("--active-only", action="store_true")
     add_common(p_groups)
 
-    p_chains = subparsers.add_parser(
-        "gen-chains", help="Trace TOE(OB) upgrade paths"
-    )
+    p_chains = subparsers.add_parser("gen-chains",
+                                     help="Trace TOE(OB) upgrade paths")
     p_chains.add_argument("--csv-out", help="Path for CSV output")
     p_chains.add_argument("--txt-out", help="Path for TXT report")
     add_common(p_chains)
@@ -259,14 +254,6 @@ def setup_parsers() -> argparse.ArgumentParser:
                           help="Ratio threshold (default: 5.0)")
     add_common(p_excess)
 
-    # --- Modifiers ---
-    p_reord = subparsers.add_parser("mod-reorder-unit",
-                                    help="Move a Ground Element to a new slot"
-    )
-    p_reord.add_argument("target_uid", type=int)
-    p_reord.add_argument("target_wid", type=int)
-    p_reord.add_argument("target_slot", type=int)
-
     p_sunused = subparsers.add_parser("scan-unused",
                                       help="Find unused devs")
     p_sunused.add_argument("device_type", type=int)
@@ -274,9 +261,18 @@ def setup_parsers() -> argparse.ArgumentParser:
     # =========================
     # MODIFIER COMMANDS
     # =========================
-    subparsers.add_parser("mod-compact-wpn", help="Compact weapon gaps")
+    p_reord = subparsers.add_parser("mod-reorder-unit",
+                                    help="Move a Ground Element to a new slot"
+    )
+    p_reord.add_argument("target_uid", type=int)
+    p_reord.add_argument("target_wid", type=int)
+    p_reord.add_argument("target_slot", type=int)
 
-    p_reob = subparsers.add_parser("mod-reorder-ob", help="Move OB squad")
+    subparsers.add_parser("mod-compact-wpn",
+                          help="Compact weapon gaps")
+
+    p_reob = subparsers.add_parser("mod-reorder-ob",
+                                   help="Move OB squad")
     p_reob.add_argument("target_ob_id", type=int)
     p_reob.add_argument("target_wid", type=int)
     p_reob.add_argument("target_slot", type=int)
@@ -286,7 +282,8 @@ def setup_parsers() -> argparse.ArgumentParser:
     p_repl.add_argument("old_wid", type=int)
     p_repl.add_argument("new_wid", type=int)
 
-    p_upd = subparsers.add_parser("mod-update-num", help="Update squad count")
+    p_upd = subparsers.add_parser("mod-update-num",
+                                  help="Update squad count")
     p_upd.add_argument("--ob-id", dest="target_ob_id", type=int, required=True)
     p_upd.add_argument("--wid", dest="target_wid", type=int, required=True)
     p_upd.add_argument("--old", dest="old_num_s", type=int, required=True)
@@ -295,13 +292,13 @@ def setup_parsers() -> argparse.ArgumentParser:
     return base_parser
 
 
-def handle_scan_excess(paths: Dict[str, str], args: argparse.Namespace) -> None:
+def handle_scan_excess(p: Dict[str, str], a: argparse.Namespace) -> None:
     """
     Routes the scan-excess command to the correct resource scanner.
     """
-    resource = args.resource.lower()
-    ratio = args.ratio
-    unit_path = paths["unit"]
+    resource = a.resource.lower()
+    ratio = a.ratio
+    unit_path = p["unit"]
 
     if resource == "a":
         scan_units_for_excess_ammo(unit_path, ratio)
@@ -313,7 +310,8 @@ def handle_scan_excess(paths: Dict[str, str], args: argparse.Namespace) -> None:
         scan_units_for_excess_vehicles(unit_path, ratio)
     else:
         # Fallback if the user types an unsupported resource
-        print(f"Error: Unknown resource type '{resource}'. Choose from: (a)mmo, (s)upplies, (f)uel, (v)ehicles.")
+        print(f"Error: Unknown resource type '{resource}'."
+               "Choose from: (a)mmo, (s)upplies, (f)uel, (v)ehicles.")
 
 # Dispatch Map replaces the massive if/elif chain
 # Lambda delayed execution allows for fast startup and lazy imports
@@ -426,6 +424,9 @@ COMMAND_MAP: Dict[str, Callable] = {
         a.new_num_s
         )
 }
+
+paths: Dict[str,str] = {}
+# args = None
 
 def main() -> None:
     """Main execution loop using a Dispatch Map."""

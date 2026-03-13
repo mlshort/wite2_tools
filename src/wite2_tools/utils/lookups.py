@@ -18,7 +18,9 @@ Core Contents:
   `KeyError` crashes during runtime analysis, scanning, or logging.
 """
 
-OB_COMBAT_CLASS_LOOKUP: dict[int, str] = {
+from typing import Dict
+
+OB_COMBAT_CLASS_LOOKUP: Dict[int, str] = {
     0: "None",
     1: "Combat",
     2: "HQ",
@@ -28,7 +30,7 @@ OB_COMBAT_CLASS_LOOKUP: dict[int, str] = {
 }
 
 
-OB_TYPE_LOOKUP: dict[int, str] = {
+OB_TYPE_LOOKUP: Dict[int, str] = {
         0: "None",
         1: "Armor",
         2: "Mech",
@@ -58,7 +60,7 @@ OB_TYPE_LOOKUP: dict[int, str] = {
     }
 
 
-NAT_LOOKUP: dict[int, str] = {
+NAT_LOOKUP: Dict[int, str] = {
     1: "Ger",
     2: "Fin",
     3: "Ita",
@@ -112,7 +114,7 @@ def get_nat_abbr(nat_val: int) -> str:
 
 # Explicitly declared lookup for WiTE2 Nationalities
 # Key: Nation ID (int), Value: Nation Name (str)
-NATION_LOOKUP: dict[int, str] = {
+NATION_LOOKUP: Dict[int, str] = {
     0: "None",
     1: "Germany",
     2: "Finland",
@@ -179,7 +181,7 @@ NATION_LOOKUP: dict[int, str] = {
 
 # Explicitly declared lookup for Unit Status/Type
 # Key: Status Integer, Value: Status Description
-UNIT_SPECIAL_LOOKUP: dict[int, str] = {
+UNIT_SPECIAL_LOOKUP: Dict[int, str] = {
     0: "None",
     1: "Guards",
     2: "Axis-Elite",
@@ -193,7 +195,7 @@ UNIT_SPECIAL_LOOKUP: dict[int, str] = {
 
 # Explicitly declared lookup for WiTE2 Device Types
 # Key: Device Type Integer, Value: Description String
-DEVICE_TYPE_LOOKUP: dict[int, str] = {
+DEVICE_TYPE_LOOKUP: Dict[int, str] = {
     0: "Aircraft Cannon",
     1: "Man Weapon",
     2: "Squad Weapon",
@@ -230,7 +232,7 @@ DEVICE_TYPE_LOOKUP: dict[int, str] = {
 
 # Explicitly declared lookup for WiTE2 HQ Types
 # Key: HQ Type Integer, Value: Description String
-HQ_TYPE_LOOKUP: dict[int, str] = {
+HQ_TYPE_LOOKUP: Dict[int, str] = {
     0: "None",
     1: "HighCom (High Command)",
     2: "AG/Front (Army Group/Front)",
@@ -252,7 +254,7 @@ def get_hq_type_description(type_code: int) -> str:
 
 # Explicitly declared lookup for WiTE2 Ground Element Types
 # Key: Type ID (int), Value: Description (str)
-GROUND_ELEMENT_TYPE_LOOKUP: dict[int, str] = {
+GROUND_ELEMENT_TYPE_LOOKUP: Dict[int, str] = {
     1: "Rifle Squad",
     2: "Inf-AntiTank",
     3: "Cavalry Squad",
@@ -377,7 +379,7 @@ GROUND_ELEMENT_TYPE_LOOKUP: dict[int, str] = {
 
 # Explicitly declared lookup for WiTE2 Device Sizes
 # Key: Size Integer, Value: Category Description
-DEVICE_SIZE_LOOKUP: dict[int, str] = {
+DEVICE_SIZE_LOOKUP: Dict[int, str] = {
     1: "Infantry, MGs, Mortars, Lt/Md Artillery, AT/AA Guns",
     2: "Hvy Artillery, AT/AA Guns",
     3: "Lt Tanks, Armoured Cars, Assault Guns, Hvy Artillery",
@@ -400,7 +402,7 @@ def get_device_size_description(size_code: int) -> str:
 
 # Explicitly declared lookup for WiTE2 Device Face Types
 # Key: Face Type Integer, Value: Orientation Description
-DEVICE_FACE_TYPE_LOOKUP: dict[int, str] = {
+DEVICE_FACE_TYPE_LOOKUP: Dict[int, str] = {
     0: "Fwd",  # (forward)",
     1: "Side",
     2: "Rear",
@@ -412,6 +414,3 @@ DEVICE_FACE_TYPE_LOOKUP: dict[int, str] = {
     11: "Int",  # (Internal bomb load)",
     12: "Ext",  # (external bomb load)"
 }
-
-
-

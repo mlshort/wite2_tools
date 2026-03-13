@@ -1,24 +1,40 @@
 """
     module still work-in-progress
 """
+import os
 from typing import Dict, Any, List, Tuple, TypedDict
-
 
 # Direct import to bypass __init__ export issues
 from wite2_tools.generator import (
     CSVListStream,
-    CSVDictStream,
-    get_csv_dict_stream,
     get_csv_list_stream
 )
-from wite2_tools.utils.parsing import parse_int, parse_str
+from wite2_tools.utils.parsing import parse_row_int, parse_row_str
 from wite2_tools.utils import get_ob_suffix, format_ref
-from wite2_tools.models import GndColumn
+from wite2_tools.utils import get_logger
+from wite2_tools.models import (
+    G_ID_COL,
+    G_NAME_COL,
+    G_TYPE_COL
+)
+from wite2_tools.models import (
+    U_ID_COL,
+    U_NAME_COL,
+    U_TYPE_COL,
+    U_TRUCK_COL,
+    U_SQD0_COL,
+    U_SQD_NUM0_COL,
+    U_SUPPORT_COL,
+    U_SPT_NEED_COL,
+    U_HQ_SUPPORT_COL
+)
 from wite2_tools.constants import (
     MAX_SQUAD_SLOTS,
     GrdElementType
 )
 
+# Initialize the logger for this specific module
+log = get_logger(__name__)
 
 # WITE2 Ground Element Data (Complete IDs 1-118)
 # Format: {ID: {"name": str, "cv": int, "supNeed": int, "targetType": str}}
@@ -155,38 +171,46 @@ class OBStatsResult(TypedDict):
     total_support: int
     details: List[OBComposition]
 
-def _calc_ob_stats_for_row(ob_row: Dict[str, str],
-                           element_stats: Dict[int, Dict[str, Any]])->OBStatsResult:
+
+def _calc_ob_stats_for_row(ob_row: List[str],
+                           header: List[str],
+                           element_stats: Dict[int, Dict[str, Any]]
+                           )->OBStatsResult:
     """
-    Calculates total CV and Support for a single OB template row.
+    Calculates total CV and Support for a single OB template list row.
     Maps ob.csv 'sqd 0-31' to ground.csv 'id'.
     """
     total_cv = 0
     total_support = 0
     composition:List[OBComposition] = []
 
+    id_idx = header.index('id')
+    name_idx = header.index('name')
+
     # Iterate through the 32 equipment slots in the OB file
+    # (Leaving this dynamic since we aren't importing ObColumn here yet)
     for i in range(MAX_SQUAD_SLOTS):
         gid_key = f'sqd {i}'
         qty_key = f'sqdNum{i}'
 
-        gid = parse_int(ob_row.get(gid_key))
-        qty = parse_int(ob_row.get(qty_key))
+        if gid_key in header and qty_key in header:
+            gid = parse_row_int(ob_row, header.index(gid_key))
+            qty = parse_row_int(ob_row, header.index(qty_key))
 
-        if gid and gid in element_stats and qty > 0:
-            stats = element_stats[gid]
-            total_cv += stats['cv'] * qty
-            total_support += stats['sup'] * qty
+            if gid and gid in element_stats and qty > 0:
+                stats = element_stats[gid]
+                total_cv += stats['cv'] * qty
+                total_support += stats['sup'] * qty
 
-            composition.append({
-                "name": stats['name'],
-                "qty": qty,
-                "subtotal_sup": stats['sup'] * qty
-            })
+                composition.append({
+                    "name": stats['name'],
+                    "qty": qty,
+                    "subtotal_sup": stats['sup'] * qty
+                })
 
     return {
-        "id": parse_int(ob_row.get('id')),
-        "name": parse_str(ob_row.get('name')),
+        "id": parse_row_int(ob_row, id_idx),
+        "name": parse_row_str(ob_row, name_idx),
         "total_cv": total_cv,
         "total_support": total_support,
         "details": composition
@@ -194,65 +218,53 @@ def _calc_ob_stats_for_row(ob_row: Dict[str, str],
 
 
 def _calc_unit_needed_support_for_row(
-    unit_row: Dict[str, str],
+    unit_row: List[str],
     element_stats: Dict[int, Dict[str, Any]]
 ) -> Dict[str, Any]:
     """
-    Calculates 'Needed Support' for a unit by processing a single CSV row.
-    Maps 'sqd.u0-31' (WID) to element_stats lookup.
+    Calculates 'Needed Support' for a unit by processing a single CSV list row.
+    Strictly uses UnitColumn schema for indexing.
     """
     active_cv: int = 0
     total_needed_sup: int = 0
     breakdown: List[Dict[str, Any]] = []
 
-    # Process 32 equipment slots (u0-u31 and n0-n31)
+    # Process 32 equipment slots using strict schema indices
     for i in range(MAX_SQUAD_SLOTS):
-        u_key = f'sqd.u{i}'
-        n_key = f'sqd.num{i}'
+        wid = parse_row_int(unit_row, U_SQD0_COL + (i * 8))
+        qty = parse_row_int(unit_row, U_SQD_NUM0_COL + (i * 8))
 
-        # Extract WID and Quantity from the row
-        wid_val = unit_row.get(u_key)
-        qty_val = unit_row.get(n_key, '0')
+        if wid and wid in element_stats and qty > 0:
+            stats = element_stats[wid]
+            sub_cv = stats['cv'] * qty
+            sub_sup = stats['sup'] * qty
 
-        # Ensure values exist and map to our stats table
-        if wid_val and wid_val.isdigit():
-            wid = int(wid_val)
-            qty = int(qty_val) if qty_val.isdigit() else 0
+            active_cv += sub_cv
+            total_needed_sup += sub_sup
 
-            if wid in element_stats and qty > 0:
-                stats = element_stats[wid]
-                sub_cv = stats['cv'] * qty
-                sub_sup = stats['sup'] * qty
-
-                active_cv += sub_cv
-                total_needed_sup += sub_sup
-
-                breakdown.append({
-                    "element": stats['name'],
-                    "qty": qty,
-                    "cv": sub_cv,
-                    "support_needed": sub_sup
-                })
+            breakdown.append({
+                "element": stats['name'],
+                "qty": qty,
+                "cv": sub_cv,
+                "support_needed": sub_sup
+            })
 
     return {
-        "unit_id": unit_row.get('id', 'Unk'),
-        "name": unit_row.get('name', 'Unkn'),
+        "unit_id": parse_row_int(unit_row, U_ID_COL),
+        "name": parse_row_str(unit_row, U_NAME_COL, "Unkn"),
         "total_active_cv": active_cv,
         "total_needed_support": total_needed_sup,
         "breakdown": breakdown
     }
 
 
+# pylint: disable=too-many-statements, too-many-branches, too-many-locals
 def calc_unit_support(ob_file_path: str,
                       unit_file_path: str,
                       ground_file_path: str,
                       unit_id: int) -> int:
     """
     Calculates Support and Need for a specific Unit ID from unit.csv.
-
-    Args:
-        csv_path (str): Path to the *_unit.csv file.
-        unit_id (int): The unique ID of the unit to calculate.
     """
     calc_unit_spt_need: int = 0
     calc_unit_spt: int = 0
@@ -261,77 +273,82 @@ def calc_unit_support(ob_file_path: str,
     actual_hq_spt: int = 0
 
     unit_found = False
-
-# Define the variable with type hints before the assignment
     ground_info: Dict[int, Tuple[str, int]] = {}
 
+    if not os.path.isfile(ob_file_path):
+        log.error("Error: The file '%s' was not found.", ob_file_path)
+        return -1
+
+    if not os.path.isfile(unit_file_path):
+        log.error("Error: The file '%s' was not found.", unit_file_path)
+        return -1
+
     try:
-       # 1. Process Ground Elements using index-based reader to avoid 'id' collision
+        # 1. Process Ground Elements
         gnd_stream: CSVListStream = get_csv_list_stream(ground_file_path)
 
-        # Find indices manually to be safe
-        # id is index 0, name is index 1, type is index 3
         for _, g_row in gnd_stream.rows:
-            g_id = parse_int(g_row[GndColumn.ID])
-            g_elem_type = parse_int(g_row[GndColumn.TYPE])
+            g_id = parse_row_int(g_row, G_ID_COL)
+            g_elem_type = parse_row_int(g_row, G_TYPE_COL)
 
             if g_id == 0 or g_elem_type == 0:
                 continue
             ground_info[g_id] = (
-                g_row[GndColumn.NAME],
+                parse_row_str(g_row, G_NAME_COL),
                 g_elem_type
             )
 
-        unit_stream: CSVDictStream = get_csv_dict_stream(unit_file_path)
-        # pylint:disable = C0103
+        # 2. Process Units
+        unit_stream: CSVListStream = get_csv_list_stream(unit_file_path)
+
+        # Pre-calculate dynamic squad slot indices safely using Schema Enum
+        u_sqd_indices: List[Tuple[int, int]] = [
+            (U_SQD0_COL + (i * 8), U_SQD_NUM0_COL + (i * 8))
+            for i in range(MAX_SQUAD_SLOTS)
+        ]
+
+        # pylint: disable=invalid-name
         sptNeed_per_truck = 0.5
 
         for _, row in unit_stream.rows:
-            uid = parse_int(row.get('id'))
+
+            uid = parse_row_int(row, U_ID_COL)
             if uid == unit_id:
                 unit_found = True
 
-                # you have to get the unit's type to find its ob
-                # for its suffix to build the full_name
-                u_type = parse_int(row.get('type'))
+                u_type = parse_row_int(row, U_TYPE_COL)
                 u_suffix = get_ob_suffix(ob_file_path, u_type)
-                u_name = parse_str(row.get('name'))
+                u_name = parse_row_str(row, U_NAME_COL)
                 u_full_name = f"{u_name} {u_suffix}"
 
                 ref = format_ref("UID", uid, u_full_name)
                 print(f"\n--- Support for {ref} ---")
-
-                        # Print Header for the Console Output
                 print(f"\n{'Slot':^8} | {'Qty':>4} | {'Name':20.20} | "
-                      f"{'Type':4} | {'Need(ea)':8} | {'Slot Need':4}"
-                      )
-
+                      f"{'Type':4} | {'Need(ea)':8} | {'Slot Need':4}")
                 print("-" * 75)
 
-                u_vehicles = parse_int(row.get('truck'))
-                # these values are read in directly from the _unit.csv
-                actual_spt_need = parse_int(row.get('sptNeed'))
-                actual_spt = parse_int(row.get('support'))
-                actual_hq_spt = parse_int(row.get('hqSupport'))
+                u_vehicles = parse_row_int(row, U_TRUCK_COL)
+                actual_spt_need = parse_row_int(row, U_SPT_NEED_COL)
+                actual_spt = parse_row_int(row, U_SUPPORT_COL)
+                actual_hq_spt = parse_row_int(row, U_HQ_SUPPORT_COL)
+
                 # pylint: disable=C0103
                 slot_sptNeed: int = 0
 
-                # Iterate through the 32 equipment slots
-                for i in range(MAX_SQUAD_SLOTS):
-                    g_id = parse_int(row.get(f'sqd.u{i}'))
-                    g_elem_qty = parse_int(row.get(f'sqd.num{i}'))
+                # Iterate through the pre-calculated equipment slots
+                for i, (sqd_u_idx, sqd_num_idx) in enumerate(u_sqd_indices):
+                    g_id = parse_row_int(row, sqd_u_idx)
+                    g_elem_qty = parse_row_int(row, sqd_num_idx)
 
                     if g_id != 0 and g_id in ground_info:
-                    # need to get _ground[g_id].type to
-                    # reference correct ELEMENT_DATA
                         g_info = ground_info[g_id]
                         g_elem_type = g_info[1]
 
                         if g_elem_type in ELEMENT_DATA and g_elem_qty > 0:
-                            data = ELEMENT_DATA[g_elem_type]
+                            data: Tuple[str, int, int, str] = ELEMENT_DATA[g_elem_type]
 
-                            if g_elem_type == GrdElementType.SUPPORT:
-                               calc_unit_spt += g_elem_qty
+                            if g_elem_type == GrdElementType.SUPPORT.value:
+                                calc_unit_spt += g_elem_qty
 
                             elem_type_sptNeed = data[2]
                             slot_sptNeed = int(g_elem_qty * elem_type_sptNeed / 10)
@@ -345,15 +362,12 @@ def calc_unit_support(ob_file_path: str,
 
                 if u_vehicles > 0:
                     slot_sptNeed = int(u_vehicles * sptNeed_per_truck / 10)
-                    vehicle_type = GrdElementType.VEHICLE
-                    print(f"Slot {"-":2}: | {u_vehicles:4} | {"Vehicles":20} | {vehicle_type:4} "
+                    vehicle_type = GrdElementType.VEHICLE.value
+                    print(f"Slot {'-':2}: | {u_vehicles:4} | {'Vehicles':20} | {vehicle_type:4} "
                           f"| {sptNeed_per_truck/10:>8.2f} | {slot_sptNeed:6}")
 
                     calc_unit_spt_need += slot_sptNeed
                 break
-
-    except FileNotFoundError as e:
-        print(f"Error: Could not find file - {e.filename}")
 
     except Exception as e:
         print(f"An error occurred: {e}")
@@ -364,15 +378,11 @@ def calc_unit_support(ob_file_path: str,
 
     print("-" * 75)
     calc_unit_spt += actual_hq_spt
-    print(f"{"CALCULATED SUPPORT:":24} {calc_unit_spt:5}"
-          f"    {"actual support:":20} {actual_spt:5} (in-game) "
-          )
-        #print(f"  Difference: {diff}   Difference(%): {perc_diff:.2%}")
+    print(f"{'CALCULATED SUPPORT:':24} {calc_unit_spt:5}"
+          f"    {'actual support:':20} {actual_spt:5} (in-game) ")
 
-    print(f"{"CALCULATED SUPPORT NEED:":24} {calc_unit_spt_need:5}"
-          f"    {"actual support need:":20} {actual_spt_need:5} (in-game) "
-          )
-        #print(f"  Difference: {diff}   Difference(%): {perc_diff:.2%}")
+    print(f"{'CALCULATED SUPPORT NEED:':24} {calc_unit_spt_need:5}"
+          f"    {'actual support need:':20} {actual_spt_need:5} (in-game) ")
     print("\n")
 
     if calc_unit_spt_need > calc_unit_spt:
@@ -383,48 +393,51 @@ def calc_unit_support(ob_file_path: str,
 
     return calc_unit_spt_need
 
-def calc_unit_stats(unit_file_path: str,
-                    unit_id: int) -> tuple[int, int] | None:
-    """
-    Calculates total CV and supNeed for a specific Unit ID from unit.csv.
 
-    Args:
-        csv_path (str): Path to the *_unit.csv file.
-        unit_id (int): The unique ID of the unit to calculate.
+def calc_unit_stats(unit_file_path: str,
+                    unit_id: int) -> Tuple[int, int] | None:
+    """
+    Calculates total CV and Spt Need for a specific Unit ID from unit.csv.
     """
     total_cv = 0
     total_sup = 0
     unit_found = False
 
-    unit_stream: CSVDictStream = get_csv_dict_stream(unit_file_path)
+    if not os.path.isfile(unit_file_path):
+        log.error("Error: The file '%s' was not found.", unit_file_path)
+        return None
+
+    unit_stream: CSVListStream = get_csv_list_stream(unit_file_path)
+
+    u_sqd_indices: List[Tuple[int, int]] = [
+        (U_SQD0_COL + (i * 8), U_SQD_NUM0_COL + (i * 8))
+        for i in range(MAX_SQUAD_SLOTS)
+    ]
 
     for _, row in unit_stream.rows:
-        uid = parse_int(row.get('id'))
+        uid = parse_row_int(row, U_ID_COL)
         if uid == unit_id:
             unit_found = True
-            print(f"--- Stats for Unit: {row['name']} (ID: {unit_id}) ---")
+            u_name = parse_row_str(row, U_NAME_COL)
+            print(f"--- Stats for Unit: {u_name} (ID: {unit_id}) ---")
 
-            # Iterate through the 32 equipment slots
-            for i in range(MAX_SQUAD_SLOTS):
-                u_id_str = row.get(f'sqd.u{i}')
-                qty_str = row.get(f'sqd.num{i}')
+            # Iterate through the pre-calculated equipment slots
+            for i, (sqd_u_idx, sqd_num_idx) in enumerate(u_sqd_indices):
+                ground_id = parse_row_int(row, sqd_u_idx)
+                qty = parse_row_int(row, sqd_num_idx)
 
-                if u_id_str and u_id_str.strip():
-                    ground_id = int(u_id_str)
-                    qty = int(qty_str) if qty_str else 0
+                if ground_id in ELEMENT_DATA and qty > 0:
+                    data = ELEMENT_DATA[ground_id]
+                    slot_cv = qty * data[1]
+                    slot_sup = qty * data[2]
 
-                    if ground_id in ELEMENT_DATA and qty > 0:
-                        data = ELEMENT_DATA[ground_id]
-                        slot_cv = qty * data[1]
-                        slot_sup = qty * data[2]
+                    total_cv += slot_cv
+                    total_sup += slot_sup
 
-                        total_cv += slot_cv
-                        total_sup += slot_sup
-
-                        print(
-                            f"Slot {i:2}: {data[0]:20} | Qty: {qty:4} "
-                            f"| CV: {slot_cv:5} | Sup: {slot_sup:5}"
-                        )
+                    print(
+                        f"Slot {i:2}: {data[0]:20} | Qty: {qty:4} "
+                        f"| CV: {slot_cv:5} | Sup: {slot_sup:5}"
+                    )
             break
 
     if not unit_found:
@@ -435,8 +448,3 @@ def calc_unit_stats(unit_file_path: str,
     print(f"TOTAL COMBAT VALUE: {total_cv}")
     print(f"TOTAL SUPPORT NEED: {total_sup}")
     return total_cv, total_sup
-
-
-# Example usage:
-#if __name__ == "__main__":
-#    calc_unit_needed_support(OB_FILE, UNIT_FILE, GROUND_FILE, 180)

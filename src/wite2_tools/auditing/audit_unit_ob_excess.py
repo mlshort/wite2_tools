@@ -15,6 +15,7 @@ from wite2_tools.constants import MAX_SQUAD_SLOTS
 log = get_logger(__name__)
 
 
+# pylint: disable= too-many-locals, too-many-branches, too-many-statements
 def audit_unit_ob_excess(
     unit_file_path: str,
     ob_file_path: str,
@@ -28,11 +29,11 @@ def audit_unit_ob_excess(
     # 1. Map OB IDs to their authorized composition
     ob_templates: Dict[int, Dict[int, int]] = {}
 
-    if not os.path.exists(unit_file_path):
+    if not os.path.isfile(unit_file_path):
         log.error("Error: The file '%s' was not found.", unit_file_path)
         return -1
 
-    if not os.path.exists(ob_file_path):
+    if not os.path.isfile(ob_file_path):
         log.error("Error: The file '%s' was not found.", ob_file_path)
         return -1
 

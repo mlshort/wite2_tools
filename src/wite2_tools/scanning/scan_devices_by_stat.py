@@ -16,7 +16,7 @@ from typing import List, Dict, Any
 from wite2_tools.generator import get_csv_list_stream
 from wite2_tools.models import DevColumn
 from wite2_tools.utils import get_logger
-from wite2_tools.utils import parse_int
+from wite2_tools.utils import parse_row_int
 
 # Initialize the log for this specific module
 log = get_logger(__name__)
@@ -45,9 +45,8 @@ def scan_devices_by_stat(
         dev_stream = get_csv_list_stream(device_file_path)
 
         for _, row in dev_stream.rows:
-            # Use the Enum to safely access the column index
 
-            val = parse_int(row[stat_col])
+            val = parse_row_int(row, stat_col)
 
             if val >= min_value:
                 device_info = {

@@ -37,29 +37,35 @@ Example:
 
 import os
 from collections import defaultdict
-from typing import cast, Optional, Union, Iterable, Dict, List
+from typing import Union, Dict, List, Tuple
 from functools import cache
 
 # Internal package imports
-from wite2_tools.core.unit import UnitData
-from wite2_tools.generator import get_csv_dict_stream
+from wite2_tools.config import NatData, normalize_nat_codes, make_hashable
+from wite2_tools.models.unit import UnitData
+from wite2_tools.models import (
+    U_ID_COL,
+    U_NAME_COL,
+    U_NAT_COL,
+    U_TYPE_COL
+)
+from wite2_tools.generator import get_csv_list_stream
 from wite2_tools.utils import (
     get_logger,
     get_nat_abbr,
-    parse_int,
-    parse_str
+    parse_row_int,
+    parse_row_str
 )
 
 # Initialize the log for this specific module
 log = get_logger(__name__)
 
 
-@cache
 def group_units_by_ob(
     unit_file_path: str,
     active_only: bool = True,
-    nat_codes: Optional[Union[int, str, Iterable[Union[int, str]]]] = None
-) -> Dict[int, list[UnitData]]:
+    nat_codes: NatData = None
+) -> Dict[int, List[UnitData]]:
     """
     Groups units by TOE(OB) ID with optional nationality filtering.
 
@@ -73,32 +79,37 @@ def group_units_by_ob(
                 None.
 
     Returns:
-        dict[int, list[Unit]]: A dictionary mapping the TOE(OB) ID to a list of
+        Dict[int, List[Unit]]: A dictionary mapping the TOE(OB) ID to a list of
                 matching Unit objects.
     """
+
+    hash_nat = make_hashable(nat_codes)
+    return _group_units_by_ob(unit_file_path, active_only, hash_nat)
+
+
+@cache
+def _group_units_by_ob(
+    unit_file_path: str,
+    active_only: bool = True,
+    nat_codes: Union[int, str, Tuple[int, ...], None] = None
+) -> Dict[int, List[UnitData]]:
+
     ob_ids_to_units: Dict[int, List[UnitData]] = defaultdict(list)
 
     # Standardize nation_id to a set for efficient lookup
-    if nat_codes is not None:
-        if isinstance(nat_codes, (int, str)):
-            nat_filter = {int(nat_codes)}
-        else:
-            nat_filter = {int(n) for n in nat_codes}
-    else:
-        nat_filter = None
+    nat_filter = normalize_nat_codes(nat_codes)
 
-    if not os.path.exists(unit_file_path):
+    if not os.path.isfile(unit_file_path):
         log.error("Error: The file '%s' was not found.", unit_file_path)
         return dict(ob_ids_to_units)
 
     try:
-        unit_stream = get_csv_dict_stream(unit_file_path)
+        unit_stream = get_csv_list_stream(unit_file_path)
 
-        for item in unit_stream.rows:
-            _, row = cast(tuple[int, dict], item)
+        for _, row in unit_stream.rows:
 
-            utype = parse_int(row.get("type"))
-            u_nat = parse_int(row.get("nat"))
+            utype = parse_row_int(row, U_TYPE_COL)
+            u_nat = parse_row_int(row, U_NAT_COL)
 
             # Apply filters: Activity and Nationality
             if active_only and utype == 0:
@@ -106,8 +117,8 @@ def group_units_by_ob(
             if nat_filter is not None and u_nat not in nat_filter:
                 continue
 
-            uid = parse_int(row.get("id"))
-            uname = parse_str(row.get('name'), 'Unk')
+            uid = parse_row_int(row, U_ID_COL)
+            uname = parse_row_str(row, U_NAME_COL, 'Unk')
 
             unit = UnitData(uid=uid, name=uname, utype=utype, nat=u_nat)
             ob_ids_to_units[utype].append(unit)

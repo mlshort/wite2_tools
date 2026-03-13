@@ -46,19 +46,24 @@ from functools import cache
 from dataclasses import dataclass
 
 # Internal package imports
-from wite2_tools.models import GndColumn
+from wite2_tools.models import (
+    G_ID_COL,
+    G_NAME_COL,
+    O_ID_COL,
+    O_NAME_COL,
+    O_SUFFIX_COL
+)
 from wite2_tools.generator import (
-    get_csv_dict_stream,
-    get_csv_list_stream,
+    CSVListStream,
+    get_csv_list_stream
 )
 
-# DEVELOPER NOTE:
-# _ground.csv contains duplicate header names (e.g., multiple "Weapon" cols).
-# To prevent DictReader from overwriting data, we must use get_csv_list_stream
-# and resolve indices via the GndColumn Enum.
 
 from wite2_tools.utils.logger import get_logger
-from wite2_tools.utils.parsing import parse_int, parse_str
+from wite2_tools.utils.parsing import (
+    parse_row_int,
+    parse_row_str
+)
 from wite2_tools.utils.lookups import (
     OB_COMBAT_CLASS_LOOKUP,
     OB_TYPE_LOOKUP,
@@ -97,18 +102,19 @@ def _build_ob_lookup(ob_file_path: str) -> Dict[int, ObName]:
     """
     lookup: Dict[int, ObName] = {}
 
-    if not os.path.exists(ob_file_path):
+    if not os.path.isfile(ob_file_path):
         log.error("TOE(OB) file not found: %s", ob_file_path)
         return lookup
 
     try:
-        ob_stream = get_csv_dict_stream(ob_file_path)
+        ob_stream: CSVListStream = get_csv_list_stream(ob_file_path)
 
         for _, row in ob_stream.rows:
-            ob_id:int = parse_int(row.get("id"))
+
+            ob_id:int = parse_row_int(row, O_ID_COL)
             if ob_id != 0:
-                ob_name:str = parse_str(row.get('name'), '')
-                ob_suffix:str = parse_str(row.get('suffix'), '')
+                ob_name:str = parse_row_str(row, O_NAME_COL)
+                ob_suffix:str = parse_row_str(row, O_SUFFIX_COL)
 
                 lookup[ob_id] = ObName(
                     name=ob_name,
@@ -127,7 +133,7 @@ def get_ob_name(ob_file_path: str, ob_id_to_find: int) -> str:
     Public API: Resolves an TOE(OB) ID to a name.
     """
     # 1. Retrieve the cached dictionary
-    cached_dict = _build_ob_lookup(ob_file_path)
+    cached_dict: Dict[int, ObName] = _build_ob_lookup(ob_file_path)
 
     # 2. Perform instant O(1) lookup
     result = cached_dict.get(ob_id_to_find)
@@ -143,7 +149,7 @@ def get_ob_suffix(ob_file_path: str, ob_id_to_find: int) -> str:
     Public API: Resolves an TOE(OB) ID to its suffix.
     """
     # 1. Retrieve the cached dictionary
-    cached_dict = _build_ob_lookup(ob_file_path)
+    cached_dict: Dict[int, ObName] = _build_ob_lookup(ob_file_path)
 
     # 2. Perform instant O(1) lookup
     result = cached_dict.get(ob_id_to_find)
@@ -159,7 +165,7 @@ def get_ob_full_name(ob_file_path: str, ob_id_to_find: int) -> str:
     Public API: Resolves an TOE(OB) ID to a full name.
     """
     # 1. Retrieve the cached dictionary
-    cached_dict = _build_ob_lookup(ob_file_path)
+    cached_dict: Dict[int, ObName] = _build_ob_lookup(ob_file_path)
 
     # 2. Perform instant O(1) lookup
     result = cached_dict.get(ob_id_to_find)
@@ -176,8 +182,7 @@ def get_ob_combat_class_name(ob_class_val: int) -> str:
     Retrieves the description for a specific Combat Class code.
     Returns 'Unk ' if the code is not found.
     """
-    result = OB_COMBAT_CLASS_LOOKUP.get(ob_class_val, f"Unk ({ob_class_val})")
-    return result
+    return OB_COMBAT_CLASS_LOOKUP.get(ob_class_val, f"Unk ({ob_class_val})")
 
 
 def get_ob_type_code_name(ob_type_code: int) -> str:
@@ -213,24 +218,22 @@ def _build_ground_elem_lookup(ground_file_path: str) -> Dict[int, str]:
     """
     lookup: Dict[int, str] = {}
 
-    if not os.path.exists(ground_file_path):
+    if not os.path.isfile(ground_file_path):
         log.error("Ground file not found: '%s'", ground_file_path)
         return lookup
 
     try:
         # Use list generator to handle duplicate 'id' column names safely
-        gnd_stream = get_csv_list_stream(ground_file_path)
-
-        if gnd_stream.header is None:
-            return lookup
+        gnd_stream: CSVListStream = get_csv_list_stream(ground_file_path)
 
         for _, row in gnd_stream.rows:
+
             try:
                 # Ensure GndColumn values are integers for list indexing
-                g_id = parse_int(row[GndColumn.ID])
+                g_id = parse_row_int(row, G_ID_COL)
                 if g_id != 0:
                     # Capture the name based on the specific column index
-                    g_name = parse_str(row[GndColumn.NAME], "")
+                    g_name = parse_row_str(row, G_NAME_COL)
                     lookup[g_id] = g_name
             except (ValueError, IndexError):
                 # ValueError: parse_int failed; IndexError: row is too short
@@ -248,7 +251,7 @@ def get_ground_elem_type_name(ground_file_path: str,
     Public API: Resolves a Ground Element WID to its name via O(1) lookup.
     """
     # 1. Retrieve the cached dictionary
-    cached_dict = _build_ground_elem_lookup(ground_file_path)
+    cached_dict: Dict[int, str] = _build_ground_elem_lookup(ground_file_path)
 
     # 2. Perform instant O(1) lookup
     return cached_dict.get(wid_to_find, f"Unk ({wid_to_find})")

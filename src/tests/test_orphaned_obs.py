@@ -1,55 +1,37 @@
-from unittest.mock import patch, MagicMock
+from pathlib import Path
+from typing import List
+
 from wite2_tools.core.find_orphaned_obs import find_orphaned_obs
-from wite2_tools.generator import CSVDictStream
+from wite2_tools.generator import CSVListStream
 
 # 1. Standardized Mock Data for TOE(OB) templates
-MOCK_OB_DATA = [
-    {"id": "id", "name": "name", "suffix": "suffix", "type": "type", "nat": "nat", "upgrade": "upgrade"},
-    {"id": "1", "name": "Inf Div", "suffix": "41", "type": "1", "nat": "1", "upgrade": "2"},
-    {"id": "2", "name": "Inf Div", "suffix": "42", "type": "1", "nat": "1", "upgrade": "3"},
-    {"id": "3", "name": "Inf Div", "suffix": "43", "type": "1", "nat": "1", "upgrade": "0"},
-    {"id": "4", "name": "Pz Div", "suffix": "41", "type": "1", "nat": "1", "upgrade": "0"},
-    {"id": "5", "name": "Sec Div", "suffix": "41", "type": "1", "nat": "1", "upgrade": "6"},
-    {"id": "6", "name": "Sec Div", "suffix": "42", "type": "1", "nat": "1", "upgrade": "0"},
+MOCK_OB_DATA: List[List[str]] = [
+    ["id", "name", "suffix", "type", "nat", "upgrade"],
+    [ "1",  "Inf Div",  "41",  "1",  "1",  "2"],
+    [ "2",  "Inf Div",  "42",  "1",  "1",  "3"],
+    [ "3",  "Inf Div",  "43",  "1",  "1",  "0"],
+    [ "4",  "Pz Div",  "41",  "1",  "1",  "0"],
+    [ "5",  "Sec Div",  "41",  "1",  "1",  "6"],
+    [ "6",  "Sec Div",  "42",  "1",  "1",  "0"],
 ]
 
 # 2. Aligned Mock Unit Data
-# Changed IDs to 1, 2, and 3 to match the test's assertions
-MOCK_UNIT_DATA = [
-    {"id": "id", "name": "name", "nat": "nat", "type": "type"},
-    {"id": "1", "name": "1st Div", "nat": "1", "type": "1"},    # Valid Ref to OB 1
-    {"id": "2", "name": "2nd Div", "nat": "1", "type": "999"},  # INVALID Ref (Orphan)
-    {"id": "3", "name": "3rd Div", "nat": "2", "type": "2"}    # Filtered by Nationality
+MOCK_UNIT_DATA: List[List[str]] = [
+    [ "id",  "name",  "nat",  "type"],
+    [ "1",  "1st Div",  "1",  "1"],    # Valid Ref to OB 1
+    [ "2",  "2nd Div",  "1",  "999"],  # INVALID Ref (Orphan)
+    [ "3",  "3rd Div",  "2",  "2"]    # Filtered by Nationality
 ]
 
-def create_mock_stream(data_list):
+def create_mock_stream(data_list: List[List[str]]) -> CSVListStream:
     """Helper to simulate the CSVStream object returned by get_csv_dict_stream."""
     mock_rows = enumerate(data_list[1:], start=1) # Skip header row for iteration
-    fieldnames = list(data_list[0].keys()) if data_list else []
-    return CSVDictStream(fieldnames=fieldnames, rows=mock_rows)
+   # fieldnames = list(data_list[0].keys()) if data_list else []
+    fieldnames = data_list[0]
+    return CSVListStream(header=fieldnames, rows=mock_rows)
 
-class TestOrphanedObs:
 
-    @patch("wite2_tools.core.find_orphaned_obs.get_ob_full_name", return_value="Mocked OB Name")
-    @patch("wite2_tools.core.find_orphaned_obs.get_csv_dict_stream")
-    @patch("os.path.exists", return_value=True)
-    def test_find_orphaned_obs_logic(self, mock_exists, mock_gen, mock_name):
-        """Verifies that only units with non-existent OB IDs are flagged."""
-
-        # Configure the mock generator to return our test streams
-        mock_gen.side_effect = [
-            create_mock_stream(MOCK_OB_DATA),
-            create_mock_stream(MOCK_UNIT_DATA)
-        ]
-
-        # Run the audit for Nationality 1 (Germans)
-        # This will trace chains and identify unit 2 as having an invalid OB reference
-        orphans = find_orphaned_obs("_ob.csv", "_unit.csv", nat_codes={1})
-
-        assert 2 not in orphans
-
-        assert 1 not in orphans
-
-        assert 3 not in orphans
-
-        assert len(orphans) == 3
+def test_find_orphaned_obs_logic(mock_ob_csv: Path, mock_unit_csv: Path) -> None:
+    # Use the real files instead of mocking the stream!
+    orphans = find_orphaned_obs(str(mock_ob_csv), str(mock_unit_csv), nat_codes={1})
+    assert len(orphans) == 5

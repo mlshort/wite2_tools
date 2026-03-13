@@ -1,50 +1,28 @@
+"""
+_unit.csv Mapping Reference:
+| Constant       | CSV Header | Index | Notes                     |
+|----------------|------------|-------|---------------------------|
+| ID_COL         | id         | 0     | Unique Identifier         |
+| NAME_COL       | name       | 1     | Display Name              |
+| TYPE_COL       | type       | 2     | FK: _ob.csv -> id         |
+| NAT_COL        | nat        | 3     | Nationality index         |
+"""
 from enum import IntEnum
-from typing import Dict, List, Union, Any
-
-from wite2_tools.constants import MAX_SQUAD_SLOTS
-
-
-def _generate_unit_columns() -> Dict[str, int]:
-    """Generates the mapping for the UnitColumn IntEnum."""
-    cols: List[str] = [
-        "ID", "NAME", "TYPE", "NAT", "PLAYER", "X", "Y", "LEADER", "MORALE",
-        "DELAY", "HQ", "HHQ", "COMBAT_SUPPORT", "MEN", "SUP", "S_NEED", "MOVED",
-        "MOVE", "CUR", "MOTORIZED", "SUB_TO", "HQ_FUEL", "NEXT", "FRONT", "A_NEED",
-        "AMMO", "CUR_STRAT", "LOADED", "ROLE", "FROZEN", "WITHDRAW", "IN_SUPPLY",
-        "WON", "LOST", "GUARDS", "HQ_SUPPORT", "HQ_SUPPLY", "V_NEED", "TRUCK",
-        "TX", "TY", "FAT", "SYM", "DAM", "DETECT", "MAX_DETECT", "HIDDEN", "FUEL",
-        "F_NEED", "SUPPORT", "SPT_NEED", "ROUTED", "FIGHTING", "AX", "AY", "MAX_TOE",
-        "WAS_STATIC", "BUILD_UP", "RESERVE", "CORPS", "CORPS_GDS", "DIVN0", "DIVN1",
-        "DIVN2", "DIV_GDS0", "DIV_GDS1", "DIV_GDS2", "DIV_WON0", "DIV_WON1", "DIV_WON2",
-        "DIV_LOST0", "DIV_LOST1", "DIV_LOST2", "COMBAT_VALUE0", "COMBAT_VALUE1",
-        "RECON_VALUE0", "RECON_VALUE1", "AIR_HQ", "AIR_SUPPLY_TONS", "AIR_SUPPLY_RG",
-        "WITHDRAW_TURN", "SUPPLY_DUMP_CITY", "AT_CITY", "AMPHIB_PREP", "AMPHIB_ORDERS",
-        "INTERDICT", "TRUCKS_USED", "HQ_CHAIN", "ATX", "ATY", "GARRISON", "HQ_CHANGE",
-        "STACK_TOP", "AWX", "AWY", "AUTO_AV_SUPPORT", "PRIORITY", "AIR_TASK_DETAIL",
-        "PTX", "PTY", "PARA_PREP", "JUMP", "UNIT_ARRIVED", "HQ_COLOR", "RENAME_UNIT",
-        "RENAME_VALID", "RENAME_CONDITION", "COM_PREP", "INFO_LINK", "THEATER_BOX",
-        "TH_BOX_LOCK", "ATTACHED_TO_FORT", "UNIT_TAG_ID", "NO_UNIT_REBUILD"
-    ]
-    # Withdrawal turns (114 to 123)
-    for i in range(5):
-        cols.extend([f"WITH_TURN_{i}", f"WITH_DEST_{i}"])
-    # Squad blocks (124 to 379)
-    sqd_attrs: List[str] = ["U", "NUM", "DIS", "DAM", "FAT", "FIRED", "EXP", "EXP_ACCUM"]
-    for i in range(MAX_SQUAD_SLOTS):
-        for attr in sqd_attrs:
-            cols.append(f"SQD_{attr}{i}")
-    return {name: i for i, name in enumerate(cols)}
-
-# UnitColumn = IntEnum("UnitColumn", _generate_unit_columns())
+from typing import Dict, List, Union, Any, Final
 
 
 class UnitColumn(IntEnum):
     """
-    Column indexes for WiTE2's _unit.csv files
+    Schema for WiTE2's _unit.csv files (380 columns).
+
+    Attributes:
+        ID: Unique unit identifier (Index 0).
+        TYPE: Linkage ID to the _ob.csv table (Index 2).
+        NAT: Nationality index (Index 3).
     """
     ID = 0
     NAME = 1
-    TYPE = 2
+    TYPE = 2  # References _ob.id
     NAT = 3
     PLAYER = 4
     X = 5
@@ -259,6 +237,107 @@ class UnitColumn(IntEnum):
     SQD_U31, SQD_NUM31, SQD_DIS31, SQD_DAM31 = 372, 373, 374, 375
     SQD_FAT31, SQD_FIRED31, SQD_EXP31, SQD_EXP_ACCUM31 = 376, 377, 378, 379
 
+NUM_COLS : Final[int] = len(UnitColumn)
+SQD_SLOTS : Final[int] = 32
+ATTRS_PER_SQD: Final[int] = 8
+
+"""
+Unit Column Aliases
+-------------------
+These constants provide a clean interface for accessing specific indices
+within the _unit.csv structure.
+"""
+ID_COL: Final[int]          = UnitColumn.ID
+NAME_COL: Final[int]        = UnitColumn.NAME
+#: The TYPE_COL maps directly to the 'id' field in the _ob.csv file.
+TYPE_COL: Final[int]        = UnitColumn.TYPE
+NAT_COL : Final[int]        = UnitColumn.NAT
+TRUCK_COL : Final[int]      = UnitColumn.TRUCK
+SUPPORT_COL : Final[int]    = UnitColumn.SUPPORT
+SPT_NEED_COL : Final[int]   = UnitColumn.SPT_NEED
+HQ_SUPPORT_COL : Final[int] = UnitColumn.HQ_SUPPORT
+
+# Interleaved stride (8 attributes per squad slot)
+# pylint: disable=invalid-name
+SQD0_COL: Final[int]           = UnitColumn.SQD_U0
+SQD_NUM0_COL : Final[int]      = UnitColumn.SQD_NUM0
+SQD_DIS0_COL: Final[int]       = UnitColumn.SQD_DIS0
+SQD_DAM0_COL: Final[int]       = UnitColumn.SQD_DAM0
+SQD_FAT0_COL: Final[int]       = UnitColumn.SQD_FAT0
+SQD_FIRED0_COL: Final[int]     = UnitColumn.SQD_FIRED0
+SQD_EXP0_COL: Final[int]       = UnitColumn.SQD_EXP0
+SQD_EXP_ACCUM0_COL: Final[int] = UnitColumn.SQD_EXP_ACCUM0
+
+
+def gen_unit_column_names() -> List[str]:
+    """Generates the mapping for the UnitColumn IntEnum."""
+    cols: List[str] = [
+        "id", "name", "type", "nat", "player", "x", "y", "leader", "morale",
+        "delay", "hq", "hhq", "combatSupport", "men", "sup", "sNeed", "moved",
+        "move", "cur", "motorized", "subTo", "hqFuel", "next", "front", "aNeed",
+        "ammo", "curStrat", "loaded", "role", "frozen", "withdraw", "inSupply",
+        "won", "lost", "guards", "hqSupport", "hqSupply", "vNeed", "truck", "tx",
+        "ty", "fat", "sym", "dam", "detect", "maxDetect", "hidden", "fuel",
+        "fNeed", "support", "sptNeed", "routed", "fighting", "ax", "ay", "maxTOE",
+        "wasStatic", "buildUp", "reserve", "corps", "corpsGds", "divn0", "divn1",
+        "divn2", "divGds0", "divGds1", "divGds2", "divWon0", "divWon1", "divWon2",
+        "divLost0", "divLost1", "divLost2", "combatValue0", "combatValue1",
+        "reconValue0", "reconValue1", "airHq", "airSupplyTons", "airSupplyRg",
+        "withdrawTurn", "supplyDumpCity", "atCity", "amphibPrep", "amphibOrders",
+        "interdict", "trucksUsed", "hqChain", "atx", "aty", "garrison", "hqChange",
+        "stackTop", "awx", "awy", "autoAvSupport", "priority", "airTaskDetail",
+        "ptx", "pty", "paraPrep", "jump", "unitArrived", "hqColor", "renameUnit",
+        "renameValid", "renameCondition", "comPrep", "infoLink", "theaterBox",
+        "thBoxLock", "attachedToFort", "unitTagID", "noUnitRebuild"
+    ]
+    # Withdrawal turns (114 to 123)
+    for i in range(5):
+        cols.extend([f"withTurn {i}", f"withDest {i}"])
+    # Squad blocks (124 to 379)
+    sqd_attrs: List[str] = ["u", "num", "dis", "dam",
+                            "fat", "fired", "exp", "expAccum"]
+    for i in range(SQD_SLOTS):
+        for attr in sqd_attrs:
+            cols.append(f"sqd.{attr}{i}")
+    return cols
+
+
+def gen_default_unit_row(unit_id: int = 0,
+                         name: str = "",
+                         unit_type: int = 0,
+                         nat: int = 0) -> List[str]:
+    """
+    Generates a default 380-column row for a _unit.csv file.
+
+    Args:
+        unit_id (int): The ID for the Unit (Column 0). Defaults to 0.
+        name (str): The name of the Unit (Column 1). Defaults to empty.
+        unit_type (int): The TOE(OB) ID (Column 2). Defaults to 0.
+        nat (int): The nationality ID (Column 3). Defaults to 0.
+
+    Returns:
+        List[str]: A list containing the ID, Name, Type, Nat, and 376 zeroes.
+    """
+    row: List[str] = [str(unit_id), name, str(unit_type), str(nat)]
+
+    # Append 376 zeroes to fill out the remaining columns
+    row.extend(["0"] * 376)
+
+    return row
+
+
+def gen_default_unit_dict(unit_id: int = 0,
+                          name: str = "",
+                          unit_type: int = 0,
+                          nat: int = 0) -> Dict[str, str]:
+    """
+    Generates a default Unit dictionary mapped to schema headers.
+    """
+    headers = gen_unit_column_names()
+    default_row_list = gen_default_unit_row(unit_id, name, unit_type, nat)
+
+    # Zip the 380 headers together with the 380 default values
+    return dict(zip(headers, default_row_list))
 
 # Type alias for a parsed unit record
 # Values are usually int for stats or str for names
@@ -284,7 +363,7 @@ def parse_unit_row(row: List[str]) -> UnitRecord:
             unit_data[col.name] = val
     return unit_data
 
-# 2. Define the Unit Class
+# pylint: disable= too-few-public-methods
 class Unit:
     """
     A dynamic object representation of a WiTE2 Unit.

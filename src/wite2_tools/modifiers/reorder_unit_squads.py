@@ -41,43 +41,67 @@ Functions
     on the row dictionary.
 """
 import os
+from typing import List
 
 # Internal package imports
 from wite2_tools.constants import (
     MAX_SQUAD_SLOTS,
-    MIN_SQUAD_SLOTS,
-    UNIT_SQUAD_PREFIXES
+    MIN_SQUAD_SLOTS
 )
 from wite2_tools.utils import (
     get_logger,
     parse_int
 )
 from wite2_tools.modifiers.base import process_csv_in_place
+from wite2_tools.models import (
+    UnitColumn,
+    U_ID_COL,
+    U_SQD0_COL,
+    ATTRS_PER_SQD
+)
 
 # Initialize the logger for this specific module
 log = get_logger(__name__)
 
 
-def reorder_unit_elems(row: dict, source_slot: int, target_slot: int) -> dict:
+def reorder_unit_elems(row: List[str],
+                       source_slot: int,
+                       target_slot: int) -> List[str]:
     """
-    Moves elements at 'source_slot' to 'target_slot' and shifts others for
-    all 8 associated unit columns.
+    Moves elements at 'source_slot' to 'target_slot' using List indices
+    mapped from the UnitColumn IntEnum.
 
     Args:
-        row (dict): The dictionary representing a single CSV row.
-        source_slot (int): The current index of the squad element.
-        target_slot (int): The destination index for the squad element.
+        row (list): The list representing a single CSV row.
+        source_slot (int): The current offset (0-9).
+        target_slot (int): The destination offset (0-9).
 
     Returns:
-        dict: The modified row dictionary.
-    """""
+        list: The modified row list.
+    """
+    # Define the starting column for each of the 8 associated attribute blocks
+    # We use the '0' index member of each block from the IntEnum
+    attribute_bases : List[int] = [
+        UnitColumn.SQD_U0,
+        UnitColumn.SQD_NUM0,
+        UnitColumn.SQD_DIS0,
+        UnitColumn.SQD_DAM0,
+        UnitColumn.SQD_FAT0,
+        UnitColumn.SQD_FIRED0,
+        UnitColumn.SQD_EXP0,
+        UnitColumn.SQD_EXP_ACCUM0
+    ]
 
-    for prefix in UNIT_SQUAD_PREFIXES:
-        keys = [f"{prefix}{i}" for i in range(MAX_SQUAD_SLOTS)]
-        vals = [row[k] for k in keys]
-        vals.insert(target_slot, vals.pop(source_slot))
-        for i in range(MAX_SQUAD_SLOTS):
-            row[keys[i]] = vals[i]
+
+    # Calculate the exact starting index for both slots
+    source_offset = source_slot * ATTRS_PER_SQD
+    target_offset = target_slot * ATTRS_PER_SQD
+
+    for base_enum in attribute_bases:
+        # Move the data
+        row[base_enum + target_offset] = row[base_enum + source_offset]
+        # Clear the old slot
+        row[base_enum + source_offset] = "0"
 
     return row
 
@@ -120,7 +144,7 @@ def reorder_unit_squads(unit_file_path: str,
                   "(0-31).", target_slot)
         return 0
 
-    if not os.path.exists(unit_file_path):
+    if not os.path.isfile(unit_file_path):
         log.error("Error: The file '%s' was not found.", unit_file_path)
         return -1
 
@@ -128,13 +152,17 @@ def reorder_unit_squads(unit_file_path: str,
     log.info("Reordering squads in '%s' | UNIT ID: %d | WID: %d | To Loc: %d",
              file_name, target_uid, target_wid, target_slot)
 
-    def process_row(row: dict, row_idx: int) -> tuple[dict, bool]:
-        uid = parse_int(row.get("id"))
+
+
+    def process_row(row: List[str], row_idx: int) -> tuple[List[str], bool]:
+        uid = parse_int(row[U_ID_COL])
         if target_uid == uid:
+
             for i in range(MAX_SQUAD_SLOTS):
-                current_sqd_col = f"sqd.u{i}"
-                if current_sqd_col in row:
-                    wid = parse_int(row.get(current_sqd_col))
+                current_sqd_col = U_SQD0_COL + (i * 8)
+
+                if current_sqd_col < len(row):
+                    wid = parse_int(row[current_sqd_col])
                     if wid == target_wid:
                         if i != target_slot:
                             row = reorder_unit_elems(row, i, target_slot)

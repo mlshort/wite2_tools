@@ -1,4 +1,5 @@
 from enum import IntEnum
+from typing import List, Dict
 
 # pylint: disable=invalid-name
 class AirGroupColumn(IntEnum):
@@ -92,3 +93,72 @@ class AirGroupColumn(IntEnum):
     WITH_DEST_3 = 84
     WITH_TURN_4 = 85
     WITH_DEST_4 = 86
+
+
+
+def gen_airgroup_column_names() -> List[str]:
+    """
+    Generates the 87 headers for a _airgroup.csv file dynamically.
+    """
+
+    # 1. Base Properties (Columns 0 to 76)
+    cols: List[str] = [
+        'id', 'name', 'player', 'type', 'airType', 'leader', 'prim', 'subNum',
+        'base', 'startBase', 'mission', 'secMission', 'target', 'passenger',
+        'transferTo', 'traveled', 'subTo', 'subId', 'maxRg', 'trainedAs',
+        'morale', 'exp', 'tactic', 'moved', 'patX', 'patY', 'landing', 'flying',
+        'takeoff', 'assigned', 'ready', 'fueling', 'maint', 'reserve', 'moving',
+        'damaged', 'total', 'altTarget', 'depart0', 'depart1', 'nat', 'delay',
+        'replaceDelay', 'detachment', 'detachedFrom', 'navDev', 'radarDev',
+        'kills', 'changed', 'pilotNum', 'nowReady', 'nowDamaged', 'nowReserve',
+        'nightFly', 'guards', 'withdraw', 'aKills', 'upgradeAllow', 'upgradeDone',
+        'fatigue', 'replaceMode', 'navalTrain', 'navalOnly', 'airTask', 'airHQ',
+        'traveledDay', 'curWS', 'hqChange', 'missionPct', 'trainPct', 'restPct',
+        'groupArrived', 'toTravel', 'airSym', 'infoLink', 'theaterBox', 'thBoxLock'
+    ]
+
+    # 2. Withdrawal Slots (Columns 77 to 86)
+    # 5 pairs of turn/destination arrays
+    for i in range(5):
+        cols.extend([f"withTurn {i}", f"withDest {i}"])
+
+    return cols
+
+def gen_default_airgroup_row(airgroup_id: int = 0,
+                             name: str = "",
+                             nat: int = 0) -> List[str]:
+    """
+    Generates a default 87-column row for a _airgroup.csv file.
+
+    Args:
+        airgroup_id (int): The ID for the Air Group (Column 0). Defaults to 0.
+        name (str): The name of the Air Group (Column 1). Defaults to empty.
+        nat (int): The nationality ID (Column 40). Defaults to 0.
+
+    Returns:
+        List[str]: A list containing the ID, Name, and zeroes mapped to the remaining slots.
+    """
+    # Create the base row: ID and Name
+    row: List[str] = [str(airgroup_id), name]
+
+    # Fill the remaining 85 columns with zeros
+    row.extend(["0"] * 85)
+
+    # If a specific nationality is passed, inject it into index 40
+    if nat != 0:
+        row[40] = str(nat)
+
+    return row
+
+
+def gen_default_airgroup_dict(airgroup_id: int = 0,
+                              name: str = "",
+                              nat: int = 0) -> Dict[str, str]:
+    """
+    Generates a default Air Group dictionary mapped to schema headers.
+    """
+    headers = gen_airgroup_column_names()
+    default_row_list = gen_default_airgroup_row(airgroup_id, name, nat)
+
+    # Zip the 87 headers together with the 87 default values
+    return dict(zip(headers, default_row_list))

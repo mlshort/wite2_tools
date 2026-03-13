@@ -3,10 +3,11 @@ import math
 import os
 from typing import Set
 
-from wite2_tools import get_csv_dict_stream
+from wite2_tools import get_csv_list_stream
 from wite2_tools import ENCODING_TYPE
-from wite2_tools.utils import parse_int
+from wite2_tools.utils import parse_row_int
 from wite2_tools.utils import get_logger
+from wite2_tools.models import DevColumn
 
 # Initialize the log for this specific module
 log = get_logger(__name__)
@@ -22,32 +23,29 @@ def apply_anti_armor_fix_with_validation(device_file_path: str,
     # Track statistics for validation
     stats = {} # {type_id: {'min': val, 'max': val, 'count': 0}}
 
-    if not os.path.exists(device_file_path):
+    if not os.path.isfile(device_file_path):
         log.error("Error: The file '%s' was not found.", device_file_path)
         return -1
 
     # Initialize the generator
-    dev_stream = get_csv_dict_stream(device_file_path)
+    dev_stream = get_csv_list_stream(device_file_path)
 
-    # 1. Grab the reader object first (the first yield in your generator)
-    fieldnames = dev_stream.fieldnames
-
-    # 2. Open output file for writing
+    # 1. Open output file for writing
     with open(output_path, mode='w', encoding=ENCODING_TYPE, newline='') as f_out:
-        writer = csv.DictWriter(f_out, fieldnames=fieldnames)
-        writer.writeheader()
+        writer = csv.writer(f_out)
 
-        # 3. Process rows from the generator
+        # 2. Process rows from the generator
         for _, row in dev_stream.rows:
+
             try:
-                dev_type = parse_int(row.get('type'), -1)
-                dev_pen = parse_int(row.get('pen'))
+                dev_type = parse_row_int(row, DevColumn.TYPE, -1)
+                dev_pen = parse_row_int(row, DevColumn.PEN)
                 # following is experimental !!
                 # Apply fix for specified types
                 if target_types and dev_type in target_types and dev_pen > 0:
                     new_aa = math.floor((dev_pen * 0.8) + 0.5)
                     if apply_fix:
-                        row['antiArmor'] = str(new_aa)
+                        row[DevColumn.ANTI_ARMOR] = str(new_aa)
 
                     # Update validation stats
                     if dev_type not in stats:

@@ -1,18 +1,21 @@
-import pytest
 from pathlib import Path
+import pytest
 
 from wite2_tools.config import ENCODING_TYPE
-from wite2_tools.core.group_units_by_ob import group_units_by_ob
+from wite2_tools.core.group_units_by_ob import (
+    group_units_by_ob,
+    _group_units_by_ob
+)
 
 
 @pytest.fixture(autouse=True)
 def clear_caches()->None:
     """Ensure the @cache is cleared before every test run."""
-    group_units_by_ob.cache_clear()
+    _group_units_by_ob.cache_clear()
 
 
 @pytest.fixture(name="mock_nat_unit_csv")
-def mock_nat_unit_csv(tmp_path:Path)->str:
+def mock_nat_unit_csv(tmp_path:Path)->Path:
     """Creates a mock _unit.csv with multiple nationalities."""
     content = (
         "id,name,type,nat\n"
@@ -24,13 +27,13 @@ def mock_nat_unit_csv(tmp_path:Path)->str:
     )
     file_path = tmp_path / "mock_nat_units.csv"
     file_path.write_text(content, encoding=ENCODING_TYPE)
-    return str(file_path)
+    return file_path
 
 
-def test_group_units_with_single_nat_filter(mock_nat_unit_csv:Path):
+def test_group_units_with_single_nat_filter(mock_nat_unit_csv:Path)->None:
     """Verifies filtering for a single nationality (Germany)."""
     # Act: Filter for Nat 1
-    result = group_units_by_ob(mock_nat_unit_csv, nat_codes=1)
+    result = group_units_by_ob(str(mock_nat_unit_csv), nat_codes=1)
 
     # Assert: Only IDs 1 and 2 should be present
     assert 10 in result
@@ -40,10 +43,10 @@ def test_group_units_with_single_nat_filter(mock_nat_unit_csv:Path):
     assert 20 not in result
 
 
-def test_group_units_with_multiple_nat_filter(mock_nat_unit_csv:Path):
+def test_group_units_with_multiple_nat_filter(mock_nat_unit_csv:Path)->None:
     """Verifies filtering for multiple nationalities (Germany and Italy)."""
     # FIX: Pass a tuple (1, 3) instead of a list [1, 3]
-    result = group_units_by_ob(mock_nat_unit_csv, nat_codes=(1, 3))
+    result = group_units_by_ob(str(mock_nat_unit_csv), nat_codes=(1, 3))
 
     # Assert: German units (Type 10) and Italian units (Type 20) present
     assert 10 in result
@@ -52,10 +55,10 @@ def test_group_units_with_multiple_nat_filter(mock_nat_unit_csv:Path):
     assert not any(u.uid == 3 for u in result[10])
 
 
-def test_group_units_no_filter(mock_nat_unit_csv:Path):
+def test_group_units_no_filter(mock_nat_unit_csv:Path)->None:
     """Verifies behavior when no nationality filter is applied."""
     # Act: No nation_id
-    result = group_units_by_ob(mock_nat_unit_csv)
+    result = group_units_by_ob(str(mock_nat_unit_csv))
 
     # Assert: All active units (IDs 1, 2, 3, 4) should be present
     assert len(result[10]) == 3

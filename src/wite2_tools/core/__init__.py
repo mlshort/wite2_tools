@@ -5,8 +5,8 @@ evolution chains, identifying unreferenced database IDs, and performing
 global inventory calculations across the unit database.
 """
 
-__version__ = "0.5.0"
-__date__ = "2026-03-02"
+__version__ = "0.6.0"
+__date__ = "2026-03-11"
 
 from .exceptions import (
     WiTE2Error,

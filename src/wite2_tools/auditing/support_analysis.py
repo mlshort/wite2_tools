@@ -1,5 +1,4 @@
-from typing import Dict, List, Union, Iterable, Optional
-from collections import namedtuple
+from typing import List, Union, Iterable, Optional
 from wite2_tools.generator import get_csv_dict_stream
 from wite2_tools.models.unit_schema import UnitColumn, Unit
 
@@ -70,10 +69,10 @@ if __name__ == "__main__":
 
 
     # Example path - replace with your actual test file
-    path = "data/scenarios/test_unit.csv"
+    PATH = "data/scenarios/test_unit.csv"
 
     # Correctly mapping the data to the expected type
-    stream = get_csv_dict_stream(path)
+    stream = get_csv_dict_stream(PATH)
     typed_units = [Unit(**row) for _, row in stream.rows]
 
     print_undersupported_units(typed_units)

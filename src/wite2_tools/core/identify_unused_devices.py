@@ -1,22 +1,24 @@
 import os
-from typing import cast
 
-from wite2_tools.generator import get_csv_dict_stream
+from wite2_tools.generator import get_csv_list_stream
 from wite2_tools.utils import (
     get_logger,
-    parse_int,
-    parse_str
+    parse_row_int,
+    parse_row_str
 )
-from wite2_tools.constants import MAX_SQUAD_SLOTS
+from wite2_tools.models.dev_schema import DevColumn
+from wite2_tools.models.gnd_schema import GndColumn
+from wite2_tools.models.aircraft_schema import AcColumn
 
 # Initialize the log for this specific module
 log = get_logger(__name__)
 
 
+# pylint: disable=too-many-branches, too-many-locals
 def identify_unused_devices(ground_file_path: str,
                             aircraft_file_path: str,
                             device_file_path: str,
-                            device_type: int)->int:
+                            device_type: int) -> int:
     """
     Identifies devices of a specific type that are not present in any ground
     unit or aircraft.
@@ -25,15 +27,15 @@ def identify_unused_devices(ground_file_path: str,
     """
     devices_of_type = {}
 
-    if not os.path.exists(ground_file_path):
+    if not os.path.isfile(ground_file_path):
         log.error("Error: The file '%s' was not found.", ground_file_path)
         return -1
 
-    if not os.path.exists(aircraft_file_path):
+    if not os.path.isfile(aircraft_file_path):
         log.error("Error: The file '%s' was not found.", aircraft_file_path)
         return -1
 
-    if not os.path.exists(device_file_path):
+    if not os.path.isfile(device_file_path):
         log.error("Error: The file '%s' was not found.", device_file_path)
         return -1
 
@@ -54,19 +56,18 @@ def identify_unused_devices(ground_file_path: str,
 
     # 1. Identify all devices of the specified type from the device file
     try:
-        device_gen = get_csv_dict_stream(device_file_path)
+        device_gen = get_csv_list_stream(device_file_path)
 
-        for item in device_gen.rows:
-            # Cast the yielded item to satisfy static type checkers
-            _, row = cast(tuple[int, dict], item)
-            d_type = parse_int(row.get("type"))
+        for _, row in device_gen.rows:
+            d_type = parse_row_int(row, DevColumn.TYPE)
+
             if d_type == device_type:
-                d_name = parse_str(row.get('name', "Unk"))
-                d_id = parse_int(row.get('id'))
+                d_name = parse_row_str(row, DevColumn.NAME, default="Unk")
+                d_id = parse_row_int(row, DevColumn.ID)
                 if d_id:
                     devices_of_type[d_id] = d_name
 
-    except (OSError, IOError, ValueError, KeyError) as e:
+    except (OSError, IOError, KeyError) as e:
         log.exception("identify_unused_devices failed: %s", e)
         return -1
 
@@ -74,18 +75,33 @@ def identify_unused_devices(ground_file_path: str,
         print(f"No devices of Type {device_type} found in the device file.")
         return 0
 
-    # 2. Identify all weapon IDs used in the ground and aircraft files (wpn 0 through wpn 9)
+    # 2. Identify all weapon IDs used in the ground and aircraft files
     used_weapon_ids = set()
-    wpn_cols:list[str] = [f'wpn {i}' for i in range(MAX_SQUAD_SLOTS)]
 
-    for file_path in [ground_file_path, aircraft_file_path]:
+    # Build strict index lists from schemas (WPN_0 through WPN_9)
+    gnd_wpn_indices = [getattr(GndColumn, f"WPN_{i}").value for i in range(10)]
+
+    # Aircraft have base weapons and 5 additional Weapon Sets (WS0 to WS4)
+    # which must be checked so bombs/drop tanks aren't falsely flagged as unused.
+    ac_wpn_indices = [getattr(AcColumn, f"WPN_{i}").value for i in range(10)]
+    for ws in range(5):
+        ac_wpn_indices.extend([getattr(AcColumn,
+                                       f"WS{ws}_WPN_{i}").value for i in range(10)])
+
+    # Map the files to their respective column schemas
+    file_mappings = [
+        (ground_file_path, gnd_wpn_indices),
+        (aircraft_file_path, ac_wpn_indices)
+    ]
+
+    for file_path, wpn_indices in file_mappings:
         try:
-            gen = get_csv_dict_stream(file_path)
+            gen = get_csv_list_stream(file_path)
 
-            for item in gen.rows:
-                _, row = cast(tuple[int, dict], item)
-                for col in wpn_cols:
-                    wpn_id = parse_int(row.get(col))
+            # Iterate through the rows using the exact positional indices
+            for _, row in gen.rows:
+                for w_idx in wpn_indices:
+                    wpn_id = parse_row_int(row, w_idx)
                     # Filter out zero values
                     if wpn_id:
                         used_weapon_ids.add(wpn_id)

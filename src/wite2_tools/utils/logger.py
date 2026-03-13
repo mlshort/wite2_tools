@@ -20,10 +20,12 @@ Core Features:
   to the root logger to avoid duplicate log entries.
 """
 from logging import Logger
+from typing import Final
 import logging
 import os
 import sys
 import io
+import atexit
 from datetime import datetime
 
 # Internal package imports
@@ -36,34 +38,25 @@ LOG_FILENAME = f"wite2_{timestamp}.log"
 
 # 2. Define the exact path
 LOG_PATH = os.path.join(LOCAL_LOG_PATH, LOG_FILENAME)
-DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
-CLEAN_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
+DATE_FORMAT: Final = "%Y-%m-%d %H:%M:%S"
+CLEAN_FORMAT: Final = "%(asctime)s - %(levelname)s - %(message)s"
 # Modified format to include clickable source code references
-DETAILED_FORMAT = '%(asctime)s - %(levelname)s - File "%(pathname)s", ' \
+DETAILED_FORMAT: Final = '%(asctime)s - %(levelname)s - File "%(pathname)s", ' \
              'line %(lineno)d - %(message)s'
-JSON_FORMAT = '{"timestamp": "%(asctime)s", "level": "%(levelname)s", "msg": \
+JSON_FORMAT: Final = '{"timestamp": "%(asctime)s", "level": "%(levelname)s", "msg": \
               "%(message)s"}'
-CSV_FORMAT = "%(asctime)s,%(levelname)s,%(message)s"
-MIN_FORMAT = "%(message)s"
+CSV_FORMAT: Final = "%(asctime)s,%(levelname)s,%(message)s"
+MIN_FORMAT: Final = "%(message)s"
 
-# --- NEW: Global UTF-8 Stream Wrapper ---
-# This ensures that both basicConfig and get_logger use a UTF-8 capable stream
+
+
+# pylint: disable=invalid-name
 UTF8_CONSOLE = sys.stdout
 if hasattr(sys.stdout, 'buffer'):
     UTF8_CONSOLE = io.TextIOWrapper(sys.stdout.buffer,
                                     encoding='utf-8',
                                     errors='replace')
 
-# 3. Configure logging immediately on import
-logging.basicConfig(
-    level=logging.INFO,
-    format=CLEAN_FORMAT,
-    handlers=[
-        logging.FileHandler(LOG_PATH, encoding='utf-8'),
-        # Use the wrapped stream here to prevent UnicodeEncodeError
-        logging.StreamHandler(UTF8_CONSOLE)
-    ]
-)
 
 def get_logger(name: str | None)->Logger:
     """
@@ -77,7 +70,9 @@ def get_logger(name: str | None)->Logger:
         formatter = logging.Formatter(CLEAN_FORMAT)
 
         # File Handler
-        file_handler = logging.FileHandler(LOG_PATH, encoding='utf-8')
+        file_handler = logging.FileHandler(LOG_PATH,
+                                           mode='a',
+                                           encoding='utf-8')
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
 
@@ -93,3 +88,8 @@ def set_formatter(msg_format: str)->None:
     root_logger = logging.getLogger()
     for handler in root_logger.handlers:
         handler.setFormatter(new_formatter)
+
+# Ensure buffers are flushed and files are unlocked when the program/test ends
+@atexit.register
+def _cleanup_logging() -> None:
+    logging.shutdown()

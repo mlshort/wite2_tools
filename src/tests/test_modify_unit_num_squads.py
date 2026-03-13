@@ -1,65 +1,21 @@
 import csv
-import pytest
 from pathlib import Path
+
 
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
-from wite2_tools.constants import MAX_SQUAD_SLOTS
 from wite2_tools.modifiers import modify_unit_squads
+from wite2_tools.models import U_SQD_NUM0_COL
 
 
-@pytest.fixture(name="mock_modify_unit_csv")
-def mock_modify_unit_csv(tmp_path:Path):
-    """Generates a 4-row truth table to test all conditional updating paths."""
-    file_path = tmp_path / "mock_modify_unit.csv"
-
-    headers = ["id", "name", "type", "nat"]
-    for i in range(MAX_SQUAD_SLOTS):
-        headers.append(f"sqd.u{i}")
-        headers.append(f"sqd.num{i}")
-
-    def create_row(uid, uname, utype, elem_id, qty):
-        # Initialize all columns to "0"
-        row = {h: "0" for h in headers}
-        # 'type' is the referenced TOE(OB) ID in _unit files
-        # that maps to the 'id' column of the _ob file
-        row.update({
-            "id": uid,
-            "name": uname,
-            "type": utype,
-            "nat": "1",
-            "sqd.u0": elem_id,
-            "sqd.num0": qty
-        })
-        return row
-
-    with open(file_path, 'w', newline='', encoding=ENCODING_TYPE) as f:
-        writer = csv.DictWriter(f, fieldnames=headers)
-        writer.writeheader()
-
-        # Row 1 (Index 0): SUCCESS (Matches TOE(OB)=50, Elem=105, Qty=10)
-        writer.writerow(create_row("1", "Unit 1", "50", "105", "10"))
-
-        # Row 2 (Index 1): FAILS (Wrong TOE(OB) ID - 99 instead of 50)
-        writer.writerow(create_row("2", "Unit 2", "99", "105", "10"))
-
-        # Row 3 (Index 2): FAILS (Wrong Element ID - 999 instead of 105)
-        writer.writerow(create_row("3", "Unit 3", "50", "999", "10"))
-
-        # Row 4 (Index 3): FAILS (Wrong Old Qty - 15 instead of 10)
-        writer.writerow(create_row("4", "Unit 4", "50", "105", "15"))
-
-    return str(file_path)
-
-
-def test_modify_unit_squads_success_and_filters(mock_modify_unit_csv):
+def test_modify_unit_squads_success_and_filters(mock_unit_csv: Path) -> None:
     """
     Verifies that the strict multi-level conditions are applied correctly.
     """
 
     # Execute: In TOE(OB) 50, if Elem 105 has qty 10, change it to 99
     updates = modify_unit_squads(
-        mock_modify_unit_csv,
+        str(mock_unit_csv),
         target_ob_id=50,
         target_wid=105,
         old_num_squads=10,
@@ -69,11 +25,14 @@ def test_modify_unit_squads_success_and_filters(mock_modify_unit_csv):
     # Assert ONLY Row 1 was updated by the script
     assert updates == 1
 
-    with open(mock_modify_unit_csv, 'r', encoding=ENCODING_TYPE) as f:
-        rows = list(csv.DictReader(f))
+    with open(mock_unit_csv, 'r', encoding=ENCODING_TYPE) as f:
+        rows = list(csv.reader(f))
 
-        # Assert data integrity using the 4-Row Truth Table
-        assert rows[0]["sqd.num0"] == "99"  # Successful change
-        assert rows[1]["sqd.num0"] == "10"  # Blocked by TOE(OB) check
-        assert rows[2]["sqd.num0"] == "10"  # Blocked by Elem check
-        assert rows[3]["sqd.num0"] == "15"  # Blocked by Old Qty check
+        # Use your known index from unit_schema
+        target_qty_idx = U_SQD_NUM0_COL + (2 * 8)
+
+        # Find the unit by ID (Index 0 is ALWAYS the ID column).
+        # We slice rows[1:] to skip the header row, avoiding any BOM weirdness.
+        updated_unit = next(r for r in rows[1:] if r[0] == "102")
+
+        assert updated_unit[target_qty_idx] == "99", "Quantity should be updated to 99"
