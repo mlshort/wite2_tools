@@ -1,35 +1,15 @@
-from typing import Any, Generator
 from pathlib import Path
 from unittest.mock import patch, MagicMock
-import pytest
 
 
 # Adjust imports based on the actual functions in your file
 from wite2_tools.utils.get_name import (
     get_ground_elem_type_name,
-    _build_ground_elem_lookup,
     get_device_type_name,
     get_country_name,
     get_unit_special_name
 )
 
-
-@pytest.fixture(autouse=True)
-def reset_caches() -> Generator[None, Any, None]:
-    """
-    Automatically runs before and after every test to clear the functools
-    caches. This guarantees no test contaminates the results of another by
-    leaving parsed CSV data in memory.
-    """
-    # Clear the cache for the ground element builder
-    # (Add your other builders here like _build_ob_lookup.cache_clear() if they exist)
-    if hasattr(_build_ground_elem_lookup, "cache_clear"):
-        _build_ground_elem_lookup.cache_clear()
-
-    yield  # Let the test run
-
-    if hasattr(_build_ground_elem_lookup, "cache_clear"):
-        _build_ground_elem_lookup.cache_clear()
 
 
 # ---------------------------------------------------------

@@ -60,11 +60,9 @@ def process_csv_in_place(file_path: str,
                                    newline='', encoding=ENCODING_TYPE)
 
     try:
-        # SWITCH: Use list stream instead of dict stream
         stream = get_csv_list_stream(file_path)
 
         with temp_file as outfile:
-            # SWITCH: Use csv.writer instead of csv.DictWriter
             writer = csv.writer(outfile)
 
             # List streams usually include the header as the first yielded row or
@@ -72,7 +70,7 @@ def process_csv_in_place(file_path: str,
             for item in stream.rows:
 
                 # Explicitly cast for type checkers: (row_index, row_data_list)
-                row_idx, row = cast(tuple[int, List], item)
+                row_idx, row = cast(Tuple[int, List], item)
 
                 # Pass the list to the custom logic callback
                 row, was_modified = row_processor(row, row_idx)

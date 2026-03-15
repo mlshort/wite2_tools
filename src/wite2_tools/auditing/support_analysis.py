@@ -1,35 +1,19 @@
-from typing import List, Union, Iterable, Optional
-from wite2_tools.generator import get_csv_dict_stream
-from wite2_tools.models.unit_schema import UnitColumn, Unit
+from typing import List, Iterable, Optional, Tuple
+from wite2_tools.models.UnitRow import UnitRow
 
 # ... [Include the UnitColumn IntEnum from previous step] ...
 
-# Create a template for the Unit object based on Enum names
-# Unit = namedtuple("Unit", [c.name for c in UnitColumn])
-
-def parse_unit_to_object(row: List[str]) -> Unit:
-    """
-    Parses a CSV row into a NamedTuple for dot-notation access.
-    """
-    processed_values: List[Union[int, str]] = []
-    for col in UnitColumn:
-        raw_val = row[col.value]
-        try:
-            processed_values.append(int(raw_val))
-        except (ValueError, TypeError):
-            processed_values.append(raw_val)
-    return Unit(*processed_values)
 
 def filter_units(
-    units: Iterable[Unit],
+    units: Iterable[UnitRow],
     name_contains: Optional[str] = None,
-    at_coords: Optional[tuple[int, int]] = None,
+    at_coords: Optional[Tuple[int, int]] = None,
     min_morale: Optional[int] = None
-) -> List[Unit]:
+) -> List[UnitRow]:
     """
     Filters a collection of units based on specific criteria.
     """
-    results: List[Unit] = list(units)
+    results: List[UnitRow] = list(units)
 
     if name_contains:
         results = [u for u in results if name_contains.lower() in u.NAME.lower()]
@@ -43,7 +27,7 @@ def filter_units(
     return results
 
 
-def print_undersupported_units(units: Iterable[Unit]) -> None:
+def print_undersupported_units(units: Iterable[UnitRow]) -> None:
     """
     Identifies and prints units where SPT_NEED is greater than SUPPORT.
     Displays the deficit for easy prioritization.
@@ -62,17 +46,4 @@ def print_undersupported_units(units: Iterable[Unit]) -> None:
     print("-" * 60)
     print(f"Total undersupported units found: {count}")
 
-# Example usage:
-# print_undersupported_units(all_units)
 
-if __name__ == "__main__":
-
-
-    # Example path - replace with your actual test file
-    PATH = "data/scenarios/test_unit.csv"
-
-    # Correctly mapping the data to the expected type
-    stream = get_csv_dict_stream(PATH)
-    typed_units = [Unit(**row) for _, row in stream.rows]
-
-    print_undersupported_units(typed_units)

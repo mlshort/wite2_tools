@@ -1,10 +1,25 @@
+"""
+_aircraft.csv Mapping Reference:
+| Constant       | CSV Header | Index | Notes                                 |
+|----------------|------------|-------|---------------------------------------|
+| ID             | id         | 0     | Unique Identifier                     |
+| NAME           | name       | 1     | Display Name                          |
+| MAX_ALT        | maxAlt     | 2     | Maximum Altitude                      |
+| NAT            | nat        | 3     | Nationality Code                      |
+| MAX_SPEED      | maxSpeed   | 5     | Maximum Speed                         |
+| TYPE           | type       | 19    | Aircraft Type Category                |
+
+Note: The Aircraft file contains exactly 322 columns (0-321) covering base
+properties, built-in weapon slots (0-9), and 5 external weapon sets
+(Loadouts: ws0 through ws4).
+"""
 from enum import IntEnum
-from typing import List, Dict
-from typing import Any, Final
+from typing import List, Dict, Any, Final
+
 
 class AcColumn(IntEnum):
     """
-    Aircraft Column indices for WiTE2's _aircraft.csv file.
+    Aircraft Column indices for WiTE2's _aircraft.csv file (322 Columns).
     """
     # --- Base Properties ---
     ID = 0
@@ -13,25 +28,41 @@ class AcColumn(IntEnum):
     NAT = 3
     SYM = 4
     MAX_SPEED = 5
-    MAX_SPEED_ALT = 6   #: the optimum altitude to achieve Max Speed
-    ZERO_ALT_SPEED = 7  #: max speed at sea level
-    MAX_ALT_SPEED = 8   #: max speed at highest altitude
-    CRU_SPEED = 9   #: Cruise Speed
-    CLIMB = 10      #: climb rate in terms of feet per minute
-    MAX_LOAD = 11   #: in pounds
-    ENDURANCE = 12  #: minutes
+
+    # The optimum altitude to achieve Max Speed
+    MAX_SPEED_ALT = 6
+
+    # Max speed at sea level
+    ZERO_ALT_SPEED = 7
+
+    # Max speed at highest altitude
+    MAX_ALT_SPEED = 8
+
+    # Cruise Speed
+    CRU_SPEED = 9
+
+    # Climb rate in terms of feet per minute
+    CLIMB = 10
+
+    # Maximum load in pounds
+    MAX_LOAD = 11
+
+    # Endurance in minutes
+    ENDURANCE = 12
     RANGE = 13
     YEAR = 14
     MVR = 15
     ARMOR = 16
+
+    # Aircraft damage points are measured against the aircraft
+    # durability rating to determine if it is destroyed or just damaged
     DURAB = 17
-    """
-    Aircraft damage points are measured against the aircraft
-    durability rating to determine if the aircraft is destroyed or just
-    damaged
-    """
+
     MONTH = 18
-    TYPE = 19 #: mapped to AirCraftType
+
+    # Mapped to AirCraftType
+    TYPE = 19
+
     BLANK = 20
     UPGRADE = 21
     CREW = 22
@@ -39,18 +70,18 @@ class AcColumn(IntEnum):
     SORTIE_FUEL = 24
     BUILD_COST = 25
     POOL = 26
-    BUILD_LIMIT = 27  #: Number of frames that are converted each turn
+
+    # Number of frames that are converted each turn
+    BUILD_LIMIT = 27
     MAX_IMPORT = 28
     IMPORT_FROM = 29
     LAST_YEAR = 30
     LAST_MONTH = 31
+
+    # Reliability rating ranges from "really good" (lower numbers) to
+    # "really bad" (higher numbers). Checked during missions.
     RELIB = 32
-    """
-    All aircraft have a reliability rating which ranges from
-    “really good” (lower numbers) to “really bad” (higher numbers). These
-    reliability ratings are checked when aircraft conduct a mission with those
-    that fail the reliability check becoming damaged.
-    """
+
     PHOTO = 33
     EXP_RATE = 34
     ENGINE_NUM = 35
@@ -59,10 +90,13 @@ class AcColumn(IntEnum):
     # --- Base Weapons ---
     WPN_0, WPN_1, WPN_2, WPN_3, WPN_4 = 37, 38, 39, 40, 41
     WPN_5, WPN_6, WPN_7, WPN_8, WPN_9 = 42, 43, 44, 45, 46
+
     WPN_NUM_0, WPN_NUM_1, WPN_NUM_2, WPN_NUM_3, WPN_NUM_4 = 47, 48, 49, 50, 51
     WPN_NUM_5, WPN_NUM_6, WPN_NUM_7, WPN_NUM_8, WPN_NUM_9 = 52, 53, 54, 55, 56
-    WPN_FACE_0, WPN_FACE_1, WPN_FACE_2, WPN_FACE_3, WPN_FACE_4 = 57, 58, 59, 60, 61
-    WPN_FACE_5, WPN_FACE_6, WPN_FACE_7, WPN_FACE_8, WPN_FACE_9 = 62, 63, 64, 65, 66
+
+    WPN_FACE_0, WPN_FACE_1, WPN_FACE_2, WPN_FACE_3 = 57, 58, 59, 60
+    WPN_FACE_4, WPN_FACE_5, WPN_FACE_6, WPN_FACE_7 = 61, 62, 63, 64
+    WPN_FACE_8, WPN_FACE_9 = 65, 66
 
     # --- Weapon Set 0 ---
     WS0_WPN_0, WS0_WPN_NUM_0, WS0_WPN_FACE_0, WS0_WPN_ACC_0 = 67, 68, 69, 70
@@ -75,6 +109,7 @@ class AcColumn(IntEnum):
     WS0_WPN_7, WS0_WPN_NUM_7, WS0_WPN_FACE_7, WS0_WPN_ACC_7 = 95, 96, 97, 98
     WS0_WPN_8, WS0_WPN_NUM_8, WS0_WPN_FACE_8, WS0_WPN_ACC_8 = 99, 100, 101, 102
     WS0_WPN_9, WS0_WPN_NUM_9, WS0_WPN_FACE_9, WS0_WPN_ACC_9 = 103, 104, 105, 106
+
     WS0_YEAR, WS0_MONTH, WS0_LAST_YEAR, WS0_LAST_MONTH = 107, 108, 109, 110
     WS0_MVR_MOD, WS0_CLIMB_MOD, WS0_SORTIE_AMMO_MOD = 111, 112, 113
     WS0_SORTIE_FUEL_MOD, WS0_END_MOD = 114, 115
@@ -91,6 +126,7 @@ class AcColumn(IntEnum):
     WS1_WPN_7, WS1_WPN_NUM_7, WS1_WPN_FACE_7, WS1_WPN_ACC_7 = 146, 147, 148, 149
     WS1_WPN_8, WS1_WPN_NUM_8, WS1_WPN_FACE_8, WS1_WPN_ACC_8 = 150, 151, 152, 153
     WS1_WPN_9, WS1_WPN_NUM_9, WS1_WPN_FACE_9, WS1_WPN_ACC_9 = 154, 155, 156, 157
+
     WS1_YEAR, WS1_MONTH, WS1_LAST_YEAR, WS1_LAST_MONTH = 158, 159, 160, 161
     WS1_MVR_MOD, WS1_CLIMB_MOD, WS1_SORTIE_AMMO_MOD = 162, 163, 164
     WS1_SORTIE_FUEL_MOD, WS1_END_MOD = 165, 166
@@ -107,6 +143,7 @@ class AcColumn(IntEnum):
     WS2_WPN_7, WS2_WPN_NUM_7, WS2_WPN_FACE_7, WS2_WPN_ACC_7 = 197, 198, 199, 200
     WS2_WPN_8, WS2_WPN_NUM_8, WS2_WPN_FACE_8, WS2_WPN_ACC_8 = 201, 202, 203, 204
     WS2_WPN_9, WS2_WPN_NUM_9, WS2_WPN_FACE_9, WS2_WPN_ACC_9 = 205, 206, 207, 208
+
     WS2_YEAR, WS2_MONTH, WS2_LAST_YEAR, WS2_LAST_MONTH = 209, 210, 211, 212
     WS2_MVR_MOD, WS2_CLIMB_MOD, WS2_SORTIE_AMMO_MOD = 213, 214, 215
     WS2_SORTIE_FUEL_MOD, WS2_END_MOD = 216, 217
@@ -123,6 +160,7 @@ class AcColumn(IntEnum):
     WS3_WPN_7, WS3_WPN_NUM_7, WS3_WPN_FACE_7, WS3_WPN_ACC_7 = 248, 249, 250, 251
     WS3_WPN_8, WS3_WPN_NUM_8, WS3_WPN_FACE_8, WS3_WPN_ACC_8 = 252, 253, 254, 255
     WS3_WPN_9, WS3_WPN_NUM_9, WS3_WPN_FACE_9, WS3_WPN_ACC_9 = 256, 257, 258, 259
+
     WS3_YEAR, WS3_MONTH, WS3_LAST_YEAR, WS3_LAST_MONTH = 260, 261, 262, 263
     WS3_MVR_MOD, WS3_CLIMB_MOD, WS3_SORTIE_AMMO_MOD = 264, 265, 266
     WS3_SORTIE_FUEL_MOD, WS3_END_MOD = 267, 268
@@ -177,13 +215,13 @@ class Aircraft:
 
 
 NUM_COLS : Final[int] = len(AcColumn)
-
 ID_COL : Final[int] = AcColumn.ID
 
 
-
 def gen_aircraft_column_names() -> List[str]:
-    """Generates the 322 headers for a _aircraft.csv file dynamically."""
+    """
+    Generates the 322 headers for a _aircraft.csv file dynamically.
+    """
 
     # 1. Base Properties (Columns 0 to 36)
     cols: List[str] = [
@@ -222,6 +260,7 @@ def gen_aircraft_column_names() -> List[str]:
 
     return cols
 
+
 def gen_default_aircraft_row(aircraft_id: int = 0,
                              name: str = "",
                              nat: int = 0) -> List[str]:
@@ -234,7 +273,8 @@ def gen_default_aircraft_row(aircraft_id: int = 0,
         nat (int): The nationality ID (Column 3). Defaults to 0.
 
     Returns:
-        List[str]: A list containing the ID, Name, 1 zero, Nationality, and 318 zeroes.
+        List[str]: A list containing the ID, Name, 1 zero, Nationality,
+        and 318 zeroes.
     """
     # Create the base row: [ID, Name, maxAlt (0), Nat]
     row: List[str] = [str(aircraft_id), name, "0", str(nat)]
@@ -248,7 +288,9 @@ def gen_default_aircraft_row(aircraft_id: int = 0,
 def gen_default_aircraft_dict(aircraft_id: int = 0,
                               name: str = "",
                               nat: int = 0) -> Dict[str, str]:
-    """Generates a default Aircraft dictionary mapped to schema headers."""
+    """
+    Generates a default Aircraft dictionary mapped to schema headers.
+    """
     headers = gen_aircraft_column_names()
     default_row_list = gen_default_aircraft_row(aircraft_id, name, nat)
 

@@ -1,7 +1,7 @@
 from unittest.mock import patch, MagicMock
 from typing import List, Dict
 
-from wite2_tools.models.unit_schema import Unit
+from wite2_tools.models.UnitRow import UnitRow
 from wite2_tools.generator import CSVDictStream
 from wite2_tools.auditing.support_analysis import print_undersupported_units
 
@@ -26,7 +26,7 @@ def create_mock_stream(data_list : List[Dict[str,str]]) -> CSVDictStream:
 # pylint: disable= too-few-public-methods
 class TestSupportAnalysis:
 
-    @patch("wite2_tools.auditing.support_analysis.get_csv_dict_stream")
+    @patch("wite2_tools.get_csv_dict_stream")
     def test_print_undersupported_units(self, mock_stream: MagicMock) -> None:
         """Verifies the logic correctly identifies units with deficits."""
 
@@ -35,8 +35,8 @@ class TestSupportAnalysis:
 
         # 2. Replicate the logic you'd use in the main script
         stream = mock_stream("dummy_path.csv")
-        typed_units: list[Unit] = [Unit(**row) for _, row in stream.rows]
-
+    #     typed_units: list[UnitRow] = [UnitRow(**row) for _, row in stream.rows]
+        typed_units: list[UnitRow] = [UnitRow.from_dict(row) for _, row in stream.rows]
         # 3. Run the function
         # Since the function just prints, we are ensuring it runs without crashing,
         # but in a real test you might use 'capsys' to read the print output.

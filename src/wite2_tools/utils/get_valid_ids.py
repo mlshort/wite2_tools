@@ -36,8 +36,10 @@ from functools import cache
 
 # Internal package imports
 from wite2_tools.models import (
-    O_ID_COL, O_TYPE_COL, O_UPGRADE_COL,
+    ObRow,
+    GndRow,
     G_ID_COL, G_TYPE_COL,
+    UnitRow,
     U_ID_COL, U_TYPE_COL
 )
 
@@ -46,7 +48,6 @@ from wite2_tools.generator import (
     get_csv_list_stream
 )
 from wite2_tools.utils.logger import get_logger
-from wite2_tools.utils.parsing import parse_row_int
 
 # Initialize the log for this specific module
 log = get_logger(__name__)
@@ -60,17 +61,23 @@ def get_valid_ob_ids(ob_file_path: str) -> Set[int]:
     unique file path!
     """
     valid_ob_ids: Set[int] = set()
+
+    if not os.path.isfile(ob_file_path):
+        log.error("TOE(OB) file not found: %s", ob_file_path)
+        return set()
+
     file_name = os.path.basename(ob_file_path)
-    log.info("Building valid TOE(OB) ID cache from '%s'...", file_name)
+    log.info("Building Valid TOE(OB) ID cache from '%s'...", file_name)
 
     try:
         ob_stream = get_csv_list_stream(ob_file_path)
 
         for idx, row in ob_stream.rows:
+            ob = ObRow(row)
 
             try:
-                ob_id = parse_row_int(row, O_ID_COL)  # 'id' column
-                ob_type = parse_row_int(row, O_TYPE_COL)  # 'type' column
+                ob_id = ob.ID #parse_row_int(row, O_ID_COL)  # 'id' column
+                ob_type = ob.TYPE #parse_row_int(row, O_TYPE_COL)  # 'type' column
                 if ob_id != 0 and ob_type != 0:
                     valid_ob_ids.add(ob_id)
             except (ValueError, IndexError):
@@ -98,7 +105,12 @@ def get_valid_ob_upgrade_ids(ob_file_path: str) -> Set[int]:
     Caches the result to avoid repeated file I/O.
     """
     valid_ob_upgrade_ids: Set[int] = set()
-    log.info("Building valid TOE(OB) upgrade ID cache from '%s'...",
+
+    if not os.path.isfile(ob_file_path):
+        log.error("TOE(OB) file not found: %s", ob_file_path)
+        return set()
+
+    log.info("Building TOE(OB) upgrade ID cache from '%s'...",
                 ob_file_path)
 
     try:
@@ -107,12 +119,13 @@ def get_valid_ob_upgrade_ids(ob_file_path: str) -> Set[int]:
         for idx, row in ob_stream.rows:
 
             try:
-                ob_id: int = parse_row_int(row, O_ID_COL)
+                ob = ObRow(row)
+                ob_id: int = ob.ID #parse_row_int(row, O_ID_COL)
                 # Skip invalid IDs
                 if ob_id == 0:
                     continue
-                ob_type: int = parse_row_int(row, O_TYPE_COL)
-                ob_upgrade: int = parse_row_int(row, O_UPGRADE_COL)
+                ob_type: int = ob.TYPE #parse_row_int(row, O_TYPE_COL)
+                ob_upgrade: int = ob.UPGRADE #parse_row_int(row, O_UPGRADE_COL)
 
                 if ob_type != 0 and ob_upgrade != 0:
                     valid_ob_upgrade_ids.add(ob_upgrade)
@@ -143,8 +156,13 @@ def get_valid_ground_elem_ids(ground_file_path: str) -> Set[int]:
     Caches the result to avoid repeated file I/O.
     """
     valid_elem_ids: Set[int] = set()
+
+    if not os.path.isfile(ground_file_path):
+        log.error("TOE(OB) file not found: %s", ground_file_path)
+        return set()
+
     file_name: str = os.path.basename(ground_file_path)
-    log.info("Building valid ground element ID cache from '%s'...",
+    log.info("Building Ground Element ID cache from '%s'...",
                 file_name)
 
     # The minimum number of columns required to process this row
@@ -155,6 +173,7 @@ def get_valid_ground_elem_ids(ground_file_path: str) -> Set[int]:
         gnd_stream: CSVListStream = get_csv_list_stream(ground_file_path)
 
         for idx, row in gnd_stream.rows:
+            gnd = GndRow(row)
 
             # 2. Defensive check: Skip rows that are too short for our indices
             if len(row) < MIN_REQUIRED_COLS:
@@ -164,10 +183,10 @@ def get_valid_ground_elem_ids(ground_file_path: str) -> Set[int]:
 
             try:
                 # Access by index to avoid duplicate header issues
-                wid = parse_row_int(row, G_ID_COL)
+                wid = gnd.ID #parse_row_int(row, G_ID_COL)
                 if wid == 0:
                     continue
-                ground_type = parse_row_int(row, G_TYPE_COL)
+                ground_type = gnd.TYPE #parse_row_int(row, G_TYPE_COL)
                 if ground_type != 0:
                     valid_elem_ids.add(wid)
             except (ValueError, IndexError):
@@ -175,7 +194,9 @@ def get_valid_ground_elem_ids(ground_file_path: str) -> Set[int]:
                 log.debug("Skipping malformed row at index %d", idx)
                 continue
 
-        log.info("  Cache built with %d valid WIDs.", len(valid_elem_ids))
+        if len(valid_elem_ids) > 0:
+            log.info("  Ground Element ID Cache built with %d valid WIDs.",
+                     len(valid_elem_ids))
         return valid_elem_ids
 
     except FileNotFoundError:
@@ -202,6 +223,10 @@ def get_valid_unit_ids(unit_file_path: str,
     """
     valid_ids: Set[int] = set()
 
+    if not os.path.isfile(unit_file_path):
+        log.error("_unit file not found: %s", unit_file_path)
+        return set()
+
     # The minimum number of columns required to process this row
     # pylint: disable=invalid-name
     MIN_REQUIRED_COLS: Final[int] = max(U_ID_COL, U_TYPE_COL) + 1
@@ -210,6 +235,7 @@ def get_valid_unit_ids(unit_file_path: str,
         unit_stream: CSVListStream = get_csv_list_stream(unit_file_path)
 
         for idx, row in unit_stream.rows:
+            unit = UnitRow(row)
 
             # 2. Defensive check: Skip rows that are too short for our indices
             if len(row) < MIN_REQUIRED_COLS:
@@ -217,11 +243,11 @@ def get_valid_unit_ids(unit_file_path: str,
                 log.debug("Skipping malformed row %d: insufficient columns.", idx)
                 continue
             try:
-                uid: int = parse_row_int(row, U_ID_COL)
+                uid: int = unit.ID #parse_row_int(row, U_ID_COL)
 
                 # If filtering by active, skip Type 0 units
                 if active_only:
-                    utype: int = parse_row_int(row, U_TYPE_COL)
+                    utype: int = unit.TYPE #parse_row_int(row, U_TYPE_COL)
                     if utype == 0:
                         continue
 

@@ -5,6 +5,7 @@ import os
 from typing import Dict, Any, List, Tuple, TypedDict
 
 # Direct import to bypass __init__ export issues
+from wite2_tools.core.GND_ELEMENT_DATA import GND_ELEMENT_DATA
 from wite2_tools.generator import (
     CSVListStream,
     get_csv_list_stream
@@ -13,12 +14,16 @@ from wite2_tools.utils.parsing import parse_row_int, parse_row_str
 from wite2_tools.utils import get_ob_suffix, format_ref
 from wite2_tools.utils import get_logger
 from wite2_tools.models import (
-    G_ID_COL,
+    O_SQD_SLOTS
+)
+from wite2_tools.models import (
+    GndRow,
     G_NAME_COL,
     G_TYPE_COL
 )
 from wite2_tools.models import (
-    U_ID_COL,
+    UnitRow,
+    U_SQD_SLOTS,
     U_NAME_COL,
     U_TYPE_COL,
     U_TRUCK_COL,
@@ -29,135 +34,11 @@ from wite2_tools.models import (
     U_HQ_SUPPORT_COL
 )
 from wite2_tools.constants import (
-    MAX_SQUAD_SLOTS,
     GrdElementType
 )
 
 # Initialize the logger for this specific module
 log = get_logger(__name__)
-
-# WITE2 Ground Element Data (Complete IDs 1-118)
-# Format: {ID: {"name": str, "cv": int, "supNeed": int, "targetType": str}}
-ELEMENT_DATA = {
-    1: ( "Rifle Squad",  3,  4,  "Inf"),
-    2: ( "Inf-AntiTank",  1,  1,  "Inf"),
-    3: ( "Cavalry Squad",  3,  8,  "Inf"),
-    4: ( "Machinegun",  1,  3,  "Inf"),
-    5: ( "Mortar",  1,  8,  "Art"),
-    6: ( "AntiTank Gun",  1,  6,  "Art"),
-    7: ( "Mech-Inf Squad",  8,  9,  "Inf"),
-    8: ( "Md Flak",  1,  10,  "Art"),
-    9: ( "Artillery",  1,  25,  "Art"),
-    10: ( "Naval Gun",  1,  40,  "Art"),
-    11: ( "Armoured Car",  4,  6,  "AFV"),
-    12: ( "Lt Tank",  7,  12,  "AFV"),
-    13: ( "Md Tank",  9,  12,  "AFV"),
-    14: ( "Hvy Tank",  9,  12,  "AFV"),
-    15: ( "CS Tank",  8,  12,  "AFV"),
-    16: ( "Motor-Inf Squad",  3,  4,  "Inf"),
-    17: ( "Flame Tank",  9,  12,  "AFV"),
-    18: ( "Assault Gun",  8,  12,  "AFV"),
-    19: ( "Mech-Engr Squad",  8,  10,  "Inf"),
-    20: ( "Engineer Squad",  3,  5,  "Inf"),
-    21: ( "SP Artillery",  3,  35,  "AFV"),
-    22: ( "SP Flak",  3,  12,  "AFV"),
-    23: ( "HT AT-Gun",  3,  10,  "AFV"),
-    24: ( "Mech-MG Section",  8,  10,  "Inf"),
-    25: ( "HT CS-Mortar",  3,  11,  "AFV"),
-    26: ( "Special Forces",  3,  4,  "Inf"),
-    27: ( "Marine Commando",  3,  4,  "Inf"),
-    28: ( "Airborne Engineer",  3,  5,  "Inf"),
-    29: ( "SP AAMG",  1,  4,  "Art"),
-    30: ( "AAMG",  1,  4,  "Inf"),
-    31: ( "Rocket",  1,  20,  "Art"),
-    32: ( "Hvy Artillery",  1,  45,  "Art"),
-    33: ( "Lt Flak",  1,  5,  "Art"),
-    34: ( "Hvy Flak",  1,  20,  "Art"),
-    35: ( "Amphibious Tank",  3,  12,  "AFV"),
-    36: ( "MSW Tank",  9,  12,  "AFV"),
-    37: ( "Engineer Tank",  9,  12,  "AFV"),
-    38: ( "Airborne Squad",  3,  4,  "Inf"),
-    39: ( "SP Inf-Gun",  5,  12,  "AFV"),
-    40: ( "SMG Squad",  3,  4,  "Inf"),
-    41: ( "Carrier-Inf Squad",  3,  10,  "Inf"),
-    42: ( "Air Landing Section",  3,  4,  "Inf"),
-    43: ( "Hvy AT Gun",  1,  7,  "Art"),
-    44: ( "Lt AT Gun",  1,  4,  "Art"),
-    45: ( "Hvy Infantry Gun",  1,  9,  "Art"),
-    46: ( "Lt Artillery",  1,  15,  "Art"),
-    47: ( "Airborne Tank",  7,  12,  "AFV"),
-    48: ( "Recon Jeep",  3,  5,  "Inf"),
-    49: ( "Motorcycle Squad",  3,  5,  "Inf"),
-    50: ( "Ski Squad",  3,  4,  "Inf"),
-    51: ( "Security Squad",  3,  4,  "Inf"),
-    52: ( "Partisan Squad",  2,  2,  "Inf"),
-    53: ( "Naval Rifle Squad",  3,  4,  "Inf"),
-    54: ( "Labour Squad",  1,  3,  "Inf"),
-    55: ( "Md Field Gun",  1,  35,  "Art"),
-    56: ( "SP Rocket Launcher",  3,  25,  "AFV"),
-    57: ( "Lt Mortar",  1,  2,  "Inf"),
-    58: ( "Hvy Mortar",  1,  12,  "Art"),
-    59: ( "SP AntiTank Gun",  7,  12,  "AFV"),
-    60: ( "Tank Destroyer",  8,  12,  "AFV"),
-    61: ( "Hvy Tank Destroyer",  9,  12,  "AFV"),
-    62: ( "Infantry Gun",  1,  7,  "Art"),
-    63: ( "Infantry Tank",  9,  12,  "AFV"),
-    64: ( "Cavalry Tank",  9,  12,  "AFV"),
-    65: ( "Hvy Cavalry Tank",  9,  12,  "AFV"),
-    66: ( "Hvy Assault Tank",  8,  12,  "AFV"),
-    67: ( "Lt Tank Destroyer",  6,  12,  "AFV"),
-    68: ( "CS Cavalry Tank",  8,  12,  "AFV"),
-    69: ( "CS Infantry Tank",  9,  12,  "AFV"),
-    70: ( "Lt Armoured Car",  2,  6,  "AFV"),
-    71: ( "Naval Artillery",  1,  40,  "Art"),
-    72: ( "Recon Tank",  7,  12,  "AFV"),
-    73: ( "Recon Halftrack",  4,  8,  "AFV"),
-    74: ( "Flamethrower",  2,  3,  "Inf"),
-    75: ( "Assault Tank",  9,  12,  "AFV"),
-    76: ( "Foreign Md Tank",  9,  12,  "AFV"),
-    77: ( "Foreign Lt Tank",  7,  12,  "AFV"),
-    78: ( "Foreign Flame Tank",  9,  12,  "AFV"),
-    79: ( "Foreign Lt TD",  6,  12,  "AFV"),
-    80: ( "Foreign Tank Destroyer",  8,  12,  "AFV"),
-    81: ( "Foreign Assault Gun",  8,  12,  "AFV"),
-    82: ( "Foreign SP Artillery",  3,  35,  "AFV"),
-    83: ( "Foreign Armoured Car",  4,  6,  "AFV"),
-    84: ( "Unarmored SP Rocket",  1,  20,  "Art"),
-    85: ( "HT Mortar",  2,  12,  "AFV"),
-    86: ( "Super Hvy Artillery",  1,  45,  "Art"),
-    87: ( "Chassis",  0,  0,  "None"),
-    88: ( "Mech-Recon",  6,  10,  "Inf"),
-    89: ( "Lt Infantry",  3,  4,  "Inf"),
-    90: ( "Hvy SP Artillery",  3,  35,  "AFV"),
-    91: ( "CS Armored Car",  3,  6,  "AFV"),
-    92: ( "Hvy Armored Car",  4,  8,  "AFV"),
-    93: ( "Flame APC",  9,  12,  "AFV"),
-    94: ( "Troop Ship",  0,  0,  "None"),
-    95: ( "Cargo Ship",  0,  0,  "None"),
-    96: ( "Vehicle Repair",  0,  0,  "None"),
-    97: ( "Supply Dump",  0,  0,  "None"),
-    98: ( "Fuel Dump",  0,  0,  "None"),
-    99: ( "Support",  1,  0,  "Inf"),
-    100: ( "Air Support",  1,  0,  "Inf"),
-    101: ( "Manpower",  0,  0,  "None"),
-    102: ( "Hvy Industry",  0,  0,  "None"),
-    103: ( "Oil",  0,  0,  "None"),
-    104: ( "Fuel",  0,  0,  "None"),
-    105: ( "Synthetic Fuel",  0,  0,  "None"),
-    106: ( "Resource",  0,  0,  "None"),
-    107: ( "Artillery",  0,  0,  "None"),
-    108: ( "Vehicle",  0,  0,  "None"),
-    109: ( "Railyard",  0,  0,  "None"),
-    110: ( "Port",  0,  0,  "None"),
-    111: ( "V-Weapons Factory",  0,  0,  "None"),
-    112: ( "V-Weapons Launcher",  0,  0,  "None"),
-    113: ( "U-Boat Factory",  0,  0,  "None"),
-    114: ( "U-Boat Pen",  0,  0,  "None"),
-    115: ( "Assault Squad",  3,  4,  "Inf"),
-    116: ( "Static AntiTank Gun",  1,  6,  "Art"),
-    117: ( "Mech-Cavalry",  3,  4,  "Inf"),
-    118: ( "MG Section",  4,  6,  "Inf"),
-}
 
 class OBComposition(TypedDict):
     name: str
@@ -189,7 +70,7 @@ def _calc_ob_stats_for_row(ob_row: List[str],
 
     # Iterate through the 32 equipment slots in the OB file
     # (Leaving this dynamic since we aren't importing ObColumn here yet)
-    for i in range(MAX_SQUAD_SLOTS):
+    for i in range(O_SQD_SLOTS):
         gid_key = f'sqd {i}'
         qty_key = f'sqdNum{i}'
 
@@ -228,9 +109,10 @@ def _calc_unit_needed_support_for_row(
     active_cv: int = 0
     total_needed_sup: int = 0
     breakdown: List[Dict[str, Any]] = []
+    unit = UnitRow(unit_row)
 
     # Process 32 equipment slots using strict schema indices
-    for i in range(MAX_SQUAD_SLOTS):
+    for i in range(U_SQD_SLOTS):
         wid = parse_row_int(unit_row, U_SQD0_COL + (i * 8))
         qty = parse_row_int(unit_row, U_SQD_NUM0_COL + (i * 8))
 
@@ -250,7 +132,7 @@ def _calc_unit_needed_support_for_row(
             })
 
     return {
-        "unit_id": parse_row_int(unit_row, U_ID_COL),
+        "unit_id": unit.ID, #parse_row_int(unit_row, U_ID_COL),
         "name": parse_row_str(unit_row, U_NAME_COL, "Unkn"),
         "total_active_cv": active_cv,
         "total_needed_support": total_needed_sup,
@@ -288,7 +170,9 @@ def calc_unit_support(ob_file_path: str,
         gnd_stream: CSVListStream = get_csv_list_stream(ground_file_path)
 
         for _, g_row in gnd_stream.rows:
-            g_id = parse_row_int(g_row, G_ID_COL)
+            gnd = GndRow(g_row)
+            g_id = gnd.ID
+        #    g_id = parse_row_int(g_row, G_ID_COL)
             g_elem_type = parse_row_int(g_row, G_TYPE_COL)
 
             if g_id == 0 or g_elem_type == 0:
@@ -304,15 +188,15 @@ def calc_unit_support(ob_file_path: str,
         # Pre-calculate dynamic squad slot indices safely using Schema Enum
         u_sqd_indices: List[Tuple[int, int]] = [
             (U_SQD0_COL + (i * 8), U_SQD_NUM0_COL + (i * 8))
-            for i in range(MAX_SQUAD_SLOTS)
+            for i in range(U_SQD_SLOTS)
         ]
 
         # pylint: disable=invalid-name
         sptNeed_per_truck = 0.5
 
         for _, row in unit_stream.rows:
-
-            uid = parse_row_int(row, U_ID_COL)
+            unit = UnitRow(row)
+            uid = unit.ID  #parse_row_int(row, U_ID_COL)
             if uid == unit_id:
                 unit_found = True
 
@@ -344,10 +228,10 @@ def calc_unit_support(ob_file_path: str,
                         g_info = ground_info[g_id]
                         g_elem_type = g_info[1]
 
-                        if g_elem_type in ELEMENT_DATA and g_elem_qty > 0:
-                            data: Tuple[str, int, int, str] = ELEMENT_DATA[g_elem_type]
+                        if g_elem_type in GND_ELEMENT_DATA and g_elem_qty > 0:
+                            data: Tuple[str, int, int, str, int] = GND_ELEMENT_DATA[g_elem_type]
 
-                            if g_elem_type == GrdElementType.SUPPORT.value:
+                            if g_elem_type == GrdElementType.SUPPORT:
                                 calc_unit_spt += g_elem_qty
 
                             elem_type_sptNeed = data[2]
@@ -362,7 +246,7 @@ def calc_unit_support(ob_file_path: str,
 
                 if u_vehicles > 0:
                     slot_sptNeed = int(u_vehicles * sptNeed_per_truck / 10)
-                    vehicle_type = GrdElementType.VEHICLE.value
+                    vehicle_type = GrdElementType.VEHICLE
                     print(f"Slot {'-':2}: | {u_vehicles:4} | {'Vehicles':20} | {vehicle_type:4} "
                           f"| {sptNeed_per_truck/10:>8.2f} | {slot_sptNeed:6}")
 
@@ -411,11 +295,12 @@ def calc_unit_stats(unit_file_path: str,
 
     u_sqd_indices: List[Tuple[int, int]] = [
         (U_SQD0_COL + (i * 8), U_SQD_NUM0_COL + (i * 8))
-        for i in range(MAX_SQUAD_SLOTS)
+        for i in range(U_SQD_SLOTS)
     ]
 
     for _, row in unit_stream.rows:
-        uid = parse_row_int(row, U_ID_COL)
+        unit = UnitRow(row)
+        uid = unit.ID #parse_row_int(row, U_ID_COL)
         if uid == unit_id:
             unit_found = True
             u_name = parse_row_str(row, U_NAME_COL)
@@ -426,8 +311,8 @@ def calc_unit_stats(unit_file_path: str,
                 ground_id = parse_row_int(row, sqd_u_idx)
                 qty = parse_row_int(row, sqd_num_idx)
 
-                if ground_id in ELEMENT_DATA and qty > 0:
-                    data = ELEMENT_DATA[ground_id]
+                if ground_id in GND_ELEMENT_DATA and qty > 0:
+                    data = GND_ELEMENT_DATA[ground_id]
                     slot_cv = qty * data[1]
                     slot_sup = qty * data[2]
 

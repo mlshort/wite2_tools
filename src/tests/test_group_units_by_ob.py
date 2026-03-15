@@ -5,23 +5,12 @@ import pytest
 from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.core.group_units_by_ob import UnitData
 from wite2_tools.core.group_units_by_ob import (
-    _group_units_by_ob,
     group_units_by_ob
 )
 
 # ==========================================
 # FIXTURES (Setup)
 # ==========================================
-
-
-@pytest.fixture(autouse=True, name="clear_caches")
-def clear_caches() -> None:
-    """
-    Automatically runs before every test to clear the @cache decorator.
-    This guarantees that state does not leak between different tests.
-    """
-    _group_units_by_ob.cache_clear()
-
 
 @pytest.fixture(name="mock_corrupted_unit_csv")
 def mock_corrupted_unit_csv(tmp_path:Path) -> Path:

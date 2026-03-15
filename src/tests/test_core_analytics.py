@@ -1,27 +1,16 @@
 
 from pathlib import Path
 from typing import Callable
-import pytest
 
 # Internal package imports
 from wite2_tools.core.group_units_by_ob import UnitData
 from wite2_tools.core.group_units_by_ob import (
-    _group_units_by_ob,
     group_units_by_ob
 )
 from wite2_tools.core.count_global_unit_inventory import (
     count_global_unit_inventory
 )
 
-# ==========================================
-# FIXTURES (Setup)
-# ==========================================
-
-
-@pytest.fixture(autouse=True, name="clear_caches")
-def clear_caches() -> None:
-    """Clear the group_units_by_ob cache between tests."""
-    _group_units_by_ob.cache_clear()
 
 # ==========================================
 # TEST CASES

@@ -13,10 +13,14 @@ It also exports abbreviated column aliases (e.g., `G_ID_COL`, `U_NAME_COL`)
 to keep imports and syntax clean in downstream processing scripts.
 """
 
+from .UnitRow import UnitRow
+from .ObRow import ObRow
+from .GndRow import GndRow
+
 from .ob_schema import (
-    OB, ObColumn,
+    ObColumn,
     gen_ob_column_names,
-    gen_default_ob_row,
+#    gen_default_ob_row,
     ELEM_BASE,
     NUM_BASE,
     NUM_COLS as O_NUM_COLS,
@@ -30,9 +34,8 @@ from .ob_schema import (
     SQD0_COL as O_SQD0_COL, SQD_NUM0_COL as O_SQD_NUM0_COL
 )
 from .unit_schema import (
-    Unit, UnitColumn,
+    UnitColumn,
     gen_unit_column_names,
-    gen_default_unit_row,
     ATTRS_PER_SQD,
     NUM_COLS as U_NUM_COLS,
     SQD_SLOTS as U_SQD_SLOTS,
@@ -80,10 +83,9 @@ __all__ = [
     "G_MEN_COL",
 
     # --- Unit Entities ---
-    "Unit",
+    "UnitRow",
     "UnitColumn",
     "gen_unit_column_names",
-    "gen_default_unit_row",
     "ATTRS_PER_SQD",
     "U_NUM_COLS",
     "U_SQD_SLOTS",
@@ -99,10 +101,10 @@ __all__ = [
     "U_SQD_NUM0_COL",
 
     # --- OB (Order of Battle) Entities ---
-    "OB",
+    "ObRow",
     "ObColumn",
     "gen_ob_column_names",
-    "gen_default_ob_row",
+#    "gen_default_ob_row",
     "ELEM_BASE",
     "NUM_BASE",
     "O_NUM_COLS",

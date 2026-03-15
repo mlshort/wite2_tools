@@ -4,14 +4,7 @@ import pytest
 from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.core.group_units_by_ob import (
     group_units_by_ob,
-    _group_units_by_ob
 )
-
-
-@pytest.fixture(autouse=True)
-def clear_caches()->None:
-    """Ensure the @cache is cleared before every test run."""
-    _group_units_by_ob.cache_clear()
 
 
 @pytest.fixture(name="mock_nat_unit_csv")

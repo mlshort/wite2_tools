@@ -2,45 +2,45 @@ from typing import List
 
 # Correct import from models as requested
 from wite2_tools.models import (
-    gen_default_unit_row,
-    ATTRS_PER_SQD,
-    U_SQD0_COL
+    UnitRow,
 )
 from wite2_tools.modifiers.reorder_unit_squads import (
-    reorder_unit_elems,
     reorder_unit_squads
 )
 
 
 def test_reorder_unit_elems_logic() -> None:
-    """Verifies interleaved unit attribute blocks shift in sync."""
+    """Verifies interleaved unit attribute blocks shift in sync using UnitRow."""
 
-    # 1. Setup
-    row: List[str] = gen_default_unit_row()
+    # 1. Setup: Use the factory method
+    unit = UnitRow.create_default(unit_id=1, name="Test Unit", unit_type=1, nat=1)
 
     # 2. Place Data in Slot 1
-    # Slot 1 base = 124 + (1 * 8) = 132
-    s1_base = U_SQD0_COL + (1 * ATTRS_PER_SQD)
+    # Because of our custom __setattr__, these assignments automatically
+    # update the underlying unit.raw list at the correct indices.
+    unit.SQD_U1 = 99
+    unit.SQD_NUM1 = 10
 
-    row[s1_base + 0] = "99"  # SQD_U1
-    row[s1_base + 1] = "10"  # SQD_NUM1
+    # 3. Action: Call the class method
+    unit.reorder_slots(1, 0)
 
-    # 3. Action
-    updated: List[str] = reorder_unit_elems(row, source_slot=1, target_slot=0)
+    # 4. Assertions: Check the target (Slot 0)
+    # The reorder_slots method refreshed these attributes from the list.
+    assert unit.SQD_U0 == 99, "WID 99 should have moved to slot 0"
+    assert unit.SQD_NUM0 == 10, "Qty 10 should have moved to slot 0"
 
-    # 4. Assertions for Target (Slot 0)
-    s0_base = U_SQD0_COL + (0 * ATTRS_PER_SQD)
+    # 5. Assertions for Cleanup (Slot 1)
+    # Since we 'popped' the block and 'inserted' it elsewhere,
+    # whatever was in slot 2 shifted to slot 1 (which was likely all zeroes).
+    assert unit.SQD_U1 == 0, "Source WID (Slot 1) should now be empty/shifted"
+    assert unit.SQD_NUM1 == 0, "Source Qty (Slot 1) should now be empty/shifted"
 
-    assert updated[s0_base + 0] == "99", f"WID 99 should be at index {s0_base}"
-    assert updated[s0_base + 1] == "10", f"Qty 10 should be at index {s0_base + 1}"
-
-    # 6. Assertions for Cleanup (Slot 1)
-    assert updated[s1_base + 0] == "0", "Source WID should be reset"
-    assert updated[s1_base + 1] == "0", "Source Qty should be reset"
 
 
 def test_reorder_unit_squads_integration(mock_unit_csv: str) -> None:
-    """Tests the full file-write process using list-based stream logic."""
+    """
+    Tests the full file-write process using list-based stream logic.
+    """
     # This integration test now relies on the underlying modifier
     # using get_csv_list_stream internally.
     updates: int = reorder_unit_squads(

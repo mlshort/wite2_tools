@@ -8,7 +8,7 @@ _unit.csv Mapping Reference:
 | NAT_COL        | nat        | 3     | Nationality index         |
 """
 from enum import IntEnum
-from typing import Dict, List, Union, Any, Final
+from typing import Dict, List, Union, Final
 
 
 class UnitColumn(IntEnum):
@@ -23,15 +23,19 @@ class UnitColumn(IntEnum):
     ID = 0
     NAME = 1
     TYPE = 2  # References _ob.id
+    # maps to nat types
     NAT = 3
     PLAYER = 4
     X = 5
     Y = 6
     LEADER = 7
     MORALE = 8
+    # num of weeks until arrival
     DELAY = 9
     HQ = 10
+    # maps to _unit.id of assigned HQ
     HHQ = 11
+    # can be negative
     COMBAT_SUPPORT = 12
     MEN = 13
     SUP = 14
@@ -270,7 +274,9 @@ SQD_EXP_ACCUM0_COL: Final[int] = UnitColumn.SQD_EXP_ACCUM0
 
 
 def gen_unit_column_names() -> List[str]:
-    """Generates the mapping for the UnitColumn IntEnum."""
+    """
+    Generates the mapping for the UnitColumn IntEnum.
+    """
     cols: List[str] = [
         "id", "name", "type", "nat", "player", "x", "y", "leader", "morale",
         "delay", "hq", "hhq", "combatSupport", "men", "sup", "sNeed", "moved",
@@ -302,110 +308,4 @@ def gen_unit_column_names() -> List[str]:
     return cols
 
 
-def gen_default_unit_row(unit_id: int = 0,
-                         name: str = "",
-                         unit_type: int = 0,
-                         nat: int = 0) -> List[str]:
-    """
-    Generates a default 380-column row for a _unit.csv file.
 
-    Args:
-        unit_id (int): The ID for the Unit (Column 0). Defaults to 0.
-        name (str): The name of the Unit (Column 1). Defaults to empty.
-        unit_type (int): The TOE(OB) ID (Column 2). Defaults to 0.
-        nat (int): The nationality ID (Column 3). Defaults to 0.
-
-    Returns:
-        List[str]: A list containing the ID, Name, Type, Nat, and 376 zeroes.
-    """
-    row: List[str] = [str(unit_id), name, str(unit_type), str(nat)]
-
-    # Append 376 zeroes to fill out the remaining columns
-    row.extend(["0"] * 376)
-
-    return row
-
-
-def gen_default_unit_dict(unit_id: int = 0,
-                          name: str = "",
-                          unit_type: int = 0,
-                          nat: int = 0) -> Dict[str, str]:
-    """
-    Generates a default Unit dictionary mapped to schema headers.
-    """
-    headers = gen_unit_column_names()
-    default_row_list = gen_default_unit_row(unit_id, name, unit_type, nat)
-
-    # Zip the 380 headers together with the 380 default values
-    return dict(zip(headers, default_row_list))
-
-# Type alias for a parsed unit record
-# Values are usually int for stats or str for names
-UnitRecord = Dict[str, Union[int, str]]
-
-def parse_unit_row(row: List[str]) -> UnitRecord:
-    """
-    Converts a raw CSV row into a typed dictionary.
-
-    Args:
-        row: A list of strings representing a single row from the CSV.
-
-    Returns:
-        A dictionary where keys are column names and values are typed.
-    """
-    unit_data: UnitRecord = {}
-    for col in UnitColumn:
-        val:str = row[col.value]
-        # Attempt to convert to int if possible, otherwise keep as string
-        try:
-            unit_data[col.name] = int(val)
-        except (ValueError, TypeError):
-            unit_data[col.name] = val
-    return unit_data
-
-# pylint: disable= too-few-public-methods
-class Unit:
-    """
-    A dynamic object representation of a WiTE2 Unit.
-    Automatically converts CSV string numbers into integers.
-    """
-
-    # --- Type Hints for Pylance & Autocomplete ---
-    # You only need to list the fields you actually use in your code!
-    ID: int
-    NAME: str
-    MORALE: int
-    X: int
-    Y: int
-    SUPPORT: int
-    SPT_NEED: int
-
-    def __init__(self, **kwargs: Any):
-        # We loop through every item provided by your CSV stream
-        for key, value in kwargs.items():
-            # Attempt to convert to an integer for math/logic comparisons
-            try:
-                converted_value = int(value)
-            except (ValueError, TypeError):
-                converted_value = value  # Keep as string if it's a name, etc.
-
-            # This attaches the value to the object.
-            # If your CSV header is 'sptNeed', it becomes u.sptNeed
-            setattr(self, key, converted_value)
-
-    def __getattr__(self, item: str) -> Any:
-        # 1. Normalize what the code is asking for (SPT_NEED -> SPTNEED)
-        normalized_request = item.replace("_", "").upper()
-
-        # 2. Loop through the actual CSV keys stored in the object
-        for actual_key, val in self.__dict__.items():
-
-            # Normalize the CSV key (sptNeed -> SPTNEED)
-            normalized_key = actual_key.replace("_", "").upper()
-
-            # 3. If they match, return the value!
-            if normalized_key == normalized_request:
-                return val
-
-        # If we loop through everything and find nothing, raise the error
-        raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{item}'")

@@ -37,59 +37,15 @@ from typing import List, Tuple
 
 # Internal package imports
 from wite2_tools.constants import MIN_SQUAD_SLOTS, MAX_SQUAD_SLOTS
-from wite2_tools.utils import (
-    get_logger,
-    parse_row_int
-)
+from wite2_tools.utils import get_logger
 from wite2_tools.modifiers.base import process_csv_in_place
-from wite2_tools.models import (
-    O_ID_COL,
-    O_SQD0_COL,
-    O_SQD_NUM0_COL
-)
+
+# Import ObColumn so we can use its pure integer indices
+from wite2_tools.models import ObRow, ObColumn
 
 
 # Initialize the log for this specific module
 log = get_logger(__name__)
-
-
-def reorder_ob_elems(row: List[str],
-                     source_slot: int,
-                     target_slot: int) -> List[str]:
-    """
-    Moves OB elements and their quantities from 'source_slot' to 'target_slot'
-    using list indices mapped from the OBColumn IntEnum.
-
-    Args:
-        row (list): The list representing a single CSV row.
-        source_slot (int): The current offset (0-9).
-        target_slot (int): The destination offset (0-9).
-
-    Returns:
-        list: The modified row list.
-    """
-    # OB files typically focus on two blocks: The Element ID and the Quantity
-    attribute_bases = [
-        O_SQD0_COL,
-        O_SQD_NUM0_COL
-    ]
-
-    for base_enum in attribute_bases:
-        # Get the starting integer index from the Enum
-        start_idx = base_enum
-        end_idx = start_idx + MAX_SQUAD_SLOTS
-
-        # Extract the window (the 10 slots for IDs or 10 slots for Numbers)
-        vals = row[start_idx:end_idx]
-
-        # Reorder the values in the temporary list
-        # pop() picks it up, insert() puts it down at the new index
-        vals.insert(target_slot, vals.pop(source_slot))
-
-        # Slice assignment: Update the original row efficiently
-        row[start_idx:end_idx] = vals
-
-    return row
 
 
 def reorder_ob_squads(ob_file_path: str,
@@ -146,28 +102,33 @@ def reorder_ob_squads(ob_file_path: str,
         if row_idx == 0:
             return row, False
 
-        # Use ObColumn IntEnum for direct index access
+        ob = ObRow(row)
+
         try:
-            ob_id = parse_row_int(row, O_ID_COL)
-        except (IndexError, ValueError):
+            ob_id = ob.ID
+        except AttributeError:
             return row, False
 
         if ob_id == target_ob_id:
-            # Calculate the range for squad IDs (sqd 0 through sqd 9)
-            start_idx = O_SQD0_COL
+            # Grab the exact starting index for the squad block
+            sqd_base = ObColumn.SQD_0
 
             for i in range(MAX_SQUAD_SLOTS):
-                # Access the WID directly by index
-                wid = parse_row_int(row, start_idx + i)
+                try:
+                    # Direct list access using pure integer offset math
+                    wid = int(ob.raw[sqd_base + i])
+                except (IndexError, ValueError):
+                    continue
 
                 if wid == target_wid:
                     if i != target_slot:
-                        # Use the refactored list-based helper
-                        row = reorder_ob_elems(row, i, target_slot)
+                        # ObRow's method handles shifting elements and updating self.raw
+                        ob.reorder_slots(i, target_slot)
 
                         log.debug("TOE(OB) ID[%d]: Moved squad from slot %d to %d",
                                   ob_id, i, target_slot)
-                        return row, True
+                        # Return the modified underlying list
+                        return ob.raw, True
                     break # Found the WID but it's already in the target slot
 
         return row, False

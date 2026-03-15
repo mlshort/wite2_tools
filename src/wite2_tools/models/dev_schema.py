@@ -1,3 +1,17 @@
+"""
+_device.csv Mapping Reference:
+| Constant       | CSV Header | Index | Notes                                 |
+|----------------|------------|-------|---------------------------------------|
+| D_ID_COL       | id         | 0     | Unique Identifier                     |
+| D_NAME_COL     | name       | 1     | Display Name                          |
+| TYPE_COL       | type       | 2     | Device Type Code                      |
+| SYM_COL        | sym        | 3     | Symbol Code                           |
+| LOAD_COST_COL  | loadCost   | 4     | Weight in pounds                      |
+| PEN_COL        | pen        | 7     | Armor penetration (mm at 100 meters)  |
+
+Note: The Device file contains exactly 25 columns (0-24) covering all combat
+statistics and properties for weapons/equipment.
+"""
 from enum import IntEnum
 from typing import Final, List, Dict
 
@@ -5,43 +19,62 @@ from typing import Final, List, Dict
 class DevColumn(IntEnum):
     """
     Device Column indices for WiTE2's _device.csv file (25 Columns).
+
+    The Device schema defines the combat statistics and properties of weapons
+    and equipment used by Ground Elements and Aircraft.
     """
     ID = 0
     NAME = 1
     TYPE = 2
     SYM = 3
-    LOAD_COST = 4  # number of pounds the device weighs
-    RANGE = 5  # no idea how this is used
+
+    # Number of pounds the device weighs
+    LOAD_COST = 4
+
+    # No idea how this is used
+    RANGE = 5
     EFFECT = 6
-    PEN = 7  # Penetration
-    """
-    number of millimetres of armour plate the weapon can penetrate
-    appears to be 0-degree (vertical) penetration at 100 meters
-    """
-    ACC = 8  # Accuracy
-    CEILING = 9  # Max Ceiling (in feet)
+
+    # Penetration: Number of millimetres of armour plate the weapon can
+    # penetrate. Appears to be 0-degree (vertical) penetration at 100 meters.
+    PEN = 7
+
+    # Accuracy
+    ACC = 8
+
+    # Max Ceiling (in feet)
+    CEILING = 9
     ANTI_ARMOR = 10
     ANTI_SOFT = 11
-    WARHEAD = 12  # Not displayed in the Editor (see below)
+
+    # Not displayed in the Editor
+    WARHEAD = 12
     ANTI_AIR = 13
-    RG = 14  # Maximum Effective Range (meters for ground units)
-    # the range is "feet" for aircraft
-    ROF = 15  # Rate of Fire (can be negative)
-    # a negative value would be scaled as RoF of 1 / x minutes, instead of
-    # x / 1 minute.
+
+    # Maximum Effective Range (meters for ground units, feet for aircraft)
+    RG = 14
+
+    # Rate of Fire (can be negative). A negative value is scaled as RoF
+    # of 1 / x minutes, instead of x / 1 minute.
+    ROF = 15
     # Rate of Fire (ROF) is not used in the conventional military sense.
     # It indicates how many times a device will be allowed to fire during
     # the combat phase. The higher the number entered the better the ROF.
-    HEAT = 16  # HEAT Pen
+
+    # HEAT Pen
     # number of millimetres of armour plate the HEAT weapon can penetrate
-    # at x range
-    HVAP = 17  # HVAP Pen
+    # at (100 meter?) range
+    HEAT = 16
+    # High Velocity Armor Piercing (HVAP)
+    HVAP = 17
     BLAST = 18
-    DUD_RATE = 19  # Not displayed in the Editor
+    # Not displayed in the Editor
+    DUD_RATE = 19
     COUNTER_DEV = 20
     COUNTER_DT = 21
     COUNTER_VAL = 22
     COUNTER_T_VAL = 23
+    # Max Effective Ceiling (in feet)
     EFF_CEILING = 24
 
 # 1. Warhead: The Caliber Scale
@@ -75,7 +108,9 @@ class DevColumn(IntEnum):
 # thinner walls of rocket casings which allowed for more explosive filler and
 # a larger burst radius at the expense of penetration.
 
-
+# ---------------------------------------------------------
+# CONSTANT ALIASES FOR LEGACY OR CONVENIENCE
+# ---------------------------------------------------------
 NUM_COLS : Final[int] = len(DevColumn)
 
 ID_COL : Final[int]        = DevColumn.ID
@@ -89,6 +124,9 @@ PEN_COL : Final[int]       = DevColumn.PEN
 def gen_device_column_names() -> List[str]:
     """
     Generates the 25 headers for a _device.csv file.
+
+    Returns:
+        List[str]: A list of column header strings.
     """
     return [
         'id', 'name', 'type', 'sym', 'loadCost', 'range', 'effect', 'pen',

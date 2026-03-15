@@ -1,3 +1,14 @@
+"""
+Device Usage Analyzer Module
+
+This module identifies weapons or equipment (devices) of a specific type
+that are defined in the database but remain unassigned to any ground
+element or aircraft.
+
+It cross-references the `_device.csv` file against `_ground.csv` and
+`_aircraft.csv` to build a comprehensive map of active weapon loadouts,
+allowing modders to safely locate unused device IDs for custom content.
+"""
 import os
 
 from wite2_tools.generator import get_csv_list_stream
@@ -22,8 +33,9 @@ def identify_unused_devices(ground_file_path: str,
     """
     Identifies devices of a specific type that are not present in any ground
     unit or aircraft.
-    :param device_type: The integer ID of the device type (e.g.,
-    7 for Hvy Gun, 25 for DP Gun)
+
+    :param device_type: The integer ID of the device type
+                        (e.g., 7 for Hvy Gun, 25 for DP Gun)
     """
     devices_of_type = {}
 
@@ -59,11 +71,12 @@ def identify_unused_devices(ground_file_path: str,
         device_gen = get_csv_list_stream(device_file_path)
 
         for _, row in device_gen.rows:
+            d_id = parse_row_int(row, DevColumn.ID)
             d_type = parse_row_int(row, DevColumn.TYPE)
 
             if d_type == device_type:
                 d_name = parse_row_str(row, DevColumn.NAME, default="Unk")
-                d_id = parse_row_int(row, DevColumn.ID)
+
                 if d_id:
                     devices_of_type[d_id] = d_name
 
@@ -78,15 +91,37 @@ def identify_unused_devices(ground_file_path: str,
     # 2. Identify all weapon IDs used in the ground and aircraft files
     used_weapon_ids = set()
 
-    # Build strict index lists from schemas (WPN_0 through WPN_9)
-    gnd_wpn_indices = [getattr(GndColumn, f"WPN_{i}").value for i in range(10)]
-
-    # Aircraft have base weapons and 5 additional Weapon Sets (WS0 to WS4)
-    # which must be checked so bombs/drop tanks aren't falsely flagged as unused.
-    ac_wpn_indices = [getattr(AcColumn, f"WPN_{i}").value for i in range(10)]
-    for ws in range(5):
-        ac_wpn_indices.extend([getattr(AcColumn,
-                                       f"WS{ws}_WPN_{i}").value for i in range(10)])
+    # Build dynamic lists of weapon column indices using our schemas
+    gnd_wpn_indices = [
+        GndColumn.WPN_0, GndColumn.WPN_1, GndColumn.WPN_2, GndColumn.WPN_3,
+        GndColumn.WPN_4, GndColumn.WPN_5, GndColumn.WPN_6, GndColumn.WPN_7
+    ]
+    # Base weapons + all Loadout weapons
+    ac_wpn_indices = [
+        AcColumn.WPN_0, AcColumn.WPN_1, AcColumn.WPN_2, AcColumn.WPN_3,
+        AcColumn.WPN_4, AcColumn.WPN_5, AcColumn.WPN_6, AcColumn.WPN_7,
+        AcColumn.WPN_8, AcColumn.WPN_9,
+        AcColumn.WS0_WPN_0, AcColumn.WS0_WPN_1, AcColumn.WS0_WPN_2,
+        AcColumn.WS0_WPN_3, AcColumn.WS0_WPN_4, AcColumn.WS0_WPN_5,
+        AcColumn.WS0_WPN_6, AcColumn.WS0_WPN_7, AcColumn.WS0_WPN_8,
+        AcColumn.WS0_WPN_9,
+        AcColumn.WS1_WPN_0, AcColumn.WS1_WPN_1, AcColumn.WS1_WPN_2,
+        AcColumn.WS1_WPN_3, AcColumn.WS1_WPN_4, AcColumn.WS1_WPN_5,
+        AcColumn.WS1_WPN_6, AcColumn.WS1_WPN_7, AcColumn.WS1_WPN_8,
+        AcColumn.WS1_WPN_9,
+        AcColumn.WS2_WPN_0, AcColumn.WS2_WPN_1, AcColumn.WS2_WPN_2,
+        AcColumn.WS2_WPN_3, AcColumn.WS2_WPN_4, AcColumn.WS2_WPN_5,
+        AcColumn.WS2_WPN_6, AcColumn.WS2_WPN_7, AcColumn.WS2_WPN_8,
+        AcColumn.WS2_WPN_9,
+        AcColumn.WS3_WPN_0, AcColumn.WS3_WPN_1, AcColumn.WS3_WPN_2,
+        AcColumn.WS3_WPN_3, AcColumn.WS3_WPN_4, AcColumn.WS3_WPN_5,
+        AcColumn.WS3_WPN_6, AcColumn.WS3_WPN_7, AcColumn.WS3_WPN_8,
+        AcColumn.WS3_WPN_9,
+        AcColumn.WS4_WPN_0, AcColumn.WS4_WPN_1, AcColumn.WS4_WPN_2,
+        AcColumn.WS4_WPN_3, AcColumn.WS4_WPN_4, AcColumn.WS4_WPN_5,
+        AcColumn.WS4_WPN_6, AcColumn.WS4_WPN_7, AcColumn.WS4_WPN_8,
+        AcColumn.WS4_WPN_9
+    ]
 
     # Map the files to their respective column schemas
     file_mappings = [
@@ -106,9 +141,21 @@ def identify_unused_devices(ground_file_path: str,
                     if wpn_id:
                         used_weapon_ids.add(wpn_id)
 
-        except (OSError, IOError, ValueError, KeyError) as e:
-            log.warning("Skipping file %s due to error: %s", file_path, e)
-
+        except OSError as e:
+            log.warning(
+                "File access error for '%s'. Skipping. Details: %s",
+                file_path, e
+            )
+        except ValueError as e:
+            log.warning(
+                "Data type conversion failed in '%s'. Skipping. Details: %s",
+                file_path, e
+            )
+        except KeyError as e:
+            log.warning(
+                "Missing expected column in '%s'. Skipping. Details: %s",
+                file_path, e
+            )
     # 3. Filter for unused devices
     unused_list = []
     for dev_id, dev_name in devices_of_type.items():

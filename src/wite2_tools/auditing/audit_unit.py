@@ -29,55 +29,79 @@ Command Line Usage:
 import csv
 import os
 from tempfile import NamedTemporaryFile
-from typing import Set, Any, Dict
+from typing import Set, Tuple, List
 
 # Internal package imports
-from wite2_tools.config import ENCODING_TYPE
-from wite2_tools.generator import get_csv_dict_stream
-from wite2_tools.utils import (
-     parse_int,
-     parse_str
+from wite2_tools.generator import CSVListStream, get_csv_list_stream
+from wite2_tools.utils import get_logger, parse_row_int
+from wite2_tools.utils.formatting import (
+    format_ref,
+    format_header,
+    format_coords,
+    format_status,
+    audit_msg,
+    completion_msg
 )
+from wite2_tools.models import (
+    UnitRow,
+    UnitColumn,
+    U_SQD_SLOTS,
+    U_SQD0_COL,
+    U_SQD_NUM0_COL,
+    ATTRS_PER_SQD
+)
+from wite2_tools.utils.get_valid_ids import (
+    get_valid_ground_elem_ids,
+    get_valid_unit_ids
+)
+
+from wite2_tools.config import ENCODING_TYPE
+
+from wite2_tools.NatCodes import NatCodes
+
 from wite2_tools.constants import (
-    MAX_SQUAD_SLOTS,
     MIN_X,
     MAX_X,
     MIN_Y,
     MAX_Y,
     MAX_GAME_TURNS
 )
-from wite2_tools.utils import (
-    get_logger,
-    get_valid_ground_elem_ids,
-    get_valid_unit_ids,
-    format_ref,
-    format_coords,
-    audit_msg,
-    completion_msg
-)
+
 
 # Initialize the logger for this specific module
 log = get_logger(__name__)
 
 
-def is_greater_than_zero(value: Any) -> bool:
-    try:
-        return float(value) > 0
-    except ValueError:
-        # Returns False if the cell is text, empty, or None
-        return False
-
-
-def _check_coords(uid: int,
-                  uname: str,
-                  row: Dict[str, str]) -> int:
-    """Helper to validate all coordinate sets (x, y, tx, ty, etc.)."""
+def _check_nat(row: List[str],
+               uid: int,
+               uname: str) -> int:
     issues = 0
-    coord_pairs = [('x', 'y'), ('tx', 'ty'), ('ax', 'ay'), ('ptx', 'pty')]
+
+    unit = UnitRow(row)
+    u_nat = unit.NAT
+    if u_nat not in NatCodes:
+        ref = format_ref("UID", uid, uname)
+        log.warning("%s: Invalid NAT %s",
+                        ref, u_nat)
+        issues += 1
+
+    return issues
+
+
+
+def _check_coords(row: List[str],
+                  uid: int,
+                  uname: str) -> int:
+    """
+    Helper to validate all coordinate sets (x, y, tx, ty, etc.).
+    """
+    issues = 0
+    coord_pairs = [(UnitColumn.X, UnitColumn.Y), (UnitColumn.TX, UnitColumn.TY),
+                    (UnitColumn.ATX, UnitColumn.ATY), (UnitColumn.PTX, UnitColumn.PTY)]
 
     for cx, cy in coord_pairs:
-        x = parse_int(row.get(cx), -1)
-        y = parse_int(row.get(cy), -1)
+        x = parse_row_int(row, cx, -1)
+        y = parse_row_int(row, cy, -1)
 
         # NEW: Ignore holding/production pool coordinates (0, 0)
         if x == 0 and y == 0:
@@ -87,112 +111,85 @@ def _check_coords(uid: int,
             # Uniform Identifier and Coordinate formatting
             ref = format_ref("UID", uid, uname)
             coords = format_coords(x, y)
-            log.warning("%s: Invalid %s/%s coordinates %s",
-                        ref, cx, cy, coords)
+            log.warning("%s: Invalid coordinates %s",
+                        ref, coords)
             issues += 1
     return issues
 
 
-def _check_squads(uid: int,
-                  uname: str,
-                  row: Dict[str, str],
-                  valid_elem_ids: Set,
-                  fix_ghosts: bool) -> tuple[int, int]:
-    """Helper to validate squad integrity and detect ghost squads."""
+def _check_squads(
+    row: List[str],
+    valid_ground_element_ids: Set[int],
+    unit_ref: str,
+    fix_ghosts: bool
+) -> Tuple[int, int]:
+    """Scans all 32 squad slots for invalid element IDs (ghosts)."""
     issues = 0
     fixed = 0
-    ref = format_ref("UID", uid, uname)
 
-    for i in range(MAX_SQUAD_SLOTS):
-        sqd_id_col, sqd_num_col = f"sqd.u{i}", f"sqd.num{i}"
-        sqd_id = parse_int(row.get(sqd_id_col))
-        qty = parse_int(row.get(sqd_num_col))
+    for i in range(U_SQD_SLOTS):
+        sqd_col:int = U_SQD0_COL + (i * ATTRS_PER_SQD)
+        num_col:int = U_SQD_NUM0_COL + (i * ATTRS_PER_SQD)
+        wid = parse_row_int(row, sqd_col)
+        qty = parse_row_int(row, num_col)
 
-        if sqd_id != 0 and sqd_id not in valid_elem_ids:
-            log.error("%s: Slot %d has invalid Elem WID[%d].",
-                    ref, i, sqd_id)
+        if qty > 0 and wid not in valid_ground_element_ids:
             issues += 1
+            msg = (f"{unit_ref} (Ghost Sqd): Slot {i} contains "
+                   f"{qty} elements of invalid WID[{wid}].")
 
-        if qty != 0 and sqd_id == 0:
-            log.error("%s: Ghost Squad detected in Slot %d (Qty: %d).",
-                      ref, i, qty)
-            issues += 1
             if fix_ghosts:
-                row[sqd_num_col] = "0"
+                row[sqd_col] = "0"
+                row[num_col] = "0"
                 fixed += 1
-                log.info("FIXED: Ghost squad in %s slot %d",
-                         uname, i)
+                log.warning("%s %s", format_status("FIXED"), msg)
+            else:
+                log.warning(msg)
 
     return issues, fixed
 
-# pylint: disable=too-many-arguments
-def _check_hq_and_delay(uid: int,
-                        uname: str,
-                        row: Dict[str, str],
-                        valid_active_unit_ids: Set,
-                        relink_orphans: bool,
-                        fallback_hq: int) -> tuple[int, int]:
-    """Helper to validate HQ attachment logic and deployment delays."""
+
+def _check_hq_and_delay(
+    row: List[str],
+    valid_unit_ids: Set[int],
+    fallback_hq: int,
+    unit_ref: str,
+    relink_orphans: bool = False
+) -> Tuple[int, int]:
+    """Validates command chain assignments and associated data."""
     issues = 0
     fixed = 0
-    ref: str = format_ref("UID", uid, uname)
-    unit_hhq = parse_int(row.get('hhq'))
+    hhq_id = parse_row_int(row, UnitColumn.HHQ)
 
-    if unit_hhq == uid:
-        hq_type = parse_int(row.get('hq'))
-        if hq_type not in (0, 1):
-            log.warning("%s: Self-reporting as HQ with Type(%d).",
-                     ref, hq_type)
-            issues += 1
-
-    if unit_hhq != 0:
-        # NEW: Check if the HQ exists AND is currently active
-        if unit_hhq not in valid_active_unit_ids:
-            log.error("%s: Unit reports to an invalid or inactive HQ (%d).",
-                      ref, unit_hhq)
-            issues += 1
-
-            # NEW: Auto-repair orphaned units
-            if relink_orphans and fallback_hq > 0:
-                log.info(" -> FIXING: Relinking Unit %d to Fallback HQ %d",
-                         uid, fallback_hq)
-                row['hhq'] = str(fallback_hq)
-                fixed += 1
-
-    u_delay = parse_int(row.get("delay"))
-    if u_delay > MAX_GAME_TURNS:
-        log.warning("%s: Delay(%d) exceeds MAX_GAME_TURNS(%d).",
-                    ref, u_delay, MAX_GAME_TURNS)
+    if hhq_id not in valid_unit_ids and hhq_id != 0:
         issues += 1
+        msg = f"{unit_ref} (Orphan): Assigned to invalid HQ[{hhq_id}]"
+
+        if relink_orphans:
+            row[UnitColumn.HHQ] = str(fallback_hq)
+            fixed += 1
+            log.warning(
+                "%s %s -> Relinked to HQ[%d]",
+                format_status("FIXED"), msg, fallback_hq
+            )
+        else:
+            log.warning(msg)
 
     return issues, fixed
 
 
-# pylint: disable= too-many-locals, too-many-branches, too-many-statements
-def audit_unit_csv(unit_file_path: str,
-                   ground_file_path: str,
-                   active_only: bool = True,
-                   fix_ghosts: bool = False,
-                   relink_orphans: bool = False,
-                   fallback_hq: int = 0) -> int:
+# pylint: disable=too-many-branches, too-many-statements, too-many-locals
+def audit_unit_csv(
+    unit_file_path: str,
+    ground_file_path: str,
+    active_only: bool = True,
+    fix_ghosts: bool = False,
+    relink_orphans: bool = False,
+    fallback_hq: int = 0
+) -> int:
     """
-    Validates a WiTE2 _unit CSV file for structural integrity and game-logic
-    errors.
-
-    Args:
-        unit_file_path: Path to the unit CSV.
-        ground_file_path: Path to the ground element CSV (for ID validation).
-        active_only: If True, skips units with id="0" or type="0".
-        fix_ghosts: If True, automatically zeroes out squad quantities where
-                    the ID is 0.
+    Evaluates unit data for consistency and optionally applies fixes.
     """
-    issues_found: int = 0
-    ghosts_fixed: int = 0
-    orphans_fixed: int = 0
-    seen_unit_ids: Set[int] = set()
-    temp_file = None
-    file_base = os.path.basename(unit_file_path)
-
     if not os.path.isfile(unit_file_path):
         log.error("Error: The file '%s' was not found.", unit_file_path)
         return -1
@@ -201,100 +198,113 @@ def audit_unit_csv(unit_file_path: str,
         log.error("Error: The file '%s' was not found.", ground_file_path)
         return -1
 
-    try:
-        log.info("Task Start: Evaluating Unit file integrity: '%s'", file_base)
-        # get the set of valid ground element ids
-        valid_elem_ids: Set[int] = get_valid_ground_elem_ids(ground_file_path)
-        valid_unit_ids: Set[int] = get_valid_unit_ids(unit_file_path, active_only)
+    file_base = os.path.basename(unit_file_path)
+    log.info(format_header(f"Task Start: Evaluating Unit file integrity: '{file_base}'"))
 
-        unit_stream = get_csv_dict_stream(unit_file_path)
+    valid_ground_element_ids: Set[int] = get_valid_ground_elem_ids(ground_file_path)
+    valid_unit_ids: Set[int] = get_valid_unit_ids(unit_file_path, active_only)
 
-        # Initialize temp file if fix mode is enabled
-        writer = None
-        if fix_ghosts or relink_orphans:
-            temp_file = NamedTemporaryFile(mode='w', delete=False,
-                                           dir=os.path.dirname(unit_file_path),
-                                           newline='', encoding=ENCODING_TYPE)
-            header = unit_stream.fieldnames
-            writer = csv.DictWriter(temp_file,
-                                    fieldnames=header)
-            writer.writeheader()
+    issues_found:int = 0
+    ghosts_fixed:int = 0
+    orphans_fixed:int = 0
+    seen_unit_ids:Set[int] = set()
 
-        log.info("Evaluating Unit file consistency:'%s' (Active Only:%s) (Fix Mode:%s)",
-                 file_base, active_only, (fix_ghosts or relink_orphans))
+    temp_file = None
+    if fix_ghosts or relink_orphans:
+        file_dir = os.path.dirname(unit_file_path)
+        temp_file = NamedTemporaryFile(
+            mode='w', newline='', delete=False, dir=file_dir,
+            encoding=ENCODING_TYPE, suffix=".csv"
+        )
 
-        for _, row in unit_stream.rows:
-            uid = parse_int(row.get("id"))
-            utype = parse_int(row.get("type"))
-
-            if active_only and (uid == 0 or utype == 0):
-                if writer:
-                    writer.writerow(row)
-                continue
-
-            uname = parse_str(row.get("name"), "Unk")
-            ref = format_ref("UID", uid, uname)
-
-            # 1. Primary Key Uniqueness
-            if uid in seen_unit_ids:
-                log.error("%s: Duplicate Unit ID for '%s'",
-                          ref, uname)
-                issues_found += 1
-            seen_unit_ids.add(uid)
-
-            # 2. Coordinate Validation
-            issues_found += _check_coords(uid, uname, row)
-
-            # 3. Squad and Integrity Checks (Consolidated logic)
-            s_issues, s_fixed = _check_squads(uid, uname, row,
-                                            valid_elem_ids, fix_ghosts)
-            issues_found += s_issues
-            ghosts_fixed += s_fixed
-
-            # 4. HQ & Delay Check
-            hq_issues, hq_fixed = _check_hq_and_delay(uid, uname, row,
-                                                      valid_unit_ids,
-                                                      relink_orphans,
-                                                      fallback_hq)
-            issues_found += hq_issues
-            orphans_fixed += hq_fixed
-
-            if writer:
-                writer.writerow(row)
-
-        # Finalize and swap files if changes were made
-        if (fix_ghosts or relink_orphans) and temp_file:
-            temp_file.close()
-            if ghosts_fixed > 0 or orphans_fixed > 0:
-                log.info(completion_msg("Repair",
-                                        ghosts_fixed + orphans_fixed,
-                                        file_base))
-                os.replace(temp_file.name, unit_file_path)
-            else:
-                log.info("Fix Mode Complete: No issues found to repair.")
-                os.remove(temp_file.name)
-
-        if issues_found == 0:
-            log.info("%d Units Checked - _unit.csv Consistency Check Passed.",
-                     len(seen_unit_ids))
-            # Standardized Audit Summary
-            log.info(audit_msg(file_base,
-                               issues_found,
-                               len(seen_unit_ids)))
-        else:
-            log.warning("%d Units Checked - _unit.csv Consistency Check Failed with %d issues.",
-                        len(seen_unit_ids), issues_found)
-
-    except (OSError, IOError, ValueError, KeyError, TypeError) as e:
-        log.exception("Critical error during _unit.csv evaluation: %s", e)
+    def _cleanup_temp() -> None:
         if temp_file and os.path.isfile(temp_file.name):
             try:
                 temp_file.close()
                 os.remove(temp_file.name)
             except OSError:
                 pass
-        return -1
 
+    try:
+        unit_stream: CSVListStream = get_csv_list_stream(unit_file_path)
+
+        writer = None
+        if (fix_ghosts or relink_orphans) and temp_file:
+            writer = csv.writer(temp_file, lineterminator='\n')
+            writer.writerow(unit_stream.header)
+
+        for _, row in unit_stream.rows:
+            unit = UnitRow(row)
+            uid:int = unit.ID
+            uname:str = unit.NAME
+
+            unit_ref: str = format_ref("UID", uid, uname)
+            seen_unit_ids.add(uid)
+
+            # --- Validation Helpers ---
+            issues_found += _check_nat(row, uid, uname)
+            issues_found += _check_coords(row, uid, uname)
+
+            sqd_issues, sqd_fixed = _check_squads(
+                row, valid_ground_element_ids, unit_ref, fix_ghosts
+            )
+            issues_found += sqd_issues
+            ghosts_fixed += sqd_fixed
+
+            hq_issues, hq_fixed = _check_hq_and_delay(
+                row, valid_unit_ids, fallback_hq, unit_ref, relink_orphans
+            )
+            issues_found += hq_issues
+            orphans_fixed += hq_fixed
+
+            if writer and temp_file:
+                writer.writerow(row)
+
+        if (fix_ghosts or relink_orphans) and temp_file:
+            temp_file.close()
+            if ghosts_fixed > 0 or orphans_fixed > 0:
+                log.info(
+                    completion_msg(
+                        "Repair", ghosts_fixed + orphans_fixed, file_base
+                    )
+                )
+                os.replace(temp_file.name, unit_file_path)
+            else:
+                log.info("Fix Mode Complete: No issues found to repair.")
+                os.remove(temp_file.name)
+
+        if issues_found == 0:
+            log.info(
+                "%d Units Checked - _unit.csv Consistency Check Passed.",
+                len(seen_unit_ids)
+            )
+            log.info(audit_msg(file_base, issues_found, len(seen_unit_ids)))
+        else:
+            log.warning(
+                "%d Units Checked - Check Failed with %d issues.",
+                len(seen_unit_ids), issues_found
+            )
+
+    except OSError as e:
+        log.error("File access error for '%s'. Details: %s", file_base, e)
+        _cleanup_temp()
+        return -1
+    except ValueError as e:
+        log.error("Data conversion failed in '%s'. Details: %s", file_base, e)
+        _cleanup_temp()
+        return -1
+    except KeyError as e:
+        log.error("Missing expected dictionary key in '%s': %s", file_base, e)
+        _cleanup_temp()
+        return -1
+    except IndexError as e:
+        log.error("Truncated row or missing column in '%s': %s", file_base, e)
+        _cleanup_temp()
+        return -1
+    except TypeError as e:
+        log.error("Type error processing '%s'. Details: %s", file_base, e)
+        _cleanup_temp()
+        return -1
     finally:
         for handler in log.handlers:
             handler.flush()

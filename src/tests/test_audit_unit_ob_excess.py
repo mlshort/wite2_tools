@@ -1,6 +1,6 @@
 from pathlib import Path
 from unittest.mock import patch, MagicMock
-from typing import Callable, List, Dict
+from typing import Callable
 
 
 from wite2_tools.auditing.audit_unit_ob_excess import audit_unit_ob_excess

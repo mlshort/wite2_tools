@@ -104,7 +104,7 @@ def _build_ob_lookup(ob_file_path: str) -> Dict[int, ObName]:
 
     if not os.path.isfile(ob_file_path):
         log.error("TOE(OB) file not found: %s", ob_file_path)
-        return lookup
+        return dict()
 
     try:
         ob_stream: CSVListStream = get_csv_list_stream(ob_file_path)
@@ -220,7 +220,7 @@ def _build_ground_elem_lookup(ground_file_path: str) -> Dict[int, str]:
 
     if not os.path.isfile(ground_file_path):
         log.error("Ground file not found: '%s'", ground_file_path)
-        return lookup
+        return dict()
 
     try:
         # Use list generator to handle duplicate 'id' column names safely

@@ -42,7 +42,7 @@ from functools import cache
 
 # Internal package imports
 from wite2_tools.config import NatData, normalize_nat_codes, make_hashable
-from wite2_tools.models.unit import UnitData
+from wite2_tools.models.UnitData import UnitData
 from wite2_tools.models import (
     U_ID_COL,
     U_NAME_COL,
@@ -125,8 +125,21 @@ def _group_units_by_ob(
 
         print_unit_table(ob_ids_to_units)
 
-    except (OSError, IOError, ValueError, KeyError) as e:
-        log.exception("Grouping failed: %s", e)
+    except OSError as e:
+        log.warning(
+            "File access error for '%s'. Skipping. Details: %s",
+            unit_file_path, e
+        )
+    except ValueError as e:
+        log.warning(
+            "Data type conversion failed in '%s'. Skipping. Details: %s",
+            unit_file_path, e
+        )
+    except KeyError as e:
+        log.warning(
+            "Missing expected column in '%s'. Skipping. Details: %s",
+            unit_file_path, e
+        )
 
     return dict(ob_ids_to_units)
 

@@ -13,15 +13,13 @@ import pytest
 from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.models import (
     # Unit Constants
+    UnitRow,
     gen_unit_column_names,
-    gen_default_unit_row,
     ATTRS_PER_SQD, U_SQD_SLOTS,
     U_SQD0_COL, U_SQD_NUM0_COL,
     # OB Constants
     gen_ob_column_names,
-    gen_default_ob_row,
-    ObColumn, O_SQD_SLOTS,
-    O_TYPE_COL,
+    ObColumn, ObRow,
     # Ground Constants
     gen_gnd_column_names,
     gen_default_gnd_row,
@@ -35,30 +33,81 @@ from wite2_tools.models import (
     gen_default_aircraft_row
 )
 
+from wite2_tools.utils.get_name import (
+    _build_ground_elem_lookup,
+    _build_ob_lookup
+)
+from wite2_tools.core.group_units_by_ob import (
+    _group_units_by_ob,
+)
+from wite2_tools.utils.get_valid_ids import (
+    get_valid_ob_ids,
+    get_valid_ob_upgrade_ids,
+    get_valid_ground_elem_ids,
+    get_valid_unit_ids
+)
+
+
+@pytest.fixture(autouse=True, name="clear_caches")
+def clear_all_caches()->None:
+    """
+    Automatically runs before every test to clear the @cache decorators.
+    This guarantees that state does not leak between different tests.
+    """
+    _group_units_by_ob.cache_clear()
+    _build_ob_lookup.cache_clear()
+    _build_ground_elem_lookup.cache_clear()
+    get_valid_ob_ids.cache_clear()
+    get_valid_ob_upgrade_ids.cache_clear()
+    get_valid_ground_elem_ids.cache_clear()
+    get_valid_unit_ids.cache_clear()
+
 
 # ---------------------------------------------------------
 # HELPER FUNCTIONS FOR PADDED ROW GENERATION
 # ---------------------------------------------------------
 
 def create_unit_row(
-    uid: str,
+    uid: int,
     name: str,
-    utype: str,
-    nat: str,
+    utype: int,
+    nat: int,
     squads: List[Tuple[int, str, str]]
-) -> List[str]:
+) -> UnitRow:
     """
-    Generates a 380-column _unit.csv row with interleaved squads.
-    """
-    row = gen_default_unit_row(int(uid), name, int(utype), int(nat))
+    Generates a 380-column UnitRow with populated squad slots using direct index access.
 
+    Args:
+        uid: Unit ID
+        name: Unit Name
+        utype: TOE/OB ID
+        nat: Nationality
+        squads: List of (slot_index, weapon_id, quantity)
+    """
+    # 1. Create the base object with 380 columns
+    unit = UnitRow.create_default(uid, name, utype, nat)
+
+    # 2. Access the underlying list directly
+    # Note: We use unit.raw which returns the self.raw list
     for slot_idx, wid, qty in squads:
-        if slot_idx < U_SQD_SLOTS:
-            squad_idx = U_SQD0_COL + (slot_idx * ATTRS_PER_SQD)
-            num_idx = U_SQD_NUM0_COL + (slot_idx * ATTRS_PER_SQD)
-            row[squad_idx] = wid
-            row[num_idx] = qty
-    return row
+        if 0 <= slot_idx < U_SQD_SLOTS:
+            # Calculate the exact CSV column indices
+            # U_SQD0_COL is the start of the WID block (Index 22)
+            # U_SQD_NUM0_COL is the start of the Quantity block (Index 54)
+            # ATTRS_PER_SQD is usually 1 in the unit file (non-interleaved blocks)
+
+            squad_col_idx = U_SQD0_COL + (slot_idx * ATTRS_PER_SQD)
+            num_col_idx = U_SQD_NUM0_COL + (slot_idx * ATTRS_PER_SQD)
+
+            unit.raw[squad_col_idx] = str(wid)
+            unit.raw[num_col_idx] = str(qty)
+
+    # 3. Synchronize the object attributes
+    # Because we modified the 'raw' list directly, we call __init__
+    # to refresh unit.SQD_0, unit.SQD_NUM_0, etc. from the new list values.
+    unit.__init__(unit.raw)
+
+    return unit
 
 
 # pylint: disable=too-many-arguments, too-many-positional-arguments
@@ -66,41 +115,38 @@ def create_ob_row(
     ob_id: str,
     name: str,
     suffix: str = "0",
-    nat: str = "1",
-    first_year: str = "1941",   # New
-    first_month: str = "1",     # New
-    last_year: str = "1945",    # New
-    last_month: str = "12",     # New
-    ob_type: str = "0",
-    upgrade: str = "0",
+    nat: int = 1,
+    first_year: int = 1941,
+    first_month: int = 1,
+    last_year: int = 1945,
+    last_month: int = 12,
+    ob_type: int = 0,
+    upgrade: int = 0,
     squads: Optional[List[Tuple[int, str, str]]] = None
-) -> List[str]:
+) -> ObRow:
     """
-    Generates a 79-column _ob.csv row (Indices 0-78).
+    Generates a populated ObRow object representing a _ob.csv row.
     Matches the schema: Metadata -> 32 sqd slots -> 32 sqdNum slots.
     """
-    row = gen_default_ob_row(int(ob_id), name, suffix)
-    row[ObColumn.NAT]     = nat
-# --- Date Field Indices ---
-    row[ObColumn.FIRST_YEAR]  = first_year
-    row[ObColumn.FIRST_MONTH] = first_month
-    row[ObColumn.LAST_YEAR]   = last_year
-    row[ObColumn.LAST_MONTH]  = last_month
+    row: ObRow = ObRow.create_default(int(ob_id), name, suffix)
 
-    row[O_TYPE_COL]    = ob_type
-    row[ObColumn.UPGRADE] = upgrade
+    # Clean, Pythonic property assignments!
+    row.NAT = nat
+    row.FIRST_YEAR = first_year
+    row.FIRST_MONTH = first_month
+    row.LAST_YEAR = last_year
+    row.LAST_MONTH = last_month
+    row.TYPE = ob_type
+    row.UPGRADE = upgrade
 
-# Slot Mapping
-    # sqd 0-31 are indices 15-46
-    # sqdNum 0-31 are indices 47-78
+    # Slot Mapping
     if squads:
         for slot_idx, g_id, qty in squads:
-            if slot_idx < O_SQD_SLOTS:
-                s_idx = ObColumn.SQD_0 + slot_idx
-                n_idx = ObColumn.SQD_NUM_0 + slot_idx
-                row[s_idx] = g_id
-                row[n_idx] = qty
-
+            if 0 <= slot_idx < 32:
+                # We still use raw here because we are dynamically iterating
+                # through the slots using the IntEnum math.
+                row.raw[ObColumn.SQD_0 + slot_idx] = str(g_id)
+                row.raw[ObColumn.SQD_NUM_0 + slot_idx] = str(qty)
     return row
 
 
@@ -150,7 +196,10 @@ def create_dev_row(
 # FACTORY FIXTURES (For dynamic file generation in tests)
 # ---------------------------------------------------------
 @pytest.fixture
-def make_ob_csv(tmp_path: Path) -> Callable[[str, List[Dict]], Path]:
+def make_ob_csv(tmp_path: Path) -> Callable[..., Path]:
+    """
+    Factory fixture to generate a mock _ob.csv file for testing.
+    """
     def _make(filename: str, rows_data: List[Dict]) -> Path:
         file_path = tmp_path / filename
         headers: List[str] = gen_ob_column_names()
@@ -160,33 +209,38 @@ def make_ob_csv(tmp_path: Path) -> Callable[[str, List[Dict]], Path]:
             writer.writerow(headers)
 
             for data in rows_data:
-                writer.writerow(create_ob_row(
+                row = create_ob_row(
                     ob_id=data.get("id") or data.get("ob_id", "0"),
-                    name=data["name"],
-                    suffix=data.get("suffix", "0"),
-                    nat=data.get("nat", "1"),
-                    # --- New Date Extractions ---
-                    first_year=data.get("firstYear", "1941"),
-                    first_month=data.get("firstMonth", "1"),
-                    last_year=data.get("lastYear", "1945"),
-                    last_month=data.get("lastMonth", "12"),
-                    # ----------------------------
-                    ob_type=data.get("type", "1"),
-                    upgrade=data.get("upgrade", "0"),
+                    name=data.get("name",""),
+                    suffix=data.get("suffix", ""),
+                    nat=data.get("nat", 1),
+                    first_year=data.get("firstYear", 1941),
+                    first_month=data.get("firstMonth", 1),
+                    last_year=data.get("lastYear", 1945),
+                    last_month=data.get("lastMonth", 12),
+                    ob_type=data.get("type", 1),
+                    upgrade=data.get("upgrade", 0),
                     squads=data.get("squads", [])
-                ))
+                )
+
+                writer.writerow(row.raw)
+
         return file_path
     return _make
 
+
 @pytest.fixture
 def make_unit_csv(tmp_path: Path) -> Callable[..., Path]:
-    """Factory to generate a custom _unit.csv file."""
+    """Factory to generate a custom 380-column _unit.csv file using UnitRow."""
     def _make(
         filename: str = "mock_unit.csv",
         rows_data: List[Dict[str, Any]] | None = None
     ) -> Path:
         file_path: Path = tmp_path / filename
-        headers:List[str] = gen_unit_column_names()
+        headers: List[str] = gen_unit_column_names()
+
+        # Define fields handled by the create_unit_row constructor
+        core_fields = {"id", "name", "type", "nat", "squads"}
 
         with open(file_path, 'w', newline='', encoding=ENCODING_TYPE) as f:
             writer = csv.writer(f)
@@ -194,13 +248,25 @@ def make_unit_csv(tmp_path: Path) -> Callable[..., Path]:
 
             if rows_data:
                 for data in rows_data:
-                    writer.writerow(create_unit_row(
-                        uid = data.get("id", "0"),
-                        name = data.get("name", "Unk"),
-                        utype = data.get("type", "1"),
-                        nat = data.get("nat", "1"),
-                        squads = data.get("squads", [])
-                    ))
+                    # 1. Create the base UnitRow with core identity and squads
+                    unit = create_unit_row(
+                        uid=int(data.get("id", 0)),
+                        name=str(data.get("name", "Unk")),
+                        utype=int(data.get("type", 1)),
+                        nat=int(data.get("nat", 1)),
+                        squads=data.get("squads", [])
+                    )
+
+                    # 2. Apply any other specific attributes (x, y, hhq, etc.)
+                    # This allows tests to inject custom values for any column
+                    for key, val in data.items():
+                        if key not in core_fields:
+                            # Use the UnitRow attribute logic to update the raw list
+                            setattr(unit, key, val)
+
+                    # 3. Write the underlying list to the CSV
+                    writer.writerow(unit.raw)
+
         return file_path
     return _make
 

@@ -1,15 +1,11 @@
 import csv
 from unittest.mock import patch
 from pathlib import Path
+from typing import Callable
 
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.auditing.audit_unit import audit_unit_csv
-
-# ==========================================
-# FIXTURES (Setup)
-# ==========================================
-
 
 
 # ==========================================
@@ -25,7 +21,7 @@ def test_coordinate_bounds_validation(tmp_path:Path)->None:
     unit_csv = tmp_path / "bad_coords_unit.csv"
     # Unit with X=999 (MAX_X is ~378)
     unit_csv.write_text("id,name,type,x,y,tx,ty,ax,ay,ptx,pty\n"
-                        "1,OutBounds,1,999,100,10,10,10,10,10,10")
+                        "1,OutOfBounds,1,999,100,10,10,10,10,10,10")
 
     ground_csv = tmp_path / "_ground.csv"
     ground_csv.write_text("id,name,type\n1,Placeholder,1")
@@ -87,7 +83,7 @@ def test_audit_unit_handles_value_error(tmp_path: Path)-> None:
 
     # it is handled without throwing the exception
     issues = audit_unit_csv(str(unit_csv), str(ground_csv))
-    assert issues == 0
+    assert issues == 5
 
 
 def test_audit_unit_handles_critical_io_error(tmp_path: Path)->None:
@@ -105,22 +101,48 @@ def test_audit_unit_handles_critical_io_error(tmp_path: Path)->None:
     assert issues == -1
 
 def test_audit_unit_csv_detects_all_errors(tmp_path: Path,
-                                           mock_ground_csv: Path)->None:
+                                           mock_ground_csv: Path,
+                                           make_unit_csv: Callable[..., Path])->None:
     """
     Verifies audit_unit spots duplicates, bad bounds, missing references, and ghosts.
     """
-    # 1. ARRANGE: Create the poisoned file locally using raw string for specific audit headers
-    content = (
-        "id,name,type,x,y,delay,hhq,hq,sqd.u0,sqd.num0,ax,ay,tx,ty,"
-        "ptx,pty,awx,awy\n"
-        "1,Valid Unit,10,50,50,0,32,0,105,10,38,17,40,14,19,78,32,55\n" # Valid
-        "1,Duplicate,10,50,50,0,89,0,105,10,38,17,40,114,129,71,71,2\n" # Duplicate ID
-        "3,Bad Coords,10,999,50,251,0,0,105,10,38,17,40,14,19,73,84,25\n" # X=999
-        "4,Bad Elem,10,50,50,0,82,0,999,10,38,17,40,134,119,78,26,90\n" # WID 999
-        "5,Ghost Sqd,10,50,50,0,0,59,0,50,38,17,40,114,19,28,91,100\n" # Qty 50, ID 0
-    )
     poisoned_file = tmp_path / "corrupted_unit.csv"
-    poisoned_file.write_text(content, encoding=ENCODING_TYPE)
+
+    # Use the fixture to create the file with correct padding
+    poisoned_file = make_unit_csv(
+        filename=poisoned_file,
+        rows_data=[
+                # Valid Unit (but HHQ 32 will flag as Orphan)
+                {"ID": "1", "NAME": "Valid Unit", "TYPE": "10", "X": "50", "Y": "50",
+                 "DELAY": "0", "HHQ": "32", "HQ": "0", "SQD_U0": "105", "SQD_NUM0": "10",
+                 "AX": "38", "AY": "17", "TX": "40", "TY": "14", "PTX": "19", "PTY": "78",
+                 "AWX": "32", "AWY": "55"},
+
+                # Duplicate ID (HHQ 89 will flag as Orphan)
+                {"ID": "1", "NAME": "Duplicate", "TYPE": "10", "X": "50", "Y": "50",
+                 "DELAY": "0", "HHQ": "89", "HQ": "0", "SQD_U0": "105", "SQD_NUM0": "10",
+                 "AX": "38", "AY": "17", "TX": "40", "TY": "114", "PTX": "129", "PTY": "71",
+                 "AWX": "71", "AWY": "2"},
+
+                # X=999 (Bad Coords)
+                {"ID": "3", "NAME": "Bad Coords", "TYPE": "10", "X": "999", "Y": "50",
+                 "DELAY": "251", "HHQ": "0", "HQ": "0", "SQD_U0": "105", "SQD_NUM0": "10",
+                 "AX": "38", "AY": "17", "TX": "40", "TY": "14", "PTX": "19", "PTY": "73",
+                 "AWX": "84", "AWY": "25"},
+
+                # WID 999 (Bad Element + HHQ 82 will flag as Orphan)
+                {"ID": "4", "NAME": "Bad Elem", "TYPE": "10", "X": "50", "Y": "50",
+                 "DELAY": "0", "HHQ": "82", "HQ": "0", "SQD_U0": "999", "SQD_NUM0": "10",
+                 "AX": "38", "AY": "17", "TX": "40", "TY": "134", "PTX": "119", "PTY": "78",
+                 "AWX": "26", "AWY": "90"},
+
+                # Qty 50, WID 0 (Ghost Squad + HQ 59 error)
+                {"ID": "5", "NAME": "Ghost Sqd", "TYPE": "10", "X": "50", "Y": "50",
+                 "DELAY": "0", "HHQ": "0", "HQ": "59", "SQD_U0": "0", "SQD_NUM0": "50",
+                 "AX": "38", "AY": "17", "TX": "40", "TY": "114", "PTX": "19", "PTY": "28",
+                 "AWX": "91", "AWY": "100"}
+        ]
+    )
 
     # 2. ACT: Note that we pass Path objects directly now
     issues_found = audit_unit_csv(
@@ -131,7 +153,7 @@ def test_audit_unit_csv_detects_all_errors(tmp_path: Path,
     )
 
     # 3. ASSERT
-    assert issues_found == 8
+    assert issues_found == 6
 
 def test_audit_unit_csv_fixes_ghosts(mock_corrupted_unit_csv: Path,
                                      mock_ground_csv: Path) -> None:

@@ -48,27 +48,16 @@ from functools import cache
 
 # Internal package imports
 from wite2_tools.config import normalize_nat_codes, NatData, make_hashable
-from wite2_tools.models.unit import UnitData
+from wite2_tools.models.ObRow import ObRow
+from wite2_tools.models.UnitRow import UnitRow
+from wite2_tools.models.UnitData import UnitData
 from wite2_tools.generator import get_csv_list_stream
-from wite2_tools.models import (
-    U_NAT_COL,
-    U_ID_COL,
-    U_TYPE_COL,
-    U_NAME_COL,
-    O_ID_COL,
-    O_TYPE_COL,
-    O_NAME_COL,
-    O_SUFFIX_COL,
-    O_NAT_COL,
-    O_UPGRADE_COL
-)
+
 from wite2_tools.utils import get_logger
 from wite2_tools.utils import format_header, format_list_item
 from wite2_tools.utils import (
     get_ob_full_name,
-    get_ob_suffix,
-    parse_row_int,
-    parse_row_str
+    get_ob_suffix
 )
 
 
@@ -92,27 +81,29 @@ def _parse_ob_data(ob_file_path: str,
     ob_stream = get_csv_list_stream(ob_file_path)
 
     for _, row in ob_stream.rows:
+        ob = ObRow(row)
 
-        ob_nat: int = parse_row_int(row, O_NAT_COL)
+        # ob_nat: int = parse_row_int(row, O_NAT_COL)
 
         nat_filter = normalize_nat_codes(nat_codes)
-        if nat_filter is not None and ob_nat not in nat_filter:
+        if nat_filter is not None and ob.nat not in nat_filter:
             continue
 
-        ob_id: int = parse_row_int(row, O_ID_COL)
-        if ob_id == 0:
+        # ob_id: int = parse_row_int(row, O_ID_COL)
+        if ob.ID == 0:
             continue
 
-        all_obs.add(ob_id)
-        ob_name = parse_row_str(row, O_NAME_COL).strip()
-        ob_suffix = parse_row_str(row, O_SUFFIX_COL).strip()
-        ob_id_to_name[ob_id] = f"{ob_name} {ob_suffix}"
+        #all_obs.add(ob_id)
+        all_obs.add(ob.ID)
+        ob_name = str(ob.NAME).strip() #parse_row_str(row, O_NAME_COL).strip()
+        ob_suffix = str(ob.SUFFIX).strip() # parse_row_str(row, O_SUFFIX_COL).strip()
+        ob_id_to_name[ob.ID] = f"{ob_name} {ob_suffix}"
 
-        if parse_row_int(row, O_TYPE_COL) != 0:
-            active_obs.add(ob_id)
-            upgrade_id:int = parse_row_int(row, O_UPGRADE_COL)
+        if ob.TYPE != 0:
+            active_obs.add(ob.ID)
+            upgrade_id:int = ob.UPGRADE #parse_row_int(row, O_UPGRADE_COL)
             if upgrade_id != 0:
-                ob_id_upgrade[ob_id] = upgrade_id
+                ob_id_upgrade[ob.ID] = upgrade_id
 
     return all_obs, active_obs, ob_id_to_name, ob_id_upgrade
 
@@ -133,19 +124,20 @@ def _trace_unit_references(unit_file_path: str,
     unit_stream = get_csv_list_stream(unit_file_path)
 
     for _, row in unit_stream.rows:
-        u_nat: int = parse_row_int(row, U_NAT_COL)
+        unit = UnitRow(row)
+        u_nat: int = unit.NAT
 
         if nat_filter is not None and u_nat not in nat_filter:
             continue
 
-        u_id: int = parse_row_int(row, U_ID_COL)
-        u_type: int = parse_row_int(row, U_TYPE_COL)
+        u_id: int = unit.ID
+        u_type: int = unit.TYPE
 
         if u_id != 0 and u_type != 0:
             if u_type not in ob_to_units:
                 ob_to_units[u_type] = set()
 
-            u_name = parse_row_str(row, U_NAME_COL, 'Unk').strip()
+            u_name = unit.NAME.strip()
             u_suffix = get_ob_suffix(ob_file_path, u_type)
             u_full_name = f"{u_name} {u_suffix}"
 
@@ -281,18 +273,19 @@ def find_orphaned_ob_ids2(ob_file_path: str,
         ob_stream = get_csv_list_stream(ob_file_path)
 
         for _, row in ob_stream.rows:
+            ob = ObRow(row)
 
-            ob_nat: int = parse_row_int(row, O_NAT_COL)
+            ob_nat: int = ob.NAT
 
             if nat_filter is not None and ob_nat not in nat_filter:
                 continue
 
-            ob_id: int = parse_row_int(row, O_ID_COL)
-            ob_type: int = parse_row_int(row, O_TYPE_COL)
-            ob_upgrade: int = parse_row_int(row, O_UPGRADE_COL)
+            ob_id: int = ob.ID #parse_row_int(row, O_ID_COL)
+            ob_type: int = ob.TYPE #parse_row_int(row, O_TYPE_COL)
+            ob_upgrade: int = ob.UPGRADE #parse_row_int(row, O_UPGRADE_COL)
             # Combine ob_name and ob_suffix
-            ob_name: str = parse_row_str(row, O_NAME_COL)
-            ob_suffix: str = parse_row_str(row, O_SUFFIX_COL)
+            ob_name: str = ob.NAME #parse_row_str(row, O_NAME_COL)
+            ob_suffix: str = ob.SUFFIX #parse_row_str(row, O_SUFFIX_COL)
             ob_full_name: str = f"{ob_name} {ob_suffix}"
 
             if ob_id != 0:
@@ -309,17 +302,17 @@ def find_orphaned_ob_ids2(ob_file_path: str,
         ref_upgraded_id_count = 0
 
         for _, row in unit_stream.rows:
-
-            u_nat: int = parse_row_int(row, U_NAT_COL)
+            unit = UnitRow(row)
+            u_nat:int = unit.NAT # int = parse_row_int(row, U_NAT_COL)
 
             if nat_filter is not None and u_nat not in nat_filter:
                 continue
 
-            uid: int = parse_row_int(row, U_ID_COL)
+            uid:int = unit.ID #parse_row_int(row, U_ID_COL)
 
             # utype is the FK to ob_id / TOE(OB)
-            utype: int = parse_row_int(row, U_TYPE_COL)
-            uname: str = parse_row_str(row, U_NAME_COL, 'Unk')
+            utype: int = unit.TYPE #parse_row_int(row, U_TYPE_COL)
+            uname: str = unit.NAME #parse_row_str(row, U_NAME_COL, 'Unk')
             usuffix: str = get_ob_suffix(ob_file_path, utype)
             ufull_name: str = f"{uname} {usuffix}"
 
@@ -495,6 +488,13 @@ def _get_cached_orphans(ob_file_path: str,
     """
     Private helper: Runs the heavy orphan logic and caches the resulting set.
     """
+    if not os.path.isfile(ob_file_path):
+        log.error("TOE(OB) file not found: %s", ob_file_path)
+        return set()
+
+    if not os.path.isfile(unit_file_path):
+        log.error("_unit file not found: %s", unit_file_path)
+        return set()
 
     log.info("Building Orphan TOE(OB) cache for nat_codes %s...",
              nat_codes)

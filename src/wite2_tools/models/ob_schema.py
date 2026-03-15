@@ -1,4 +1,10 @@
 """
+Order of Battle (OB) Schema Definitions for WiTE2 Modding.
+
+--- ACTIVE VS. INACTIVE OB RULESET ---
+The WiTE2 database contains thousands of rows, many of which are placeholders,
+spares, or deactivated templates.
+
 _ob.csv (TOE) Mapping Reference:
 | Constant       | CSV Header | Index | Notes                         |
 |----------------|------------|-------|-------------------------------|
@@ -12,7 +18,7 @@ _ob.csv (TOE) Mapping Reference:
 Note: The OB file contains exactly 79 columns (0-78) covering 32 slots.
 """
 from enum import IntEnum
-from typing import List, Any, Final
+from typing import List, Final
 
 
 class ObColumn(IntEnum):
@@ -23,6 +29,16 @@ class ObColumn(IntEnum):
     1. Metadata (0-14): ID, Name, Upgrade logic, and Form Size.
     2. Ground Element Slots (15-46): 32 columns containing Ground IDs.
     3. Quantities (47-78): 32 columns containing the TOE strength for each slot.
+
+    To safely filter for valid, playable OBs,
+    evaluate the following core columns:
+
+    1. `nat` (Nation): 0 = Unassigned/Inactive. All valid units must belong to a
+        nation (1=Ger, 2=Sov, etc.).
+    2. `type` (Classification): 0 = Unclassified/Null.
+    3. `firstYear`: 0 = No valid entry timeline.
+    4. `name` / `suffix`: Text containing "Empty" or "Spare" indicates a blank slot.
+    5. `id`: ID 0 is the engine's hardcoded null reference.
     """
     ID = 0
     NAME = 1
@@ -127,43 +143,4 @@ def gen_default_ob_row(ob_id: int = 0,
 
     return row
 
-# pylint: disable= too-few-public-methods
-class OB:
-    """
-    A dynamic representation of a WiTE2 Order of Battle (TOE).
 
-    This class transforms raw CSV row dictionaries into objects with
-    type-hinted attributes. It supports fuzzy attribute lookup (e.g.,
-    ob.sqd0 or ob.SQD_0) via __getattr__.
-    """
-    # Type hints for standard OB fields to keep Pylance happy
-    ID: int
-    NAME: str
-    SUFFIX: str
-    NAT: int
-    FIRST_YEAR: int
-    FIRST_MONTH: int
-    LAST_YEAR: int
-    LAST_MONTH: int
-    TYPE: int
-    UPGRADE: int
-    OB_CLASS: int
-    FORM_SIZE: int
-
-    def __init__(self, **kwargs: Any):
-        for key, value in kwargs.items():
-            # Attempt to convert to integer for comparisons (like ob.men > 500)
-            try:
-                converted_value = int(value)
-            except (ValueError, TypeError):
-                converted_value = value  # Keep as string for names, types, etc.
-
-            setattr(self, key, converted_value)
-
-    def __getattr__(self, item: str) -> Any:
-        normalized_request = item.replace("_", "").upper()
-        for actual_key, val in self.__dict__.items():
-            normalized_key = actual_key.replace("_", "").upper()
-            if normalized_key == normalized_request:
-                return val
-        raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{item}'")

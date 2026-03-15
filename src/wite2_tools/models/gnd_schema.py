@@ -97,7 +97,7 @@ class GndColumn(IntEnum):
 NUM_COLS : Final[int] = len(GndColumn)
 WPN_SLOTS : Final[int] = 10
 ATTR_PER_WPN : Final[int] = 6
-# Aliasing indices to avoid repeated .value calls
+
 #: Unique ID for the ground element.
 ID_COL: Final[int]    = GndColumn.ID
 NAME_COL: Final[int]  = GndColumn.NAME
@@ -155,3 +155,4 @@ def gen_default_gnd_row(elem_id: int = 0,
     row.extend(["0"] * 90)
 
     return row
+
