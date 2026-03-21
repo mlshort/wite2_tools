@@ -31,7 +31,7 @@ Main Functions:
                               the scenario.
 """
 import os
-from typing import Set, Final
+from typing import Final
 from functools import cache
 
 # Internal package imports
@@ -54,13 +54,13 @@ log = get_logger(__name__)
 
 
 @cache
-def get_valid_ob_ids(ob_file_path: str) -> Set[int]:
+def get_valid_ob_ids(ob_file_path: str) -> set[int]:
     """
     Builds and returns a set of valid TOE(OB) IDs from the _ob CSV.
     The @cache decorator ensures this function only runs once per
     unique file path!
     """
-    valid_ob_ids: Set[int] = set()
+    valid_ob_ids: set[int] = set()
 
     if not os.path.isfile(ob_file_path):
         log.error("TOE(OB) file not found: %s", ob_file_path)
@@ -99,12 +99,12 @@ def get_valid_ob_ids(ob_file_path: str) -> Set[int]:
 
 
 @cache
-def get_valid_ob_upgrade_ids(ob_file_path: str) -> Set[int]:
+def get_valid_ob_upgrade_ids(ob_file_path: str) -> set[int]:
     """
     Builds and returns a set of valid upgrade IDs from the _ob CSV.
     Caches the result to avoid repeated file I/O.
     """
-    valid_ob_upgrade_ids: Set[int] = set()
+    valid_ob_upgrade_ids: set[int] = set()
 
     if not os.path.isfile(ob_file_path):
         log.error("TOE(OB) file not found: %s", ob_file_path)
@@ -150,12 +150,12 @@ def get_valid_ob_upgrade_ids(ob_file_path: str) -> Set[int]:
 
 
 @cache
-def get_valid_ground_elem_ids(ground_file_path: str) -> Set[int]:
+def get_valid_ground_elem_ids(ground_file_path: str) -> set[int]:
     """
     Builds and returns a set of valid ground element WIDs from the _ground CSV.
     Caches the result to avoid repeated file I/O.
     """
-    valid_elem_ids: Set[int] = set()
+    valid_elem_ids: set[int] = set()
 
     if not os.path.isfile(ground_file_path):
         log.error("TOE(OB) file not found: %s", ground_file_path)
@@ -178,20 +178,20 @@ def get_valid_ground_elem_ids(ground_file_path: str) -> Set[int]:
             # 2. Defensive check: Skip rows that are too short for our indices
             if len(row) < MIN_REQUIRED_COLS:
                 # Log only on debug to avoid flooding the console for empty lines
-                log.debug("Skipping malformed row %d: insufficient columns.", idx)
+                log.info("Skipping malformed row %d: insufficient columns.", idx)
                 continue
 
             try:
                 # Access by index to avoid duplicate header issues
-                wid = gnd.ID #parse_row_int(row, G_ID_COL)
+                wid = gnd.ID
                 if wid == 0:
                     continue
-                ground_type = gnd.TYPE #parse_row_int(row, G_TYPE_COL)
+                ground_type = gnd.TYPE
                 if ground_type != 0:
                     valid_elem_ids.add(wid)
             except (ValueError, IndexError):
                 # Skip malformed rows or empty lines
-                log.debug("Skipping malformed row at index %d", idx)
+                log.info("Skipping malformed row at index %d", idx)
                 continue
 
         if len(valid_elem_ids) > 0:
@@ -210,7 +210,7 @@ def get_valid_ground_elem_ids(ground_file_path: str) -> Set[int]:
 
 @cache
 def get_valid_unit_ids(unit_file_path: str,
-                       active_only: bool = False) -> Set[int]:
+                       active_only: bool = False) -> set[int]:
     """
     Extracts a set of valid unit IDs from a _unit.csv file.
 
@@ -221,7 +221,7 @@ def get_valid_unit_ids(unit_file_path: str,
     Returns:
         A set of valid integer unit IDs.
     """
-    valid_ids: Set[int] = set()
+    valid_ids: set[int] = set()
 
     if not os.path.isfile(unit_file_path):
         log.error("_unit file not found: %s", unit_file_path)
@@ -266,7 +266,7 @@ def get_valid_unit_ids(unit_file_path: str,
                       unit_file_path, e)
 
     except FileNotFoundError:
-        log.error("_ground.csv file not found:'%s'", unit_file_path)
+        log.error("_unit.csv file not found:'%s'", unit_file_path)
 
     except (OSError, IOError) as e:
         log.exception("File System Error: Could not read %s: %s",

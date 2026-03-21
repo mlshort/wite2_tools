@@ -31,7 +31,9 @@ def test_get_valid_ob_upgrade_ids(mock_ob_csv: Path)->None:
 
 
 def test_get_valid_ground_elem_ids(mock_ground_csv: Path)->None:
-    """Verifies extraction of Ground Element WIDs."""
+    """
+    Verifies extraction of Ground Element WIDs.
+    """
     elem_ids = get_valid_ground_elem_ids(mock_ground_csv)
     assert elem_ids == {1, 2, 3, 4, 42,
                         51, 52, 53,
@@ -40,7 +42,9 @@ def test_get_valid_ground_elem_ids(mock_ground_csv: Path)->None:
 
 
 def test_get_valid_unit_ids(mock_unit_csv: Path)->None:
-    """Verifies extraction of Unit IDs."""
+    """
+    Verifies extraction of Unit IDs.
+    """
     unit_ids = get_valid_unit_ids(mock_unit_csv, True)
     assert unit_ids == {1, 2, 3, 4, 5, 10, 11, 12, 60, 61, 63,
                         100, 101, 102, 103, 104,

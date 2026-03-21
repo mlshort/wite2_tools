@@ -41,7 +41,6 @@ Functions
     on the row dictionary.
 """
 import os
-from typing import List
 
 # Internal package imports
 from wite2_tools.utils import (
@@ -61,9 +60,9 @@ from wite2_tools.models import (
 log = get_logger(__name__)
 
 
-def reorder_unit_elems(row: List[str],
+def reorder_unit_elems(row: list[str],
                        source_slot: int,
-                       target_slot: int) -> List[str]:
+                       target_slot: int) -> list[str]:
     """
     Moves elements at 'source_slot' to 'target_slot' using List indices
     mapped from the UnitColumn IntEnum.
@@ -78,7 +77,7 @@ def reorder_unit_elems(row: List[str],
     """
     # Define the starting column for each of the 8 associated attribute blocks
     # We use the '0' index member of each block from the IntEnum
-    attribute_bases : List[int] = [
+    attribute_bases : list[int] = [
         UnitColumn.SQD_U0,
         UnitColumn.SQD_NUM0,
         UnitColumn.SQD_DIS0,
@@ -106,7 +105,7 @@ def reorder_unit_elems(row: List[str],
 def reorder_unit_squads(unit_file_path: str,
                         target_uid: int,
                         target_wid: int,
-                        target_slot: int) -> int:
+                        target_slot: int) -> tuple[int,int]:
     """
     Reorders specific Ground Element squads within a WiTE2 _unit CSV file.
 
@@ -125,8 +124,8 @@ def reorder_unit_squads(unit_file_path: str,
                            should be relocated.
 
     Returns:
-        int: The total number of rows (OBs) successfully updated. Returns 0 if
-             no matches were found or if an error occurred.
+        tuple[int, int]: A tuple containing (total_rows_processed, total_rows_updated).
+                         Returns (0, 0) if no matches were found or if an error occurred.
 
     Note:
         - Uses a generator-based streaming approach to handle very large CSV
@@ -139,19 +138,18 @@ def reorder_unit_squads(unit_file_path: str,
     if not 0 <= target_slot < U_SQD_SLOTS:
         log.error("Validation Error: target_slot slot %d is out of bounds "
                   "(0-31).", target_slot)
-        return 0
+        return 0, 0
 
     if not os.path.isfile(unit_file_path):
         log.error("Error: The file '%s' was not found.", unit_file_path)
-        return -1
+        return 0, 0
 
     file_name = os.path.basename(unit_file_path)
-    log.info("Reordering squads in '%s' | UNIT ID: %d | WID: %d | To Loc: %d",
+    log.info("Task Start: Reordering squads in '%s' | UNIT ID: %d | WID: %d | To Loc: %d",
              file_name, target_uid, target_wid, target_slot)
 
 
-
-    def process_row(row: List[str], row_idx: int) -> tuple[List[str], bool]:
+    def process_row(row: list[str], row_idx: int) -> tuple[list[str], bool]:
         uid = parse_int(row[U_ID_COL])
         if target_uid == uid:
 
@@ -169,4 +167,11 @@ def reorder_unit_squads(unit_file_path: str,
                         break
         return row, False
 
-    return process_csv_in_place(unit_file_path, process_row)
+    processed, updated = process_csv_in_place(unit_file_path, process_row)
+
+    log.info("Task Complete: Rows processed: %d, Rows Modified: %d moving the WID[%d] to "
+             "the new slot [%d].",
+             processed,
+             updated, target_wid, target_slot)
+
+    return processed, updated

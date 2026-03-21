@@ -25,6 +25,7 @@ import logging
 import os
 import sys
 import io
+import glob
 import atexit
 from datetime import datetime
 
@@ -38,15 +39,15 @@ LOG_FILENAME = f"wite2_{timestamp}.log"
 
 # 2. Define the exact path
 LOG_PATH = os.path.join(LOCAL_LOG_PATH, LOG_FILENAME)
-DATE_FORMAT: Final = "%Y-%m-%d %H:%M:%S"
-CLEAN_FORMAT: Final = "%(asctime)s - %(levelname)s - %(message)s"
+DATE_FORMAT: Final[str] = "%Y-%m-%d %H:%M:%S"
+CLEAN_FORMAT: Final[str] = "%(asctime)s - %(levelname)s - %(message)s"
 # Modified format to include clickable source code references
-DETAILED_FORMAT: Final = '%(asctime)s - %(levelname)s - File "%(pathname)s", ' \
+DETAILED_FORMAT: Final[str] = '%(asctime)s - %(levelname)s - File "%(pathname)s", ' \
              'line %(lineno)d - %(message)s'
-JSON_FORMAT: Final = '{"timestamp": "%(asctime)s", "level": "%(levelname)s", "msg": \
+JSON_FORMAT: Final[str] = '{"timestamp": "%(asctime)s", "level": "%(levelname)s", "msg": \
               "%(message)s"}'
-CSV_FORMAT: Final = "%(asctime)s,%(levelname)s,%(message)s"
-MIN_FORMAT: Final = "%(message)s"
+CSV_FORMAT: Final[str] = "%(asctime)s,%(levelname)s,%(message)s"
+MIN_FORMAT: Final[str] = "%(message)s"
 
 
 
@@ -56,6 +57,27 @@ if hasattr(sys.stdout, 'buffer'):
     UTF8_CONSOLE = io.TextIOWrapper(sys.stdout.buffer,
                                     encoding='utf-8',
                                     errors='replace')
+
+
+def prune_old_logs(max_logs: int = 15) -> None:
+    """
+    Deletes the oldest log files so only the newest `max_logs` remain.
+    """
+    # Find all files matching your log pattern
+    search_pattern = os.path.join(LOCAL_LOG_PATH, "wite2_*.log")
+    log_files = glob.glob(search_pattern)
+
+    # Sort files by their modification time (oldest first)
+    log_files.sort(key=os.path.getmtime)
+
+    # If we have more than the limit, delete the oldest ones
+    if len(log_files) > max_logs:
+        files_to_delete = log_files[:-max_logs]
+        for old_file in files_to_delete:
+            try:
+                os.remove(old_file)
+            except OSError:
+                pass
 
 
 def get_logger(name: str | None)->Logger:
@@ -68,6 +90,9 @@ def get_logger(name: str | None)->Logger:
     if not logger.handlers:
         logger.setLevel(logging.INFO)
         formatter = logging.Formatter(CLEAN_FORMAT)
+
+        # Clean up old logs before creating a new one
+        prune_old_logs(max_logs=15)
 
         # File Handler
         file_handler = logging.FileHandler(LOG_PATH,

@@ -1,11 +1,11 @@
-from typing import Any, List, Dict
+from typing import Any, Self
 
 from wite2_tools.models.unit_schema import (
     gen_unit_column_names,
     UnitColumn,
-    ATTRS_PER_SQD,
-    SQD_SLOTS,
-    SQD0_COL as U_SQD0_COL
+    ATTRS_PER_SQD as U_ATTRS_PER_SQD,
+    SQD_SLOTS as U_SQD_SLOTS,
+    SQD_U0_COL as U_SQD0_COL
 )
 
 
@@ -24,23 +24,35 @@ class UnitRow:
     Y: int
     MORALE: int
     HHQ: int
+    _raw: list[str]
 
-    def __init__(self, row: List[str]):
+    @property
+    def raw(self) -> list[str]:
+        return self._raw
+
+
+    def __init__(self, row: list[str]) -> None:
         """
         Takes a raw CSV row (list of strings) and parses it using the UnitColumn indices.
         """
+        self.load_row(row)
+
+
+    def load_row(self, row: list[str]) -> None:
         # Use super to avoid triggering custom __setattr__ before _raw exists
         super().__setattr__('_raw', row)
         self._refresh_attributes()
 
 
-    def _refresh_attributes(self):
+    def _refresh_attributes(self)->None:
         """
         Maps the raw list to named attributes.
         """
         row_len = len(self._raw)
         for col in UnitColumn:
             raw_val = self._raw[col.value] if col.value < row_len else "0"
+
+            val: Any
             try:
                 val = int(raw_val)
             except (ValueError, TypeError):
@@ -82,16 +94,16 @@ class UnitRow:
 
 
     @classmethod
-    def create_default(cls,
+    def create_default(cls: type[Self],
                        unit_id: int = 0,
                        name: str = "",
                        unit_type: int = 0,
-                       nat: int = 0) -> "UnitRow":
+                       nat: int = 0) -> Self:
         """
         Factory method to create a default 380-column UnitRow.
         """
         # Start with ID, Name, Type, Nat
-        row: List[str] = [str(unit_id), name, str(unit_type), str(nat)]
+        row: list[str] = [str(unit_id), name, str(unit_type), str(nat)]
 
         # Fill the remaining 376 columns with zeroes
         row.extend(["0"] * 376)
@@ -100,7 +112,7 @@ class UnitRow:
 
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]):
+    def from_dict(cls, data: dict[str, Any])->Self:
         # Convert dict to a 380-column list first
         headers = gen_unit_column_names()
         row_list = [str(data.get(h, "0")) for h in headers]
@@ -112,13 +124,13 @@ class UnitRow:
         Moves an entire squad attribute block (WID, Qty, and other interleaved stats)
         from source_slot to target_slot, shifting other blocks accordingly.
         """
-        if not (0 <= source_slot < SQD_SLOTS and 0 <= target_slot < SQD_SLOTS):
+        if not (0 <= source_slot < U_SQD_SLOTS and 0 <= target_slot < U_SQD_SLOTS):
             raise IndexError(f"Slot index out of range: {source_slot} -> {target_slot}")
 
-        # Unit files use interleaved blocks of size ATTRS_PER_SQD (usually 8)
+        # Unit files use interleaved blocks of size ATTRS_PER_SQD (8)
         start_idx = U_SQD0_COL
-        stride = ATTRS_PER_SQD
-        num_slots = SQD_SLOTS
+        stride = U_ATTRS_PER_SQD
+        num_slots = U_SQD_SLOTS
         end_of_blocks = start_idx + (num_slots * stride)
 
         # 1. Extract the section of the list containing all 32 squad blocks
@@ -135,9 +147,5 @@ class UnitRow:
         self._raw[start_idx:end_of_blocks] = [item for sublist in blocks for item in sublist]
 
         # 5. Re-sync attributes (so unit.SQD_0 matches the new list state)
-        self.__init__(self._raw)
+        self.load_row(self._raw)
 
-
-    @property
-    def raw(self) -> List[str]:
-        return self._raw

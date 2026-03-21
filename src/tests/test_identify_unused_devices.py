@@ -1,11 +1,10 @@
 from pathlib import Path
-from typing import Callable, Tuple
+from collections.abc import Callable
 import pytest
 
 from wite2_tools.models import (
-    gen_default_device_row,
     gen_device_column_names,
-    DevColumn
+    DevRow
 )
 
 from wite2_tools.core.identify_unused_devices import identify_unused_devices
@@ -14,14 +13,13 @@ from wite2_tools.core.identify_unused_devices import identify_unused_devices
 @pytest.fixture
 def mock_files(make_ground_csv: Callable[..., Path],
                make_aircraft_csv: Callable[..., Path],
-               make_device_csv: Callable[..., Path]) -> Tuple[Path, Path, Path]:
+               make_device_csv: Callable[..., Path]) -> tuple[Path, Path, Path]:
 
     # Helper to force the Type into the correct column index
     headers = gen_device_column_names()
     def _make_dev(d_id: int, name: str, d_type: int) -> dict:
-        row = gen_default_device_row(d_id, name)
-        row[DevColumn.TYPE] = str(d_type)
-        return dict(zip(headers, row))
+        row = DevRow.create_default(d_id, name, d_type)
+        return dict(zip(headers, row.raw))
 
     device_csv = make_device_csv(
         filename="mock_device_unused.csv",
@@ -75,7 +73,7 @@ def test_identify_unused_devices_finds_unused(tmp_path: Path,
     assert unused_count == 3
 
 
-def test_identify_unused_devices_all_used(mock_files: Tuple[Path, Path, Path]) -> None:
+def test_identify_unused_devices_all_used(mock_files: tuple[Path, Path, Path]) -> None:
     """Verifies behavior when no devices of the target type are unused."""
     ground_path, aircraft_path, device_path = mock_files
 
@@ -89,9 +87,9 @@ def test_identify_unused_devices_all_used(mock_files: Tuple[Path, Path, Path]) -
     assert unused_count == 0
 
 
-def test_identify_unused_devices_missing_file(mock_files: Tuple[Path, Path, Path],
+def test_identify_unused_devices_missing_file(mock_files: tuple[Path, Path, Path],
                                               tmp_path: Path) -> None:
-    """Verifies the function aborts gracefully (-1) if a file is missing."""
+    """Verifies the function aborts gracefully (0) if a file is missing."""
     _, aircraft_path, device_path = mock_files
 
     # Provide a fake path for the ground file
@@ -104,4 +102,4 @@ def test_identify_unused_devices_missing_file(mock_files: Tuple[Path, Path, Path
         device_type=7
     )
 
-    assert unused_count == -1
+    assert unused_count == 0

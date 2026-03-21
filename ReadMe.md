@@ -5,7 +5,7 @@
 ![MyPy Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/mlshort/65b562e5180666321b1616e1a2e0033c/raw/mypy-coverage.json)
 
 
-**Version:** 0.6.0
+**Version:** 0.6.1
 **Author:** Mark L. Short
 
 A specialized, Python-based toolkit for managing, modifying, and analyzing

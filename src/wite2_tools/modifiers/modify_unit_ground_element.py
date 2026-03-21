@@ -20,7 +20,6 @@ Arguments:
     new_wid (int): The new Ground Element WID value.
 """
 import os
-from typing import List, Tuple
 
 # Internal package imports
 from wite2_tools.constants import MAX_SQUAD_SLOTS
@@ -35,7 +34,7 @@ log = get_logger(__name__)
 
 def modify_unit_ground_element(unit_file_path: str,
                                old_wid: int,
-                               new_wid: int) -> int:
+                               new_wid: int) -> tuple[int,int]:
     """
     Replaces a specific Ground Element WID with a new one across all
     units in a WiTE2 _unit CSV file using integer-based comparison.
@@ -46,18 +45,20 @@ def modify_unit_ground_element(unit_file_path: str,
         new_wid (int): The new Ground Element WID value.
 
     Returns:
-        int: The total number of rows (units) successfully updated.
+        tuple[int, int]: A tuple containing (total_rows_processed, total_rows_updated).
+            Returns (0, 0) if no matches were found or error occurred.
+
     """
 
     if not os.path.isfile(unit_file_path):
         log.error("Error: The file '%s' was not found.", unit_file_path)
-        return -1
+        return 0, 0
 
     log.info("Task Start: Replace WID[%d] with %d in '%s'",
              old_wid, new_wid, os.path.basename(unit_file_path))
 
     # Define the specific logic for processing a Unit row
-    def process_row(row: List[str], _: int) -> Tuple[List[str], bool]:
+    def process_row(row: list[str], _: int) -> tuple[list[str], bool]:
         was_modified = False
 
         # Check sqd.u0 through sqd.u31
@@ -80,9 +81,10 @@ def modify_unit_ground_element(unit_file_path: str,
         return row, was_modified
 
     # Execute via the shared wrapper
-    total_updates = process_csv_in_place(unit_file_path, process_row)
-    log.info("Task Complete: Modified %d rows containing the old WID[%d] to "
+    processed, updated = process_csv_in_place(unit_file_path, process_row)
+    log.info("Task Complete: Rows processed: %d, Rows Modified: %d containing the old WID[%d] to "
              "the new WID[%d].",
-             total_updates, old_wid, new_wid)
+             processed,
+             updated, old_wid, new_wid)
 
-    return total_updates
+    return processed, updated

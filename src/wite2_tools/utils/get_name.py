@@ -41,7 +41,6 @@ Functions
 """
 
 import os
-from typing import Dict
 from functools import cache
 from dataclasses import dataclass
 
@@ -97,17 +96,17 @@ class ObName:
 
 
 @cache
-def _build_ob_lookup(ob_file_path: str) -> Dict[int, ObName]:
+def _build_ob_lookup(ob_file_path: str) -> dict[int, ObName]:
     """
     Private Helper: Scans the _ob CSV, builds the TOE(ID)-to-Name dictionary,
     and caches it.
     The @cache decorator ensures this only runs once per unique file path.
     """
-    lookup: Dict[int, ObName] = {}
+    lookup: dict[int, ObName] = {}
 
     if not os.path.isfile(ob_file_path):
         log.error("TOE(OB) file not found: %s", ob_file_path)
-        return dict()
+        return {}
 
     try:
         ob_stream: CSVListStream = get_csv_list_stream(ob_file_path)
@@ -136,7 +135,7 @@ def get_ob_name(ob_file_path: str, ob_id_to_find: int) -> str:
     Public API: Resolves an TOE(OB) ID to a name.
     """
     # 1. Retrieve the cached dictionary
-    cached_dict: Dict[int, ObName] = _build_ob_lookup(ob_file_path)
+    cached_dict: dict[int, ObName] = _build_ob_lookup(ob_file_path)
 
     # 2. Perform instant O(1) lookup
     result = cached_dict.get(ob_id_to_find)
@@ -152,7 +151,7 @@ def get_ob_suffix(ob_file_path: str, ob_id_to_find: int) -> str:
     Public API: Resolves an TOE(OB) ID to its suffix.
     """
     # 1. Retrieve the cached dictionary
-    cached_dict: Dict[int, ObName] = _build_ob_lookup(ob_file_path)
+    cached_dict: dict[int, ObName] = _build_ob_lookup(ob_file_path)
 
     # 2. Perform instant O(1) lookup
     result = cached_dict.get(ob_id_to_find)
@@ -168,7 +167,7 @@ def get_ob_full_name(ob_file_path: str, ob_id_to_find: int) -> str:
     Public API: Resolves an TOE(OB) ID to a full name.
     """
     # 1. Retrieve the cached dictionary
-    cached_dict: Dict[int, ObName] = _build_ob_lookup(ob_file_path)
+    cached_dict: dict[int, ObName] = _build_ob_lookup(ob_file_path)
 
     # 2. Perform instant O(1) lookup
     result = cached_dict.get(ob_id_to_find)
@@ -214,16 +213,16 @@ def get_unit_type_name(ob_file_path: str, unit_id_to_find: int) -> str:
 
 
 @cache
-def _build_ground_elem_lookup(ground_file_path: str) -> Dict[int, str]:
+def _build_ground_elem_lookup(ground_file_path: str) -> dict[int, str]:
     """
     Private Helper: Scans the _ground CSV using list-based indexing.
     Cached to ensure O(1) lookups after the first I/O pass.
     """
-    lookup: Dict[int, str] = {}
+    lookup: dict[int, str] = {}
 
     if not os.path.isfile(ground_file_path):
         log.error("Ground file not found: '%s'", ground_file_path)
-        return dict()
+        return {}
 
     try:
         # Use list generator to handle duplicate 'id' column names safely
@@ -254,7 +253,7 @@ def get_ground_elem_type_name(ground_file_path: str,
     Public API: Resolves a Ground Element WID to its name via O(1) lookup.
     """
     # 1. Retrieve the cached dictionary
-    cached_dict: Dict[int, str] = _build_ground_elem_lookup(ground_file_path)
+    cached_dict: dict[int, str] = _build_ground_elem_lookup(ground_file_path)
 
     # 2. Perform instant O(1) lookup
     return cached_dict.get(wid_to_find, f"Unk ({wid_to_find})")

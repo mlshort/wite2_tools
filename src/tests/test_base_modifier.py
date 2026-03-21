@@ -1,6 +1,4 @@
-from typing import List
 
-# Correct import from models as requested
 from wite2_tools.models import (
     UnitRow,
 )
@@ -43,7 +41,7 @@ def test_reorder_unit_squads_integration(mock_unit_csv: str) -> None:
     """
     # This integration test now relies on the underlying modifier
     # using get_csv_list_stream internally.
-    updates: int = reorder_unit_squads(
+    _, updates = reorder_unit_squads(
         mock_unit_csv,
         target_uid=100,
         target_wid=42,
@@ -54,10 +52,10 @@ def test_reorder_unit_squads_integration(mock_unit_csv: str) -> None:
 
 def test_reorder_unit_squads_integration_missing_file() -> None:
     """Verifies error handling for non-existent files."""
-    updates: int = reorder_unit_squads(
+    _, updates = reorder_unit_squads(
         "does_not_exist.csv",
         target_uid=100,
         target_wid=42,
         target_slot=0
     )
-    assert updates == -1
+    assert updates == 0

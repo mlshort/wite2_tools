@@ -66,5 +66,5 @@ def audit_msg(file_name: str, issues: int, item_count: int) -> str:
     """
     mark = SUCCESS_MARK if issues == 0 else ISSUE_MARK
     status = "Passed" if issues == 0 else "Failed"
-    return f"{mark}{file_name} Audit {status}: {issues} issues " \
+    return f"Task Complete: {mark} '{file_name}' Audit {status}: {issues} issues " \
            f"identified ({item_count} items checked)."

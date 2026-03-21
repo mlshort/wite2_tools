@@ -6,29 +6,29 @@
 
 import csv
 from pathlib import Path
-from typing import List, Tuple, Dict, Any, Callable, Optional
+from typing import Any, Optional
+from collections.abc import Callable
 import pytest
 
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.models import (
-    # Unit Constants
+    # Unit Entities
     UnitRow,
     gen_unit_column_names,
     U_ATTRS_PER_SQD, U_SQD_SLOTS,
     U_SQD0_COL, U_SQD_NUM0_COL,
-    # OB Constants
+    # OB Entities
     gen_ob_column_names,
     ObColumn, ObRow,
     O_SQD_SLOTS,
-    # Ground Constants
+    # Ground Entities
     gen_gnd_column_names,
-    gen_default_gnd_row,
-    GndColumn, G_WPN_SLOTS,
-    # Device Constants
+    GndColumn, GndRow,
+    G_WPN_SLOTS,
+    # Device Entities
     gen_device_column_names,
-    gen_default_device_row,
-    DevColumn,
+    DevRow,
     # Aircraft
     gen_aircraft_column_names,
     gen_default_aircraft_row
@@ -73,7 +73,7 @@ def create_unit_row(
     name: str,
     utype: int,
     nat: int,
-    squads: List[Tuple[int, str, str]]
+    squads: list[tuple[int, str, str]]
 ) -> UnitRow:
     """
     Generates a 380-column UnitRow with populated squad slots using direct index access.
@@ -93,9 +93,6 @@ def create_unit_row(
     for slot_idx, wid, qty in squads:
         if 0 <= slot_idx < U_SQD_SLOTS:
             # Calculate the exact CSV column indices
-            # U_SQD0_COL is the start of the WID block (Index 22)
-            # U_SQD_NUM0_COL is the start of the Quantity block (Index 54)
-            # ATTRS_PER_SQD is usually 1 in the unit file (non-interleaved blocks)
 
             squad_col_idx = U_SQD0_COL + (slot_idx * U_ATTRS_PER_SQD)
             num_col_idx = U_SQD_NUM0_COL + (slot_idx * U_ATTRS_PER_SQD)
@@ -104,16 +101,16 @@ def create_unit_row(
             unit.raw[num_col_idx] = str(qty)
 
     # 3. Synchronize the object attributes
-    # Because we modified the 'raw' list directly, we call __init__
+    # Because we modified the 'raw' list directly, we call _load_row
     # to refresh unit.SQD_0, unit.SQD_NUM_0, etc. from the new list values.
-    unit.__init__(unit.raw)
+    unit.load_row(unit.raw)
 
     return unit
 
 
 # pylint: disable=too-many-arguments, too-many-positional-arguments
 def create_ob_row(
-    ob_id: str,
+    ob_id: int,
     name: str,
     suffix: str = "0",
     nat: int = 1,
@@ -123,13 +120,13 @@ def create_ob_row(
     last_month: int = 12,
     ob_type: int = 0,
     upgrade: int = 0,
-    squads: Optional[List[Tuple[int, str, str]]] = None
+    squads: Optional[list[tuple[int, str, str]]] = None
 ) -> ObRow:
     """
     Generates a populated ObRow object representing a _ob.csv row.
     Matches the schema: Metadata -> 32 sqd slots -> 32 sqdNum slots.
     """
-    row: ObRow = ObRow.create_default(int(ob_id), name, suffix)
+    row: ObRow = ObRow.create_default(ob_id, name, suffix)
 
     # Clean, Pythonic property assignments!
     row.NAT = nat
@@ -153,43 +150,48 @@ def create_ob_row(
 
 
 def create_gnd_row(
-    wid: str,
+    wid: int,
     name: str,
-    weapons: List[Tuple[int, str, str]],
-    gtype: str = "1",
-    men: str = "10",
-    size: str = "1"
-) -> List[str]:
-    """Generates a 92-column _ground.csv row mapping weapons/qtys."""
-    row = gen_default_gnd_row(int(wid), name)
+    gtype: int = 1,
+    nat: int = 1,
+    men: int = 10,
+    size: int = 1,
+    weapons: list[tuple[int, str, str]] | None = None
+) -> GndRow:
+    """
+    Generates a 92-column _ground.csv row mapping weapons/qtys.
+    """
+    row: GndRow = GndRow.create_default(wid, name, gtype)
 
-    row[GndColumn.TYPE] = gtype
-    row[GndColumn.ID_2] = wid
+    row.ID_2 = wid
+    row.NAT = nat
 
     # We must ensure MEN and SIZE are populated for your audit scripts
-    row[GndColumn.MEN] = men
-    row[GndColumn.SIZE] = size
+    row.MEN = men
+    row.SIZE = size
+    if weapons:
+        for slot_idx, wep_id, qty in weapons:
+            if slot_idx < G_WPN_SLOTS:
+                row.raw[GndColumn.WPN_0 + slot_idx] = wep_id
+                row.raw[GndColumn.WPN_NUM_0 + slot_idx] = qty
 
-    for slot_idx, wep_id, qty in weapons:
-        if slot_idx < G_WPN_SLOTS:
-            row[GndColumn.WPN_0 + slot_idx] = wep_id
-            row[GndColumn.WPN_NUM_0 + slot_idx] = qty
+        row.load_row(row.raw)
 
     return row
 
 
 def create_dev_row(
-    dev_id: str,
+    dev_id: int,
     name: str,
-    pen: str = "0",
-    load: str = "0"
-) -> List[str]:
+    pen: int = 0,
+    load: int = 0
+) -> DevRow:
     """
     Generates a 25-column _device.csv row based on DevColumn indices.
     """
-    row = gen_default_device_row(int(dev_id), name)
-    row[DevColumn.PEN] = pen
-    row[DevColumn.LOAD_COST] = load
+    row = DevRow.create_default(dev_id, name)
+    row.PEN = pen
+    row.LOAD_COST = load
     return row
 
 
@@ -201,9 +203,9 @@ def make_ob_csv(tmp_path: Path) -> Callable[..., Path]:
     """
     Factory fixture to generate a mock _ob.csv file for testing.
     """
-    def _make(filename: str, rows_data: List[Dict]) -> Path:
+    def _make(filename: str, rows_data: list[dict]) -> Path:
         file_path = tmp_path / filename
-        headers: List[str] = gen_ob_column_names()
+        headers: list[str] = gen_ob_column_names()
 
         with open(file_path, "w", newline="", encoding=ENCODING_TYPE) as f:
             writer = csv.writer(f)
@@ -211,7 +213,7 @@ def make_ob_csv(tmp_path: Path) -> Callable[..., Path]:
 
             for data in rows_data:
                 row = create_ob_row(
-                    ob_id=data.get("id") or data.get("ob_id", "0"),
+                    ob_id=data.get("id") or data.get("ob_id", 0),
                     name=data.get("name",""),
                     suffix=data.get("suffix", ""),
                     nat=data.get("nat", 1),
@@ -232,13 +234,15 @@ def make_ob_csv(tmp_path: Path) -> Callable[..., Path]:
 
 @pytest.fixture
 def make_unit_csv(tmp_path: Path) -> Callable[..., Path]:
-    """Factory to generate a custom 380-column _unit.csv file using UnitRow."""
+    """
+    Factory to generate a custom 380-column _unit.csv file using UnitRow.
+    """
     def _make(
         filename: str = "mock_unit.csv",
-        rows_data: List[Dict[str, Any]] | None = None
+        rows_data: list[dict[str, Any]] | None = None
     ) -> Path:
         file_path: Path = tmp_path / filename
-        headers: List[str] = gen_unit_column_names()
+        headers: list[str] = gen_unit_column_names()
 
         # Define fields handled by the create_unit_row constructor
         core_fields = {"id", "name", "type", "nat", "squads"}
@@ -275,13 +279,17 @@ def make_unit_csv(tmp_path: Path) -> Callable[..., Path]:
 
 @pytest.fixture
 def make_ground_csv(tmp_path: Path) -> Callable[..., Path]:
-    """Factory to generate a custom _ground.csv file."""
+    """
+    Factory to generate a custom _ground.csv file.
+    """
     def _make(
         filename: str = "mock_ground.csv",
-        rows_data: List[Dict[str, Any]] | None = None
+        rows_data: list[dict[str, Any]] | None = None
     ) -> Path:
         file_path: Path = tmp_path / filename
         headers = gen_gnd_column_names()
+
+        core_fields = {"id", "name", "type", "nat", "men", "size", "weapons"}
 
         with open(file_path, 'w', newline='', encoding=ENCODING_TYPE) as f:
             writer = csv.writer(f)
@@ -289,27 +297,41 @@ def make_ground_csv(tmp_path: Path) -> Callable[..., Path]:
 
             if rows_data:
                 for data in rows_data:
-                    writer.writerow(create_gnd_row(
-                        wid=data.get("id", "0"),
+                    gnd = create_gnd_row(
+                        wid=int(data.get("id", 0)),
                         name=data.get("name", "Unknown Element"),
-                        weapons=data.get("weapons", []),
-                        gtype=data.get("type", "1"),
-                        men=data.get("men", "10"),
-                        size=data.get("size", "1")
-                    ))
+                        gtype=int(data.get("type", 1)),
+                        nat=int(data.get("nat", 1)),
+                        men=int(data.get("men", 10)),
+                        size=int(data.get("size", 1)),
+                        weapons=data.get("weapons", [])
+                    )
+
+                    for key, val in data.items():
+                        if key not in core_fields:
+                            # Use the UnitRow attribute logic to update the raw
+                            # list
+                            setattr(gnd, key, val)
+
+                    writer.writerow(gnd.raw)
+
         return file_path
     return _make
 
 
 @pytest.fixture
 def make_device_csv(tmp_path: Path) -> Callable[..., Path]:
-    """Factory to generate a custom _device.csv file."""
+    """
+    Factory to generate a custom _device.csv file.
+    """
     def _make(
         filename: str = "shared_mock_device.csv",
-        rows_data: List[Dict[str, Any]] | None = None
+        rows_data: list[dict[str, Any]] | None = None
     ) -> Path:
         file_path: Path = tmp_path / filename
         headers = gen_device_column_names()
+
+        core_fields = {"id", "name", "pen", "load"}
 
         with open(file_path, 'w', newline='', encoding=ENCODING_TYPE) as f:
             writer = csv.writer(f)
@@ -317,22 +339,34 @@ def make_device_csv(tmp_path: Path) -> Callable[..., Path]:
 
             if rows_data:
                 for data in rows_data:
-                    writer.writerow(create_dev_row(
-                        dev_id=data.get("id", "0"),
+
+                    dev = create_dev_row(
+                        dev_id=int(data.get("id", 0)),
                         name=data.get("name", "Unknown Device"),
-                        pen=data.get("pen", "0"),
-                        load=data.get("load", "0")
-                    ))
+                        pen=int(data.get("pen", 0)),
+                        load=int(data.get("load", 0))
+                    )
+
+                    for key, val in data.items():
+                        if key not in core_fields:
+                            # Use the UnitRow attribute logic to update the raw
+                            # list
+                            setattr(dev, key, val)
+
+
+                    writer.writerow(dev.raw)
         return file_path
     return _make
 
 
 @pytest.fixture
 def make_aircraft_csv(tmp_path: Path) -> Callable[..., Path]:
-    """Factory to generate a custom _aircraft.csv file."""
+    """
+    Factory to generate a custom _aircraft.csv file.
+    """
     def _make(
         filename: str = "mock_aircraft.csv",
-        rows_data: List[Dict[str, Any]] | None = None
+        rows_data: list[dict[str, Any]] | None = None
     ) -> Path:
         file_path: Path = tmp_path / filename
         headers = gen_aircraft_column_names()
@@ -345,9 +379,9 @@ def make_aircraft_csv(tmp_path: Path) -> Callable[..., Path]:
                 for data in rows_data:
                     # Generate the default 322-column row
                     row = gen_default_aircraft_row(
-                        aircraft_id=int(data.get("id", "0")),
+                        aircraft_id=int(data.get("id", 0)),
                         name=data.get("name", "Unknown Aircraft"),
-                        nat=int(data.get("nat", "1"))
+                        nat=int(data.get("nat", 1))
                     )
 
                     # Dynamically overwrite any specific columns passed in the
@@ -395,7 +429,7 @@ def mock_files(
     mock_unit_csv: Path,
     mock_ob_csv: Path,
     mock_ground_csv: Path
-) -> Tuple[Path, Path, Path]:
+) -> tuple[Path, Path, Path]:
     """
     Returns the master triplet of mock files.
     Note: Ensure mock_ob_csv and mock_unit_csv are updated to include
@@ -617,6 +651,7 @@ def mock_ground_csv_fixture(make_ground_csv: Callable[..., Path]) -> Path:
         # --- NEW: Data for Strength Auditing ---
             {
                 "id": "100", "name": "Rifle Squad", "type": "1",
+                "nat" : "1",
                 "men": "10", "size": "1",
                 "weapons": []
             },
@@ -650,7 +685,6 @@ def mock_ground_csv_fixture(make_ground_csv: Callable[..., Path]) -> Path:
                 "id": "42", "name": "Tiger I",
                 "weapons": [(0, "10", "1"), (5, "11", "1"), (8, "12", "1")]
             },
-# --- NEW: Data merged from test_core_analytics.py ---
             {
                 "id": "51", "name": "Panzer III", "type": "10",
                 "nat": "1",

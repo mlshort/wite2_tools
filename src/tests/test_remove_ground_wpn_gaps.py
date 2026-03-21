@@ -14,9 +14,9 @@ def test_remove_ground_weapon_gaps(mock_ground_csv: Path) -> None:
     """Verifies that gaps are removed and weapons are shifted left/up."""
 
     # Execute the modifier
-    updates = remove_ground_weapon_gaps(str(mock_ground_csv))
+    results = remove_ground_weapon_gaps(str(mock_ground_csv))
 
-    assert updates == 4
+    assert results == (16, 4)
 
     # Verify the contents were actually shifted
     with open(mock_ground_csv, 'r', encoding=ENCODING_TYPE) as f:
@@ -26,4 +26,3 @@ def test_remove_ground_weapon_gaps(mock_ground_csv: Path) -> None:
         assert rows[4][GndColumn.WPN_0] == "100"
         assert rows[4][GndColumn.WPN_1] == "200"
         assert rows[4][GndColumn.WPN_2] == "0"
-

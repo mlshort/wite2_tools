@@ -33,15 +33,17 @@ Example:
 
 """
 import os
-from typing import List, Tuple
 
 # Internal package imports
-from wite2_tools.constants import MIN_SQUAD_SLOTS, MAX_SQUAD_SLOTS
 from wite2_tools.utils import get_logger
 from wite2_tools.modifiers.base import process_csv_in_place
 
 # Import ObColumn so we can use its pure integer indices
-from wite2_tools.models import ObRow, ObColumn
+from wite2_tools.models import (
+    ObRow,
+    ObColumn,
+    O_SQD_SLOTS
+)
 
 
 # Initialize the log for this specific module
@@ -51,7 +53,7 @@ log = get_logger(__name__)
 def reorder_ob_squads(ob_file_path: str,
                       target_ob_id: int,
                       target_wid: int,
-                      target_slot: int) -> int:
+                      target_slot: int) -> tuple[int,int]:
     """
     Reorders specific Ground Element squads within a WiTE2 TOE(OB) (Order of
     Battle) CSV file.
@@ -71,8 +73,8 @@ def reorder_ob_squads(ob_file_path: str,
             element should be relocated.
 
     Returns:
-        int: The total number of rows (OBs) successfully updated.
-             Returns 0 if no matches were found or if an error occurred.
+        tuple[int, int]: A tuple containing (total_rows_processed, total_rows_updated).
+            Returns (0, 0) if no matches were found or error occurred.
 
     Note:
         - Uses a generator-based streaming approach to handle very large CSV
@@ -84,20 +86,20 @@ def reorder_ob_squads(ob_file_path: str,
     """
 
     # Validation
-    if not MIN_SQUAD_SLOTS <= target_slot < MAX_SQUAD_SLOTS:
+    if not 0 <= target_slot < O_SQD_SLOTS:
         log.error("Validation Error: target_slot index %d is "
                   "out of bounds.", target_slot)
-        return 0
+        return 0, 0
 
     if not os.path.isfile(ob_file_path):
         log.error("Error: The file '%s' was not found.", ob_file_path)
-        return -1
+        return 0, 0
 
-    log.info("Reordering squads in '%s' | TOE(ID): %d | Target WID: %d | To Slot: %d",
-             ob_file_path, target_ob_id, target_wid, target_slot)
+    log.info("Task Start: Reordering squads in '%s' | TOE(ID): %d | Target WID: %d | To Slot: %d",
+             os.path.basename(ob_file_path), target_ob_id, target_wid, target_slot)
 
     # 1. Define the List-based row processor
-    def process_row(row: List[str], row_idx: int) -> Tuple[List[str], bool]:
+    def process_row(row: list[str], row_idx: int) -> tuple[list[str], bool]:
         # Skip header row (row index 0)
         if row_idx == 0:
             return row, False
@@ -113,7 +115,7 @@ def reorder_ob_squads(ob_file_path: str,
             # Grab the exact starting index for the squad block
             sqd_base = ObColumn.SQD_0
 
-            for i in range(MAX_SQUAD_SLOTS):
+            for i in range(O_SQD_SLOTS):
                 try:
                     # Direct list access using pure integer offset math
                     wid = int(ob.raw[sqd_base + i])
@@ -134,4 +136,11 @@ def reorder_ob_squads(ob_file_path: str,
         return row, False
 
     # 2. Execute via the shared list-stream wrapper
-    return process_csv_in_place(ob_file_path, process_row)
+    processed, updated = process_csv_in_place(ob_file_path, process_row)
+
+    log.info("Task Complete: Rows processed: %d, Rows Modified: %d moving the WID[%d] to "
+             "the new slot [%d].",
+             processed,
+             updated, target_wid, target_slot)
+
+    return processed, updated

@@ -4,10 +4,8 @@
 # Class 0=None,1=inf,2=art,3=sp-2pn,4=mech-inf,5=support
 # 6=inf-wpn,7=ac,8=spa,9=afv
 # targetType = {0=None,1=Inf,2=AFV,3=ART}
-from typing import Dict, Tuple
 
-
-GND_ELEMENT_DATA: Dict[int, Tuple[str, int, int, str, int]] = {
+GND_ELEMENT_DATA: dict[int, tuple[str, int, int, str, int]] = {
     1: ( "Rifle Squad",  3,  4,  "Inf", 1),
     2: ( "Inf-AntiTank", 1, 1, "Inf", 6),
     3: ( "Cavalry Squad", 3, 8, "Inf", 4),

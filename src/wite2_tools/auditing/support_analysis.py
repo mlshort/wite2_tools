@@ -1,4 +1,4 @@
-from typing import List, Iterable, Optional, Tuple
+from typing import Iterable, Optional
 from wite2_tools.models.UnitRow import UnitRow
 
 # ... [Include the UnitColumn IntEnum from previous step] ...
@@ -7,13 +7,13 @@ from wite2_tools.models.UnitRow import UnitRow
 def filter_units(
     units: Iterable[UnitRow],
     name_contains: Optional[str] = None,
-    at_coords: Optional[Tuple[int, int]] = None,
+    at_coords: Optional[tuple[int, int]] = None,
     min_morale: Optional[int] = None
-) -> List[UnitRow]:
+) -> list[UnitRow]:
     """
     Filters a collection of units based on specific criteria.
     """
-    results: List[UnitRow] = list(units)
+    results: list[UnitRow] = list(units)
 
     if name_contains:
         results = [u for u in results if name_contains.lower() in u.NAME.lower()]

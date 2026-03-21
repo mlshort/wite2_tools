@@ -14,7 +14,7 @@ def test_modify_unit_squads_success_and_filters(mock_unit_csv: Path) -> None:
     """
 
     # Execute: In TOE(OB) 50, if Elem 105 has qty 10, change it to 99
-    updates = modify_unit_squads(
+    results = modify_unit_squads(
         str(mock_unit_csv),
         target_ob_id=50,
         target_wid=105,
@@ -23,7 +23,7 @@ def test_modify_unit_squads_success_and_filters(mock_unit_csv: Path) -> None:
     )
 
     # Assert ONLY Row 1 was updated by the script
-    assert updates == 1
+    assert results == (26, 1)
 
     with open(mock_unit_csv, 'r', encoding=ENCODING_TYPE) as f:
         rows = list(csv.reader(f))

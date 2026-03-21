@@ -30,7 +30,7 @@ Example:
     $ python -m wite2_tools.cli mod-compact-wpn Scans the default _ground.csv
     file and shifts weapons left/up to compact any empty slots.
 """
-from typing import Tuple, List, Any
+from typing import Any
 import os
 
 # Internal package imports
@@ -46,7 +46,7 @@ from wite2_tools.models import (
 log = get_logger(__name__)
 
 
-def remove_ground_weapon_gaps(ground_file_path: str) -> int:
+def remove_ground_weapon_gaps(ground_file_path: str) -> tuple[int,int]:
     """
     Scans the _ground CSV file, identifies rows with gaps in their weapon
     slots, and shifts valid weapons left/up to fill those gaps.
@@ -56,12 +56,13 @@ def remove_ground_weapon_gaps(ground_file_path: str) -> int:
             _ground CSV file.
 
     Returns:
-        int: The total number of Ground Elements that had their weapon slots
-            compacted.
+        tuple[int, int]: A tuple containing (total_rows_processed, total_rows_updated).
+            Returns (0, 0) if no matches were found or error occurred.
+
     """
     if not os.path.isfile(ground_file_path):
         log.error("Error: The file '%s' was not found.", ground_file_path)
-        return -1
+        return 0, 0
 
     log.info("Task Start: Compacting empty weapon slots in '%s'",
              os.path.basename(ground_file_path))
@@ -70,7 +71,7 @@ def remove_ground_weapon_gaps(ground_file_path: str) -> int:
     # Define the 5 attribute blocks associated with Ground Weapons
     # These represent the 'starting' column for each 6-slot block
     # pylint: disable=invalid-name
-    WPN_BASES: List[int] = [
+    WPN_BASES: list[int] = [
         GndColumn.WPN_0,
         GndColumn.WPN_NUM_0,
         GndColumn.WPN_AMMO_0,
@@ -82,13 +83,13 @@ def remove_ground_weapon_gaps(ground_file_path: str) -> int:
     # pylint: disable=invalid-name
     ID_COL: int = GndColumn.ID
 
-    def process_row(row: List[str], row_idx: int) -> Tuple[List[str], bool]:
+    def process_row(row: list[str], row_idx: int) -> tuple[list[str], bool]:
         # Skip header
         if row_idx == 0:
             return row, False
 
-        valid_packets: List[List[Any]] = []
-        original_wpn_ids: List[int] = []
+        valid_packets: list[list[Any]] = []
+        original_wpn_ids: list[int] = []
 
         # 1. EXTRACT: Gather valid weapon "packets"
         # The weapon ID is always the first base in our list
@@ -102,12 +103,12 @@ def remove_ground_weapon_gaps(ground_file_path: str) -> int:
 
             if wid != 0:
                 # Create a packet: [ID, Num, Facing, Type, Traverse] for slot i
-                packet: List[str] = [row[base + i] for base in WPN_BASES]
+                packet: list[str] = [row[base + i] for base in WPN_BASES]
                 valid_packets.append(packet)
 
         # 2. CHECK: Compare layouts to see if a shift is actually needed
         # Reconstruct what the layout SHOULD look like if compacted
-        new_wpn_ids: List[int] = (
+        new_wpn_ids: list[int] = (
             [parse_int(p[0]) for p in valid_packets] +
             [0] * (G_WPN_SLOTS - len(valid_packets))
         )
@@ -134,9 +135,11 @@ def remove_ground_weapon_gaps(ground_file_path: str) -> int:
 
     # 4. EXECUTE & SUMMARY
     # process_csv_in_place is expected to handle the List Stream logic
-    updates: int = process_csv_in_place(ground_file_path, process_row)
+    processed_count, updates = process_csv_in_place(ground_file_path, process_row)
 
-    log.info("Finished. Total Ground Elements compacted: %d", updates)
-    print(f"Success! {updates} Ground Elements had their weapon slots compacted.")
+    log.info("Task Complete: Total Ground Elements Processed: %d, Compacted: %d",
+             processed_count,
+             updates)
+#    print(f"Success! {updates} Ground Elements had their weapon slots compacted.")
 
-    return updates
+    return processed_count, updates

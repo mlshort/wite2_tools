@@ -18,7 +18,7 @@ _ob.csv (TOE) Mapping Reference:
 Note: The OB file contains exactly 79 columns (0-78) covering 32 slots.
 """
 from enum import IntEnum
-from typing import List, Final
+from typing import Final
 
 
 class ObColumn(IntEnum):
@@ -91,19 +91,15 @@ FIRSTMONTH_COL : Final[int] = ObColumn.FIRST_MONTH
 LASTYEAR_COL : Final[int]   = ObColumn.LAST_YEAR
 LASTMONTH_COL : Final[int]  = ObColumn.LAST_MONTH
 
-#: Starting index for Ground Element ID slots (Maps to _ground.csv -> id).
-ELEM_BASE: Final[int]    = ObColumn.SQD_0
-#: Starting index for Quantity slots
-NUM_BASE: Final[int]     = ObColumn.SQD_NUM_0
 SQD0_COL: Final[int]     = ObColumn.SQD_0
 SQD_NUM0_COL: Final[int] = ObColumn.SQD_NUM_0
 
 
-def gen_ob_column_names() -> List[str]:
+def gen_ob_column_names() -> list[str]:
     """
     Generates the column name list for OB files dynamically.
     """
-    cols: List[str] = [
+    cols: list[str] = [
         "id", "name", "suffix", "nat", "firstYear", "firstMonth",
         "lastYear", "lastMonth", "type", "upgrade", "obClass",
         "icon", "divideMultiRole", "mtzType", "formSize"
@@ -118,29 +114,5 @@ def gen_ob_column_names() -> List[str]:
         cols.append(f"sqdNum {i}")
 
     return cols
-
-
-def gen_default_ob_row(ob_id: int = 0,
-                       name: str = "",
-                       suffix: str = "") -> List[str]:
-    """
-    Generates a default 79-column row for an _ob.csv file.
-
-    Args:
-        ob_id (int): The ID for the OB (Column 0). Defaults to 0.
-        name (str): The name of the OB (Column 1). Defaults to empty.
-        suffix (str): The suffix string (Column 2). Defaults to empty.
-
-    Returns:
-        List[str]: A list containing the ID, Name, Suffix, and 76 zeroes.
-    """
-    # Create the base row with the ID, Name, and Suffix
-    row: List[str] = [str(ob_id), name, suffix]
-
-    # Append 76 zeroes to fill out the remaining columns
-    # (12 remaining base properties + 32 'sqd' slots + 32 'sqdNum' slots)
-    row.extend(["0"] * 76)
-
-    return row
 
 

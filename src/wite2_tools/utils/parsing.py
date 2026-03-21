@@ -6,7 +6,7 @@ Provides centralized, exception-safe type-casting functions designed
 specifically to handle the malformed, empty, or whitespace-padded data
 frequently encountered in War in the East 2 (WiTE2) CSV files.
 """
-from typing import Optional, List
+from typing import Optional
 
 
 def parse_int(value: Optional[str], default: int = 0) -> int:
@@ -32,7 +32,7 @@ def parse_int(value: Optional[str], default: int = 0) -> int:
     except ValueError:
         return default
 
-def parse_row_int(row: List[str], offset: int, default: int = 0) -> int:
+def parse_row_int(row: list[str], offset: int, default: int = 0) -> int:
     """
     Safely extracts an integer from a CSV row.
     Handles truncated rows and empty cells by returning the default.
@@ -73,7 +73,7 @@ def parse_str(value: Optional[str], default: str = "") -> str:
     return str(value).strip()
 
 
-def parse_row_str(row: List[str], offset: int, default: str = "") -> str:
+def parse_row_str(row: list[str], offset: int, default: str = "") -> str:
     """
     Safely extracts and cleans a string from a CSV row list.
     Handles truncated rows and empty cells by returning the default value.

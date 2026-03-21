@@ -25,7 +25,7 @@ def apply_anti_armor_fix_with_validation(device_file_path: str,
 
     if not os.path.isfile(device_file_path):
         log.error("Error: The file '%s' was not found.", device_file_path)
-        return -1
+        return 0
 
     # Initialize the generator
     dev_stream = get_csv_list_stream(device_file_path)

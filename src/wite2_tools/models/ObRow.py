@@ -1,5 +1,5 @@
 from collections.abc import Iterator
-from typing import Any, List, Tuple
+from typing import Any, Self
 
 from wite2_tools.models.ob_schema import (
     ObColumn,
@@ -29,12 +29,25 @@ class ObRow:
     UPGRADE: int
     OB_CLASS: int
     FORM_SIZE: int
+    _raw : list[str]
 
-    def __init__(self, row: List[str]):
+    @property
+    def raw(self: Self) -> list[str]:
+        """
+        Returns the underlying raw CSV string list.
+        """
+        return self._raw
+
+
+    def __init__(self: Self, row: list[str]) -> None:
         """
         Takes a raw CSV row (list of strings) and parses it using the known
         Enum indices.
         """
+        self._load_row(row)
+
+
+    def _load_row(self: Self, row: list[str]) -> None:
         # We must use super().__setattr__ here to bypass our custom __setattr__
         # until the _raw list is actually attached to the object!
         super().__setattr__('_raw', row)
@@ -44,6 +57,7 @@ class ObRow:
         for col in ObColumn:
             raw_val = row[col] if col < row_len else "0"
 
+            val: Any
             try:
                 val = int(raw_val)
             except (ValueError, TypeError):
@@ -53,7 +67,7 @@ class ObRow:
             super().__setattr__(col.name, val)
 
 
-    def __getattr__(self, item: str) -> Any:
+    def __getattr__(self: Self, item: str) -> Any:
         normalized_request = item.replace("_", "").upper()
         for actual_key, val in self.__dict__.items():
             normalized_key = actual_key.replace("_", "").upper()
@@ -62,7 +76,7 @@ class ObRow:
         raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{item}'")
 
 
-    def __setattr__(self, name: str, value: Any) -> None:
+    def __setattr__(self: Self, name: str, value: Any) -> None:
         """
         Intercepts attribute assignment to ensure that the underlying CSV _raw
         list is updated simultaneously.
@@ -85,10 +99,10 @@ class ObRow:
 
 
     @classmethod
-    def create_default(cls,
+    def create_default(cls: type[Self],
                        ob_id: int = 0,
                        name: str = "",
-                       suffix: str = "") -> "ObRow":
+                       suffix: str = "") -> Self:
         """
         Factory method to create a blank ObRow with specified ID/Name.
         Automatically fills all other columns with "0".
@@ -115,7 +129,7 @@ class ObRow:
         return cls(row)
 
 
-    def get_squads(self) -> Iterator[Tuple[int, int]]:
+    def get_squads(self: Self) -> Iterator[tuple[int, int]]:
         """
         Yields (ground_element_id, quantity) by calculating offsets
         directly from the Enum indices.
@@ -141,15 +155,7 @@ class ObRow:
 
 
     @property
-    def raw(self) -> List[str]:
-        """
-        Returns the underlying raw CSV string list.
-        """
-        return self._raw
-
-
-    @property
-    def is_active(self) -> bool:
+    def is_active(self: Self) -> bool:
         """
         Evaluates if the OB is an active, deployable template in the game engine.
         Returns False for spares, placeholders, and unassigned database slots.
@@ -174,7 +180,7 @@ class ObRow:
         return True
 
 
-    def reorder_slots(self, source_slot: int, target_slot: int) -> None:
+    def reorder_slots(self: Self, source_slot: int, target_slot: int) -> None:
         """
         Moves an equipment ID and its corresponding quantity from source_slot
         to target_slot (0-31), shifting other elements accordingly.
@@ -194,7 +200,7 @@ class ObRow:
             end_idx = start_idx + SQD_SLOTS  # The width of the equipment block
 
             # Extract the relevant 32 columns as a list segment
-            segment = self._raw[start_idx:end_idx]
+            segment = self.raw[start_idx:end_idx]
 
             # Perform the move
             # pop() pulls the value out, insert() wedges it into the new position
@@ -202,9 +208,9 @@ class ObRow:
             segment.insert(target_slot, value_to_move)
 
             # Update the underlying raw list using slice assignment
-            self._raw[start_idx:end_idx] = segment
+            self.raw[start_idx:end_idx] = segment
 
         # 3. CRITICAL: Re-sync the object attributes
         # Since we modified self._raw, we must re-run the parser logic
         # so that ob.SQD_0, ob.SQD_1, etc., reflect the new list order.
-        self.__init__(self._raw)
+        self._load_row(self.raw)

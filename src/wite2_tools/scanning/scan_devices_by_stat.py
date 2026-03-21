@@ -11,7 +11,7 @@ Functions:
     scan_devices_by_stat: Scans the device database and returns a list of
                           devices that meet or exceed a specified minimum value.
 """
-from typing import List, Dict, Any
+from typing import Any
 
 from wite2_tools.generator import get_csv_list_stream
 from wite2_tools.models import DevColumn
@@ -26,7 +26,7 @@ def scan_devices_by_stat(
     device_file_path: str,
     stat_col: DevColumn,
     min_value: int
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """
     Scans the device database for items where a specific stat meets or exceeds
     a threshold.
@@ -39,7 +39,7 @@ def scan_devices_by_stat(
     Returns:
         A list of dictionaries containing the ID, Name, and the stat value of matches.
     """
-    matches: List[Dict[str, Any]] = []
+    matches: list[dict[str, Any]] = []
 
     try:
         dev_stream = get_csv_list_stream(device_file_path)

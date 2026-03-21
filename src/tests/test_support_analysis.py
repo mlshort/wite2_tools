@@ -1,12 +1,11 @@
 from unittest.mock import patch, MagicMock
-from typing import List, Dict
 
 from wite2_tools.models.UnitRow import UnitRow
 from wite2_tools.generator import CSVDictStream
 from wite2_tools.auditing.support_analysis import print_undersupported_units
 
 # 1. Create Mock Data matching your CSV structure
-MOCK_UNIT_DATA: List[Dict[str, str]] = [
+MOCK_UNIT_DATA: list[dict[str, str]] = [
     {"id": "id", "name": "name", "type": "type", "nat": "nat",
      "support": "support", "sptNeed": "sptNeed"},
     {"id": "1", "name": "1st Panzer", "type": "1", "nat": "1",
@@ -17,7 +16,7 @@ MOCK_UNIT_DATA: List[Dict[str, str]] = [
      "support": "0", "sptNeed": "0"}              # Ignored/Zeroed
 ]
 
-def create_mock_stream(data_list : List[Dict[str,str]]) -> CSVDictStream:
+def create_mock_stream(data_list : list[dict[str,str]]) -> CSVDictStream:
     """Helper to simulate the CSVStream object from your generator."""
     mock_rows = enumerate(data_list[1:], start=1) # Skip header
     fieldnames = list(data_list[0].keys())

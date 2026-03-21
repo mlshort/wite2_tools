@@ -16,12 +16,11 @@ to keep imports and syntax clean in downstream processing scripts.
 from .UnitRow import UnitRow
 from .ObRow import ObRow
 from .GndRow import GndRow
+from .DevRow import DevRow
 
 from .ob_schema import (
     ObColumn,
     gen_ob_column_names,
-    ELEM_BASE,
-    NUM_BASE,
     NUM_COLS as O_NUM_COLS,
     SQD_SLOTS as O_SQD_SLOTS,
     ID_COL as O_ID_COL, TYPE_COL as O_TYPE_COL,
@@ -42,12 +41,11 @@ from .unit_schema import (
     NAME_COL as U_NAME_COL, NAT_COL as U_NAT_COL,
     TRUCK_COL as U_TRUCK_COL, SUPPORT_COL as U_SUPPORT_COL,
     SPT_NEED_COL as U_SPT_NEED_COL, HQ_SUPPORT_COL as U_HQ_SUPPORT_COL,
-    SQD0_COL as U_SQD0_COL, SQD_NUM0_COL as U_SQD_NUM0_COL
+    SQD_U0_COL as U_SQD0_COL, SQD_NUM0_COL as U_SQD_NUM0_COL
 )
 from .gnd_schema import (
     GndColumn,
     gen_gnd_column_names,
-    gen_default_gnd_row,
     NUM_COLS as G_NUM_COLS,
     WPN_SLOTS as G_WPN_SLOTS,
     ID_COL as G_ID_COL, TYPE_COL as G_TYPE_COL,
@@ -56,7 +54,6 @@ from .gnd_schema import (
 from .dev_schema import (
     DevColumn,
     gen_device_column_names,
-    gen_default_device_row,
     NUM_COLS as D_NUM_COLS,
     ID_COL as D_ID_COL, TYPE_COL as D_TYPE_COL,
     NAME_COL as D_NAME_COL, LOAD_COST_COL as D_LOAD_COST_COL
@@ -73,7 +70,6 @@ __all__ = [
     "GndRow",
     "GndColumn",
     "gen_gnd_column_names",
-    "gen_default_gnd_row",
     "G_NUM_COLS",
     "G_WPN_SLOTS",
     "G_ID_COL",
@@ -104,8 +100,6 @@ __all__ = [
     "ObRow",
     "ObColumn",
     "gen_ob_column_names",
-    "ELEM_BASE",
-    "NUM_BASE",
     "O_NUM_COLS",
     "O_SQD_SLOTS",
     "O_ID_COL",
@@ -123,8 +117,8 @@ __all__ = [
 
     # --- Equipment/Device Entities ---
     "DevColumn",
+    "DevRow",
     "gen_device_column_names",
-    "gen_default_device_row",
     "D_NUM_COLS",
     "D_ID_COL",
     "D_TYPE_COL",

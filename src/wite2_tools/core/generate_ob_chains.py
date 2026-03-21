@@ -44,7 +44,7 @@ Example:
 """
 import csv
 import os
-from typing import cast, List, Dict, Set
+from typing import cast
 
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE, NatData, normalize_nat_codes
@@ -77,14 +77,14 @@ def generate_ob_chains(
                       column value to filter by.
     :return: The total number of chains generated.
     """
-    ob_id_to_name_map: Dict[int, str] = {}
-    ob_id_to_upgrade_map: Dict[int, int] = {}
-    all_ob_ids: Set[int] = set()
-    ob_upgrade_ids: Set[int] = set()
+    ob_id_to_name_map: dict[int, str] = {}
+    ob_id_to_upgrade_map: dict[int, int] = {}
+    all_ob_ids: set[int] = set()
+    ob_upgrade_ids: set[int] = set()
 
     if not os.path.isfile(ob_file_path):
         log.error("Error: The file '%s' was not found.", ob_file_path)
-        return -1
+        return 0
 
     # Standardize nation_id to a set for efficient lookup
     nat_filter = normalize_nat_codes(nat_codes)
@@ -97,7 +97,7 @@ def generate_ob_chains(
 
     for item in ob_stream.rows:
         # Cast the yielded item to satisfy static type checkers
-        _, row = cast(tuple[int, Dict[str,str]], item)
+        _, row = cast(tuple[int, dict[str,str]], item)
 
         try:
             # Early Exit: Filter by nationality
@@ -130,7 +130,7 @@ def generate_ob_chains(
             continue
 
     # 2. Identify Roots (IDs that are not the destination of an upgrade)
-    roots: List[int] = sorted(list(all_ob_ids - ob_upgrade_ids))
+    roots: list[int] = sorted(list(all_ob_ids - ob_upgrade_ids))
 
     # 3. Trace the chains
     chains_list = []
@@ -140,9 +140,9 @@ def generate_ob_chains(
             if root not in ob_id_to_upgrade_map:
                 continue
 
-        chain: List[int | str] = []
+        chain: list[int | str] = []
         curr = root
-        visited: Set[int] = set()  # Safety check for infinite loops in data
+        visited: set[int] = set()  # Safety check for infinite loops in data
 
         while curr != 0 and curr in ob_id_to_name_map:
             if curr in visited:

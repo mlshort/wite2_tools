@@ -8,17 +8,21 @@ for executing targeted modifications, generating analytics, and running audits.
 
 Available Commands:
 -------------------
+[Configuration]
+* config           : Manage settings.ini default paths and scenario prefixes.
+
 [Auditing]
-* audit-ground     : Scans a _ground CSV file to ensure type IDs are valid.
-* audit-unit       : Audits _unit.csv data integrity and referential links.
 * audit-ob         : Audits _ob.csv referential integrity.
-* audit-batch      : Scans a folder for CSV files and runs consistency checks.
-* audit-toe        : Audit units exceeding TOE(OB) limits.
+* audit-ground     : Audits _ground.csv to ensure type IDs are valid.
+* audit-unit       : Audits _unit.csv data integrity and referential links.
+* audit-toe        : Audits _unit.csv exceeding TOE(OB) limits.
+* audit-batch      : Scans a folder for CSV files and runs batch consistency checks.
 
 [Scanning]
 * scan-ob          : Scans TOE(OB)s for a specific Ground Element WID.
 * scan-unit        : Scans Units for a specific Ground Element WID.
 * scan-excess      : Scans units for excess supplies (ammo, fuel, etc.).
+* scan-unused      : Find unused devices in the ground/aircraft files.
 
 [Modifiers]
 * mod-compact-wpn  : Removes empty weapon slots and shifts remaining up.
@@ -28,10 +32,11 @@ Available Commands:
 * mod-update-num   : Conditionally updates unit squad counts.
 
 [Generators / Core Analytics]
+* calc-support     : Calculate unit support and need.
 * gen-inventory    : Counts global unit inventory (with nat filters).
-* gen-orphans      : Identifies unreferenced TOE(OB) IDs.
+* gen-orphans      : Find units with missing TOE(OB) references.
 * gen-groups       : Groups active units by their assigned TOE(OB) ID.
-* gen-chains       : Generates TOE(OB) upgrade chains to CSV/TXT outputs.
+* gen-chains       : Trace TOE(OB) upgrade chains to CSV/TXT outputs.
 
 Note: Target file paths are resolved automatically from the provided
       `--data-dir` (or `-d`) argument. It defaults to the current directory.
@@ -41,7 +46,7 @@ import argparse
 import configparser
 import os
 import sys
-from typing import Dict, Callable
+from collections.abc import Callable
 
 # Project Imports
 from wite2_tools.utils import get_logger
@@ -64,7 +69,7 @@ from .auditing import (
     audit_ob_csv,
     audit_unit_csv,
     audit_unit_ob_excess,
-    scan_and_evaluate_unit_files
+    audit_batch
 )
 from .modifiers import (
     modify_unit_ground_element,
@@ -83,7 +88,7 @@ from .scanning import (
 log = get_logger(__name__)
 
 
-def get_config_defaults() -> Dict[str, str]:
+def get_config_defaults() -> dict[str, str]:
     """
     Reads data_dir and scenario_name from settings.ini.
     Returns a dictionary of defaults.
@@ -103,7 +108,9 @@ def get_config_defaults() -> Dict[str, str]:
 
 
 def get_config_scenario_name()->str:
-    """Retrieves the scenario name from the config file."""
+    """
+    Retrieves the scenario name from the config file.
+    """
     scen_name = ""
     config = configparser.ConfigParser()
     if os.path.isfile(CONFIG_FILE_NAME):
@@ -132,7 +139,7 @@ def save_config(data_dir: str | None = None, scenario: str | None = None)->None:
         config.write(f)
 
 
-def resolve_paths(data_dir: str) -> Dict[str, str]:
+def resolve_paths(data_dir: str) -> dict[str, str]:
     """
     Resolves standard WiTE2 file names from a target directory.
 
@@ -140,7 +147,7 @@ def resolve_paths(data_dir: str) -> Dict[str, str]:
         data_dir (str): The directory containing the WiTE2 CSV files.
 
     Returns:
-        Dict[str, str]: A dictionary mapping file keys ('unit', 'ob',
+        dict[str, str]: A dictionary mapping file keys ('unit', 'ob',
                         'ground') to their absolute or relative paths.
 
     """
@@ -163,8 +170,14 @@ def setup_parsers() -> argparse.ArgumentParser:
     defaults = get_config_defaults()
     default_path = defaults.get("data_dir", ".")
 
-    # --- PARENT PARSERS ---
-    base_parser = argparse.ArgumentParser(add_help=False)
+    # =========================
+    # PARENT PARSERS
+    # =========================
+    base_parser = argparse.ArgumentParser(
+        description=__doc__,  # This pulls your nice docstring from the top of the file
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+
     base_parser.add_argument(
         "-d", "--data-dir", default=default_path,
         help=f"Directory containing the WiTE2 CSV files "
@@ -176,11 +189,14 @@ def setup_parsers() -> argparse.ArgumentParser:
         help="Enable debug logging output."
     )
 
-    subparsers = base_parser.add_subparsers(dest="command",
-                                            required=True,
-                                            help="Commands")
+    subparsers = base_parser.add_subparsers(
+        dest="command",
+        required=False,
+        title="subcommands",
+        metavar="<command>" # Cleans up the ugly {config,audit,...} list
+    )
 
-    def add_common(p:argparse.ArgumentParser)->None:
+    def add_nat_argument(p:argparse.ArgumentParser)->None:
         p.add_argument(
             "--nat", dest="nat_codes", type=int, nargs="+", default=[1],
             help="Nationality codes to filter (default: 1)"
@@ -194,10 +210,16 @@ def setup_parsers() -> argparse.ArgumentParser:
     p_conf.add_argument("--set-path", help="Set default data directory")
     p_conf.add_argument("--set-scenario", help="Set scenario prefix")
 
-    # Auditing
-    p_audit_devices = subparsers.add_parser("audit-devices",
-        help="Identify devices defined in ground elements but never used in Units or OBs.")
-    add_common(p_audit_devices)
+    # =========================
+    # AUDIT COMMANDS
+    # =========================
+
+    # TODO audit-devices is not currently active
+    #p_audit_devices = subparsers.add_parser("audit-devices",
+    #    help="Identify devices defined in ground elements but never used in Units or OBs.")
+    #add_common(p_audit_devices)
+
+    subparsers.add_parser("audit-ob", help="Audit _ob.csv")
 
     subparsers.add_parser("audit-ground",
                           help="Audit _ground.csv")
@@ -209,39 +231,55 @@ def setup_parsers() -> argparse.ArgumentParser:
     p_au.add_argument("--relink-orphans", action="store_true")
     p_au.add_argument("--fallback-hq", type=int, default=0)
 
-    subparsers.add_parser("audit-ob", help="Audit _ob.csv")
-
     p_toe = subparsers.add_parser("audit-toe",
-                                  help="Audit unit TOE excess")
-    add_common(p_toe)
+                                  help="Audits _unit.csv exceeding TOE(OB) limits")
+    add_nat_argument(p_toe)
 
+    p_ab = subparsers.add_parser("audit-batch",
+                                 help="Scans a folder for CSV files and runs consistency checks")
+    p_ab.add_argument("--active-only", action="store_true", default=True)
 
-    # Analytics
+    # =========================
+    # ANALYTIC COMMANDS
+    # =========================
     p_calc = subparsers.add_parser("calc-support",
                                    help="Calculate unit support and need")
     p_calc.add_argument("target_uid", type=int,
                         help="Target Unit ID")
 
 
-    # --- Generation ---
+    # =========================
+    # GENERATION COMMANDS
+    # =========================
+    p_inv = subparsers.add_parser("gen-inventory",
+                                  help="Counts global unit inventory (with nat filters)")
+    add_nat_argument(p_inv)
+
     p_orphans = subparsers.add_parser("gen-orphans",
-                                      help="Find units with missing OB references")
-    add_common(p_orphans)
+                                      help="Find units with missing TOE(OB) references")
+    add_nat_argument(p_orphans)
 
     p_groups = subparsers.add_parser("gen-groups",
-                                     help="Group units by their assigned OB ID")
+                                     help="Group units by their assigned TOE(OB) ID")
     p_groups.add_argument("--active-only", action="store_true")
-    add_common(p_groups)
+    add_nat_argument(p_groups)
 
     p_chains = subparsers.add_parser("gen-chains",
-                                     help="Trace TOE(OB) upgrade paths")
+                                     help="Trace the TOE(OB)'s upgrade paths")
     p_chains.add_argument("--csv-out", help="Path for CSV output")
     p_chains.add_argument("--txt-out", help="Path for TXT report")
-    add_common(p_chains)
+    add_nat_argument(p_chains)
 
-    # --- Scanning ---
+    # =========================
+    # SCANNING COMMANDS
+    # =========================
+    p_scan_ob = subparsers.add_parser("scan-ob",
+                                      help="Scans TOE(OB)s for a specific Ground Element WID")
+    p_scan_ob.add_argument("target_wid", type=int, help="Target Ground Element WID")
+    add_nat_argument(p_scan_ob)
+
     p_excess = subparsers.add_parser("scan-excess",
-                                     help="Scan unit resources")
+                                     help="Scans units for excess resources")
     p_excess.add_argument("resource",
                           nargs="?",
                           choices=['a','f','s','v'],
@@ -252,17 +290,17 @@ def setup_parsers() -> argparse.ArgumentParser:
                           type=float,
                           default=5.0,
                           help="Ratio threshold (default: 5.0)")
-    add_common(p_excess)
 
     p_sunused = subparsers.add_parser("scan-unused",
-                                      help="Find unused devs")
+                                      help="Find unused devices")
     p_sunused.add_argument("device_type", type=int)
+    add_nat_argument(p_sunused)
 
     # =========================
     # MODIFIER COMMANDS
     # =========================
     p_reord = subparsers.add_parser("mod-reorder-unit",
-                                    help="Move a Ground Element to a new slot"
+                                    help="Move's a Unit's Ground Element to a new slot"
     )
     p_reord.add_argument("target_uid", type=int)
     p_reord.add_argument("target_wid", type=int)
@@ -272,7 +310,7 @@ def setup_parsers() -> argparse.ArgumentParser:
                           help="Compact weapon gaps")
 
     p_reob = subparsers.add_parser("mod-reorder-ob",
-                                   help="Move OB squad")
+                                   help="Moves a TOE(OB)'s squad to a new slot")
     p_reob.add_argument("target_ob_id", type=int)
     p_reob.add_argument("target_wid", type=int)
     p_reob.add_argument("target_slot", type=int)
@@ -292,7 +330,7 @@ def setup_parsers() -> argparse.ArgumentParser:
     return base_parser
 
 
-def handle_scan_excess(p: Dict[str, str], a: argparse.Namespace) -> None:
+def handle_scan_excess(p: dict[str, str], a: argparse.Namespace) -> None:
     """
     Routes the scan-excess command to the correct resource scanner.
     """
@@ -317,7 +355,7 @@ def handle_scan_excess(p: Dict[str, str], a: argparse.Namespace) -> None:
 # Lambda delayed execution allows for fast startup and lazy imports
 # Dispatch Map (To be expanded)
 # -------------------------------------------------------------------------
-COMMAND_MAP: Dict[str, Callable] = {
+COMMAND_MAP: dict[str, Callable] = {
     "config": lambda a, p: save_config(
         a.set_path,
         a.set_scenario
@@ -343,10 +381,9 @@ COMMAND_MAP: Dict[str, Callable] = {
         p["ground"],
         set(a.nat_codes)
         ),
-    "audit-batch": lambda a, p: scan_and_evaluate_unit_files(
+    "audit-batch": lambda a, p: audit_batch(
         a.data_dir,
-        a.active_only,
-        a.fix_ghosts
+        a.active_only
         ),
     "calc-support": lambda a, p: calc_unit_support(
         p["ob"],
@@ -425,7 +462,7 @@ COMMAND_MAP: Dict[str, Callable] = {
         )
 }
 
-paths: Dict[str,str] = {}
+paths: dict[str,str] = {}
 # args = None
 
 def main() -> None:
@@ -443,20 +480,19 @@ def main() -> None:
 
     try:
         if args.command in COMMAND_MAP:
-            log.info("Executing: %s", args.command)
+            log.debug("Executing: %s", args.command)
             COMMAND_MAP[args.command](args, paths)
-            log.info("Successfully completed %s", args.command)
+            log.debug("Successfully completed %s", args.command)
+
     except DataIntegrityError as e:
         log.error("Data Integrity Error: %s", e)
         sys.exit(1)
     except FileNotFoundError as e:
         log.error("Missing CSV file: '%s'", e)
         sys.exit(1)
-
     except (OSError, ValueError, KeyError, TypeError) as e:
         log.error("Critical failure in %s: %s", args.command, e, exc_info=True)
         sys.exit(1)
-
     except Exception as e: # pylint: disable=W0718
         # This block catches any unhandled exceptions from the workers,
         # including the 'Data Corrupt' exception raised by your unit tests.

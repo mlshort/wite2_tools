@@ -1,13 +1,14 @@
-from typing import Any, Mapping, Final, Iterable, Union, TypeAlias, Set, Optional
+from typing import Any, Final, Optional
+from collections.abc import Mapping, Iterable
 
 ENCODING_TYPE : Final = "ISO-8859-1"
 CONFIG_FILE_NAME : Final = "settings.ini"
 
 
-NatData: TypeAlias = Union[int, str, Iterable[Union[int, str]], None]
+type NatData = int | str | Iterable[int | str] | None
 
 
-def normalize_nat_codes(codes: NatData) -> Optional[Set[int]]:
+def normalize_nat_codes(codes: NatData) -> Optional[set[int]]:
     """
     Standardizes nationality input into a set of integers, removing any 0.
     """

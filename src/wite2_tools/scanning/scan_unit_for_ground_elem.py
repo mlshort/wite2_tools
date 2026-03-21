@@ -33,7 +33,7 @@ Example:
     Element 42 are assigned.
 """
 import os
-from typing import cast, Dict
+from typing import cast
 
 # Internal package imports
 from wite2_tools.constants import MAX_SQUAD_SLOTS
@@ -52,7 +52,7 @@ log = get_logger(__name__)
 
 
 def _check_squad_match(
-    row: Dict[str,str],
+    row: dict[str,str],
     ob_full_path: str,
     target_wid: int,
     num_squads_filter: int,
@@ -114,7 +114,7 @@ def scan_unit_for_ground_elem(
     """
     if not os.path.isfile(unit_file_path):
         log.error("Error: The file '%s' was not found.", unit_file_path)
-        return -1
+        return 0
 
     matches_found = 0
 
@@ -137,7 +137,7 @@ def scan_unit_for_ground_elem(
 
         # Iterate through every row
         for item in unit_stream.rows:
-            _, row = cast(tuple[int, Dict[str,str]], item)
+            _, row = cast(tuple[int, dict[str,str]], item)
 
             # Convert to numbers for math comparison
             utype = parse_int(row.get("type"))

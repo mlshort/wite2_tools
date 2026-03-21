@@ -31,7 +31,6 @@ Example:
 """
 
 import os
-from typing import List
 
 # Internal package imports
 from wite2_tools.constants import MAX_SQUAD_SLOTS
@@ -48,7 +47,7 @@ def modify_unit_squads(unit_file_path: str,
                        target_ob_id: int,
                        target_wid: int,
                        old_num_squads: int,
-                       new_num_squads: int) -> int:
+                       new_num_squads: int) -> tuple[int, int]:
     """
     Modifies the number of specific Ground Element squads within a WiTE2 _unit
     CSV file.
@@ -62,7 +61,9 @@ def modify_unit_squads(unit_file_path: str,
         new_num_squads (int): The new quantity of squads to set.
 
     Returns:
-        int: The total number of rows successfully updated.
+        tuple[int, int]: A tuple containing (total_rows_processed, total_rows_updated).
+            Returns (0, 0) if no matches were found or error occurred.
+
 
     1. Scans the _unit CSV file for rows where 'type' == target_ob_id
       (TOE(OD)).
@@ -73,13 +74,13 @@ def modify_unit_squads(unit_file_path: str,
     """
     if not os.path.isfile(unit_file_path):
         log.error("Error: The file '%s' was not found.", unit_file_path)
-        return -1
+        return 0, 0
 
-    log.info("Starting update on '%s' (Target TOE(ID): %d, Target WID: %d)",
+    log.info("Task Start: update on '%s' (Target TOE(ID): %d, Target WID: %d)",
              os.path.basename(unit_file_path), target_ob_id, target_wid)
 
     # Define the specific logic for processing a Unit row
-    def process_row(row: List[str], _: int) -> tuple[List[str], bool]:
+    def process_row(row: list[str], _: int) -> tuple[list[str], bool]:
         was_modified = False
         uid: int = parse_int(row[U_ID_COL])
         # _unit.'type' maps to _ob.id
@@ -117,8 +118,10 @@ def modify_unit_squads(unit_file_path: str,
         return row, was_modified
 
     # Execute via the shared wrapper
-    total_updates = process_csv_in_place(unit_file_path, process_row)
-    log.info("Finished. Total rows modified: %d", total_updates)
-    print(f"Success! {total_updates} row(s) updated.")
+    processed_count, total_updates = process_csv_in_place(unit_file_path, process_row)
+    log.info("Task Complete: Total rows processed: %d modified: %d",
+             processed_count,
+             total_updates)
+    # print(f"Success! {total_updates} row(s) updated.")
 
-    return total_updates
+    return processed_count, total_updates

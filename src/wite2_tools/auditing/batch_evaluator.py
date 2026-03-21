@@ -38,9 +38,12 @@ from wite2_tools.utils import get_logger
 # Initialize the logger for this specific module
 log = get_logger(__name__)
 
+def audit_batch(target_folder:str, active_only: bool)->None:
+    scan_and_evaluate_ob_files(target_folder)
+    scan_and_evaluate_unit_files(target_folder, active_only)
 
 def scan_and_evaluate_unit_files(target_folder: str, active_only: bool,
-                                 fix_ghosts: bool)->None:
+                                 fix_ghosts: bool = False)->None:
     """
     Scans a folder for CSV files containing '_unit','_ground' and runs
     consistency checks.
@@ -106,7 +109,7 @@ def scan_and_evaluate_ob_files(target_folder: str) -> int:
     if not os.path.exists(target_folder) or not os.path.isdir(target_folder):
         log.error("Scan failed: The directory '%s' does not exist.",
                   target_folder)
-        return -1
+        return 0
 
     log.info("--- Starting Batch TOE(OB) Evaluation in:'%s' ---",
              target_folder)
@@ -123,11 +126,11 @@ def scan_and_evaluate_ob_files(target_folder: str) -> int:
 
     if not ob_files:
         log.warning("No files found containing the '_ob' substring.")
-        return -1
+        return 0
 
     if not ground_files:
         log.warning("No files found containing the '_ground' substring.")
-        return -1
+        return 0
 
     total_issues = 0
     files_processed = 0

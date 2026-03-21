@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Callable
+from collections.abc import Callable
 
 # Internal package imports
 from wite2_tools.core.find_orphaned_obs import find_orphaned_obs

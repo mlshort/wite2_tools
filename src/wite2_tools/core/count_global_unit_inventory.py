@@ -34,7 +34,7 @@ Example:
 """
 import os
 from collections import defaultdict
-from typing import Optional, Set, Union, Iterable, Dict
+from collections.abc import Iterable
 
 # Internal package imports
 from wite2_tools.generator import CSVListStream, get_csv_list_stream
@@ -57,17 +57,17 @@ log = get_logger(__name__)
 def count_global_unit_inventory(
     unit_file_path: str,
     ground_file_path: str,
-    nat_codes: Optional[Union[int, str, Iterable[Union[int, str]]]] = None
-) -> Dict[int, int]:
+    nat_codes: int | str | Iterable[int | str] | None = None
+) -> dict[int, int]:
     """
     Scans _unit.csv using a generator to count the total number of every
     Ground Element active in the scenario.
     """
     # Key: Ground Element WID (int), Value: Total Count (int)
-    inventory: Dict[int, int] = defaultdict(int)
+    inventory: dict[int, int] = defaultdict(int)
 
     # Standardize nation_id to a set for efficient lookup
-    nat_filter: Set[int] | None = normalize_nat_codes(nat_codes)
+    nat_filter: set[int] | None = normalize_nat_codes(nat_codes)
 
     if not os.path.isfile(unit_file_path):
         log.error("Error: The file '%s' was not found.", unit_file_path)

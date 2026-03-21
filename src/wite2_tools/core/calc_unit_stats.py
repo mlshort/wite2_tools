@@ -2,7 +2,7 @@
     module still work-in-progress
 """
 import os
-from typing import Dict, Any, List, Tuple, TypedDict
+from typing import Any, TypedDict
 
 # Direct import to bypass __init__ export issues
 from wite2_tools.core.GND_ELEMENT_DATA import GND_ELEMENT_DATA
@@ -50,12 +50,12 @@ class OBStatsResult(TypedDict):
     name: str | None
     total_cv: int
     total_support: int
-    details: List[OBComposition]
+    details: list[OBComposition]
 
 
-def _calc_ob_stats_for_row(ob_row: List[str],
-                           header: List[str],
-                           element_stats: Dict[int, Dict[str, Any]]
+def _calc_ob_stats_for_row(ob_row: list[str],
+                           header: list[str],
+                           element_stats: dict[int, dict[str, Any]]
                            )->OBStatsResult:
     """
     Calculates total CV and Support for a single OB template list row.
@@ -63,7 +63,7 @@ def _calc_ob_stats_for_row(ob_row: List[str],
     """
     total_cv = 0
     total_support = 0
-    composition:List[OBComposition] = []
+    composition:list[OBComposition] = []
 
     id_idx = header.index('id')
     name_idx = header.index('name')
@@ -99,16 +99,16 @@ def _calc_ob_stats_for_row(ob_row: List[str],
 
 
 def _calc_unit_needed_support_for_row(
-    unit_row: List[str],
-    element_stats: Dict[int, Dict[str, Any]]
-) -> Dict[str, Any]:
+    unit_row: list[str],
+    element_stats: dict[int, dict[str, Any]]
+) -> dict[str, Any]:
     """
     Calculates 'Needed Support' for a unit by processing a single CSV list row.
     Strictly uses UnitColumn schema for indexing.
     """
     active_cv: int = 0
     total_needed_sup: int = 0
-    breakdown: List[Dict[str, Any]] = []
+    breakdown: list[dict[str, Any]] = []
     unit = UnitRow(unit_row)
 
     # Process 32 equipment slots using strict schema indices
@@ -155,15 +155,15 @@ def calc_unit_support(ob_file_path: str,
     actual_hq_spt: int = 0
 
     unit_found = False
-    ground_info: Dict[int, Tuple[str, int]] = {}
+    ground_info: dict[int, tuple[str, int]] = {}
 
     if not os.path.isfile(ob_file_path):
         log.error("Error: The file '%s' was not found.", ob_file_path)
-        return -1
+        return 0
 
     if not os.path.isfile(unit_file_path):
         log.error("Error: The file '%s' was not found.", unit_file_path)
-        return -1
+        return 0
 
     try:
         # 1. Process Ground Elements
@@ -186,7 +186,7 @@ def calc_unit_support(ob_file_path: str,
         unit_stream: CSVListStream = get_csv_list_stream(unit_file_path)
 
         # Pre-calculate dynamic squad slot indices safely using Schema Enum
-        u_sqd_indices: List[Tuple[int, int]] = [
+        u_sqd_indices: list[tuple[int, int]] = [
             (U_SQD0_COL + (i * 8), U_SQD_NUM0_COL + (i * 8))
             for i in range(U_SQD_SLOTS)
         ]
@@ -229,7 +229,7 @@ def calc_unit_support(ob_file_path: str,
                         g_elem_type = g_info[1]
 
                         if g_elem_type in GND_ELEMENT_DATA and g_elem_qty > 0:
-                            data: Tuple[str, int, int, str, int] = GND_ELEMENT_DATA[g_elem_type]
+                            data: tuple[str, int, int, str, int] = GND_ELEMENT_DATA[g_elem_type]
 
                             if g_elem_type == GrdElementType.SUPPORT:
                                 calc_unit_spt += g_elem_qty
@@ -279,7 +279,7 @@ def calc_unit_support(ob_file_path: str,
 
 
 def calc_unit_stats(unit_file_path: str,
-                    unit_id: int) -> Tuple[int, int] | None:
+                    unit_id: int) -> tuple[int, int] | None:
     """
     Calculates total CV and Spt Need for a specific Unit ID from unit.csv.
     """
@@ -293,7 +293,7 @@ def calc_unit_stats(unit_file_path: str,
 
     unit_stream: CSVListStream = get_csv_list_stream(unit_file_path)
 
-    u_sqd_indices: List[Tuple[int, int]] = [
+    u_sqd_indices: list[tuple[int, int]] = [
         (U_SQD0_COL + (i * 8), U_SQD_NUM0_COL + (i * 8))
         for i in range(U_SQD_SLOTS)
     ]

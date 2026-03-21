@@ -24,7 +24,8 @@ Core Features:
 import csv
 import os
 from tempfile import NamedTemporaryFile
-from typing import Callable, Tuple, cast, List
+from collections.abc import Callable
+from typing import cast
 
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
@@ -36,8 +37,8 @@ log = get_logger(__name__)
 
 
 def process_csv_in_place(file_path: str,
-                         row_processor: Callable[[List, int],
-                                                 Tuple[List, bool]]) -> int:
+                         row_processor: Callable[[list, int],
+                                                 tuple[list, bool]]) -> tuple[int, int]:
     """
     A boilerplate wrapper that safely processes a CSV file in-place using a
     temporary file and a List Stream (more memory efficient).
@@ -47,13 +48,14 @@ def process_csv_in_place(file_path: str,
         row_processor: A callback function that takes (row_list, row_index) and
                        returns a tuple of (modified_row_list, was_modified_bool).
     Returns:
-        The total number of rows that were modified.
+        A tuple containing (total_rows_processed, total_rows_updated).
     """
     if not os.path.isfile(file_path):
         log.error("File Error: The file '%s' was not found.", file_path)
-        return 0
+        return 0, 0
 
-    update_count = 0
+    processed:int = 0
+    updated:int = 0
     # Use NamedTemporaryFile to ensure we don't corrupt the source if the script crashes
     temp_file = NamedTemporaryFile(mode='w', delete=False,
                                    dir=os.path.dirname(file_path),
@@ -68,26 +70,27 @@ def process_csv_in_place(file_path: str,
             # List streams usually include the header as the first yielded row or
             # through the stream's row generator. We iterate through the stream:
             for item in stream.rows:
+                processed += 1
 
                 # Explicitly cast for type checkers: (row_index, row_data_list)
-                row_idx, row = cast(Tuple[int, List], item)
+                row_idx, row = cast(tuple[int, list], item)
 
                 # Pass the list to the custom logic callback
                 row, was_modified = row_processor(row, row_idx)
 
                 if was_modified:
-                    update_count += 1
+                    updated += 1
 
                 writer.writerow(row)
 
-        if update_count == 0:
+        if updated == 0:
             log.warning("Process complete: No matches found or "
                         "no changes made in '%s'.",
                         os.path.basename(file_path))
             os.remove(temp_file.name)
         else:
             log.info("Success: Processing complete. Total rows updated: %d.",
-                     update_count)
+                     updated)
             # Atomic swap of the temp file with the original file
             os.replace(temp_file.name, file_path)
 
@@ -96,4 +99,4 @@ def process_csv_in_place(file_path: str,
         if os.path.exists(temp_file.name):
             os.remove(temp_file.name)
 
-    return update_count
+    return processed, updated

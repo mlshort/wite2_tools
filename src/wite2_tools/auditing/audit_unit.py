@@ -29,7 +29,6 @@ Command Line Usage:
 import csv
 import os
 from tempfile import NamedTemporaryFile
-from typing import Set, Tuple, List
 
 # Internal package imports
 from wite2_tools.generator import CSVListStream, get_csv_list_stream
@@ -72,7 +71,7 @@ from wite2_tools.constants import (
 log = get_logger(__name__)
 
 
-def _check_nat(row: List[str],
+def _check_nat(row: list[str],
                uid: int,
                uname: str) -> int:
     issues = 0
@@ -89,7 +88,7 @@ def _check_nat(row: List[str],
 
 
 
-def _check_coords(row: List[str],
+def _check_coords(row: list[str],
                   uid: int,
                   uname: str) -> int:
     """
@@ -118,11 +117,11 @@ def _check_coords(row: List[str],
 
 
 def _check_squads(
-    row: List[str],
-    valid_ground_element_ids: Set[int],
+    row: list[str],
+    valid_ground_element_ids: set[int],
     unit_ref: str,
     fix_ghosts: bool
-) -> Tuple[int, int]:
+) -> tuple[int, int]:
     """Scans all 32 squad slots for invalid element IDs (ghosts)."""
     issues = 0
     fixed = 0
@@ -150,12 +149,12 @@ def _check_squads(
 
 
 def _check_hq_and_delay(
-    row: List[str],
-    valid_unit_ids: Set[int],
+    row: list[str],
+    valid_unit_ids: set[int],
     fallback_hq: int,
     unit_ref: str,
     relink_orphans: bool = False
-) -> Tuple[int, int]:
+) -> tuple[int, int]:
     """Validates command chain assignments and associated data."""
     issues = 0
     fixed = 0
@@ -192,22 +191,22 @@ def audit_unit_csv(
     """
     if not os.path.isfile(unit_file_path):
         log.error("Error: The file '%s' was not found.", unit_file_path)
-        return -1
+        return 0
 
     if not os.path.isfile(ground_file_path):
         log.error("Error: The file '%s' was not found.", ground_file_path)
-        return -1
+        return 0
 
     file_base = os.path.basename(unit_file_path)
     log.info(format_header(f"Task Start: Evaluating Unit file integrity: '{file_base}'"))
 
-    valid_ground_element_ids: Set[int] = get_valid_ground_elem_ids(ground_file_path)
-    valid_unit_ids: Set[int] = get_valid_unit_ids(unit_file_path, active_only)
+    valid_ground_element_ids: set[int] = get_valid_ground_elem_ids(ground_file_path)
+    valid_unit_ids: set[int] = get_valid_unit_ids(unit_file_path, active_only)
 
     issues_found:int = 0
     ghosts_fixed:int = 0
     orphans_fixed:int = 0
-    seen_unit_ids:Set[int] = set()
+    seen_unit_ids:set[int] = set()
 
     temp_file = None
     if fix_ghosts or relink_orphans:
@@ -288,23 +287,23 @@ def audit_unit_csv(
     except OSError as e:
         log.error("File access error for '%s'. Details: %s", file_base, e)
         _cleanup_temp()
-        return -1
+        return 0
     except ValueError as e:
         log.error("Data conversion failed in '%s'. Details: %s", file_base, e)
         _cleanup_temp()
-        return -1
+        return 0
     except KeyError as e:
         log.error("Missing expected dictionary key in '%s': %s", file_base, e)
         _cleanup_temp()
-        return -1
+        return 0
     except IndexError as e:
         log.error("Truncated row or missing column in '%s': %s", file_base, e)
         _cleanup_temp()
-        return -1
+        return 0
     except TypeError as e:
         log.error("Type error processing '%s'. Details: %s", file_base, e)
         _cleanup_temp()
-        return -1
+        return 0
     finally:
         for handler in log.handlers:
             handler.flush()

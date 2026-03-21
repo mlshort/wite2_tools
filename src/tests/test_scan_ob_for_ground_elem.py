@@ -42,4 +42,4 @@ def test_scan_ob_for_ground_elem_missing_file()->None:
     Verifies graceful failure when the file doesn't exist.
     """
     matches = scan_ob_for_ground_elem("does_not_exist.csv", 500)
-    assert matches == -1
+    assert matches == 0

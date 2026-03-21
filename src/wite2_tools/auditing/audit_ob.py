@@ -25,7 +25,6 @@ Command Line Usage:
     python -m wite2_tools.cli audit-ob [-h] [-d DATA_DIR]
 """
 import os
-from typing import Set, Dict, List
 
 # Internal package imports
 from wite2_tools.generator import CSVListStream, get_csv_list_stream
@@ -58,7 +57,7 @@ def is_date_invalid(f_yr:int, f_mo:int, l_yr:int, l_mo:int) -> bool:
         return True
     return False
 
-def _check_chronology(ob_id: int, ob_name: str, row: List[str]) -> int:
+def _check_chronology(ob_id: int, ob_name: str, row: list[str]) -> int:
     """Validates the historical introduction and expiration dates."""
     issues = 0
     ob = ObRow(row)
@@ -91,8 +90,8 @@ def _check_chronology(ob_id: int, ob_name: str, row: List[str]) -> int:
 
 def _check_upgrade_path(ob_id: int,
                         ob_name: str,
-                        row: List[str],
-                        valid_ob_ids: Set[int]) -> int:
+                        row: list[str],
+                        valid_ob_ids: set[int]) -> int:
     """Validates the TOE upgrade paths to prevent loops and dead-ends."""
     issues = 0
     upgrade_id = parse_row_int(row,O_UPGRADE_COL)
@@ -114,14 +113,14 @@ def _check_upgrade_path(ob_id: int,
 
 def _check_squad_slots(ob_id: int,
                        ob_name: str,
-                       row: List[str],
-                       valid_elem_ids: Set[int]) -> int:
+                       row: list[str],
+                       valid_elem_ids: set[int]) -> int:
     """
     Validates all 32 equipment slots for negative quantities, ghosts,
     and WID duplicates.
     """
     issues = 0
-    seen_wids_in_row: Set[int] = set()
+    seen_wids_in_row: set[int] = set()
     ref = format_ref("TOE(OB)", ob_id, ob_name)
 
     for i in range(O_SQD_SLOTS):
@@ -160,7 +159,7 @@ def _check_squad_slots(ob_id: int,
     return issues
 
 
-def _check_for_loops(upgrade_map: Dict[int, int],
+def _check_for_loops(upgrade_map: dict[int, int],
                      ob_names: dict[int, str]) -> int:
     """
     Traces every upgrade path to ensure it eventually ends at 0.
@@ -170,7 +169,7 @@ def _check_for_loops(upgrade_map: Dict[int, int],
     for start_id in upgrade_map:
         visited = set()
         current_id:int = start_id
-        path:List[str] = []
+        path:list[str] = []
 
         while current_id != 0:
             if current_id in visited:
@@ -199,23 +198,22 @@ def audit_ob_csv(ob_file_path: str,
         referential integrity.
 
     Returns:
-        int: The total number of issues identified. -1 if a critical error
-             occurred.
+        int: The total number of issues identified.
     """
     issues_found = 0
     upgrade_map: dict[int, int] = {}
     ob_names: dict[int, str] = {}
-    seen_ob_ids: Set[int] = set()
-    valid_elem_ids: Set[int] = set()
-    valid_ob_ids: Set[int] = set()
+    seen_ob_ids: set[int] = set()
+    valid_elem_ids: set[int] = set()
+    valid_ob_ids: set[int] = set()
 
     if not os.path.isfile(ob_file_path):
         log.error("Error: The file '%s' was not found.", ob_file_path)
-        return -1
+        return 0
 
     if not os.path.isfile(ground_file_path):
         log.error("Error: The file '%s' was not found.", ground_file_path)
-        return -1
+        return 0
 
     try:
         ob_file_base_name: str = os.path.basename(ob_file_path)
@@ -278,6 +276,6 @@ def audit_ob_csv(ob_file_path: str,
 
     except (OSError, IOError, ValueError, KeyError, TypeError) as e:
         log.exception("Critical error during consistency check: %s", e)
-        return -1
+        return 0
 
     return issues_found

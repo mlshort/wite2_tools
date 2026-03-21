@@ -1,6 +1,6 @@
 
 from pathlib import Path
-from typing import Callable
+from collections.abc import Callable
 
 # Internal package imports
 from wite2_tools.auditing.audit_ob import audit_ob_csv
@@ -15,12 +15,11 @@ def test_audit_ob_handles_key_error(tmp_path: Path,
     Targets the KeyError branch by providing a CSV missing required columns.
     """
     unit_csv = tmp_path / "missing_columns.csv"
-    # Note: Pass path as string for now if your audit_ob_csv hasn't been updated
-    # to Path
+
     unit_csv.write_text("wrong_header1,wrong_header2\nval1,val2")
 
     issues = audit_ob_csv(str(unit_csv), str(mock_ground_csv))
-    assert issues == -1
+    assert issues == 0
 
 
 def test_clean_ob_passes(make_ob_csv: Callable[..., Path],
@@ -32,7 +31,7 @@ def test_clean_ob_passes(make_ob_csv: Callable[..., Path],
             {
                 "id": "100", "name": "Valid Div",
                 "firstYear" : "1941", "firstMonth": "6",
-                "lastYear" : "1945", "lastMont": "3",
+                "lastYear" : "1945", "lastMonth": "3",
                 "squads": [(0, "105", "9"), (1, "42", "3")]
             }
         ]

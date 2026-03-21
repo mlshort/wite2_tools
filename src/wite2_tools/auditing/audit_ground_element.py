@@ -18,11 +18,11 @@ Example:
 
     Scans the default _ground CSV file to ensure all type IDs are valid
     and logs any logical errors. Returns the number of issues found or
-    -1 on error.
+    0 on error.
 """
 
 import os
-from typing import Set, List, Final
+from typing import Final
 
 # Internal package imports
 from wite2_tools.models import (
@@ -81,7 +81,7 @@ def _check_ground_type(g_id: int,
 def _check_ground_stats(g_id: int,
                         g_name: str,
                         element_class_name: str,
-                        row: List[str]) -> int:
+                        row: list[str]) -> int:
     """Validates physical size and manpower assignments safely."""
     issues = 0
     ref = format_ref("WID", g_id, g_name)
@@ -127,10 +127,10 @@ def audit_ground_element_csv(ground_file_path: str) -> int:
     """
     if not os.path.isfile(ground_file_path):
         log.error("Audit failed: File not found at %s", ground_file_path)
-        return -1
+        return 0
 
     issues_found: int = 0
-    seen_ground_ids: Set[int] = set()
+    seen_ground_ids: set[int] = set()
 
     # Define the minimum indices required for a safe primary parse
     # pylint: disable=invalid-name
@@ -194,4 +194,4 @@ def audit_ground_element_csv(ground_file_path: str) -> int:
 
     except (OSError, IOError) as e:
         log.error("System error accessing file: %s", e)
-        return -1
+        return 0

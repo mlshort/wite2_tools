@@ -13,8 +13,8 @@ Features:
   while maintaining data alignment.
 """
 
-__version__ = "0.6.0"
-__date__ = "2026-03-11"
+__version__ = "0.6.1"
+__date__ = "2026-03-21"
 
 from .base import process_csv_in_place
 from .modify_unit_ground_element import modify_unit_ground_element

@@ -1,4 +1,3 @@
-from typing import List
 from pathlib import Path
 from wite2_tools.models import (
     UnitRow,
@@ -41,7 +40,7 @@ def test_reorder_unit_squads_integration(mock_unit_csv: Path) -> None:
     """Tests the full file-write process using the list-stream logic."""
     # Target ID 42 is at slot 5 in the conftest fixture
     # The internal logic of reorder_unit_squads should now use get_csv_list_stream
-    updates: int = reorder_unit_squads(
+    _, updates = reorder_unit_squads(
         str(mock_unit_csv),
         target_uid=100,
         target_wid=42,
@@ -52,10 +51,10 @@ def test_reorder_unit_squads_integration(mock_unit_csv: Path) -> None:
 
 def test_reorder_unit_squads_integration_missing_file() -> None:
     """Tests error handling when the file path is invalid."""
-    updates: int = reorder_unit_squads(
+    _, updates = reorder_unit_squads(
         "does_not_exist.csv",
         target_uid=100,
         target_wid=42,
         target_slot=0
     )
-    assert updates == -1
+    assert updates == 0

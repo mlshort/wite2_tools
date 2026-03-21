@@ -8,7 +8,7 @@ _unit.csv Mapping Reference:
 | NAT_COL        | nat        | 3     | Nationality index         |
 """
 from enum import IntEnum
-from typing import Dict, List, Union, Final
+from typing import Final
 
 
 class UnitColumn(IntEnum):
@@ -32,6 +32,7 @@ class UnitColumn(IntEnum):
     MORALE = 8
     # num of weeks until arrival
     DELAY = 9
+    # maps to hq type
     HQ = 10
     # maps to _unit.id of assigned HQ
     HHQ = 11
@@ -138,11 +139,13 @@ class UnitColumn(IntEnum):
     ATTACHED_TO_FORT = 111
     UNIT_TAG_ID = 112
     NO_UNIT_REBUILD = 113
-    WITH_TURN_0 = 114
+
     # --- Withdraw / Destination ---
-    WITH_DEST_0, WITH_TURN_1, WITH_DEST_1 = 115, 116, 117
-    WITH_TURN_2, WITH_DEST_2, WITH_TURN_3 = 118, 119, 120
-    WITH_DEST_3, WITH_TURN_4, WITH_DEST_4 = 121, 122, 123
+    WITH_TURN_0, WITH_DEST_0 = 114, 115
+    WITH_TURN_1, WITH_DEST_1 = 116, 117
+    WITH_TURN_2, WITH_DEST_2 = 118, 119
+    WITH_TURN_3, WITH_DEST_3 = 120, 121
+    WITH_TURN_4, WITH_DEST_4 = 122, 123
 
     # --- Squad Detailed Stats ---
     SQD_U0, SQD_NUM0, SQD_DIS0, SQD_DAM0 = 124, 125, 126, 127
@@ -263,7 +266,7 @@ HQ_SUPPORT_COL : Final[int] = UnitColumn.HQ_SUPPORT
 
 # Interleaved stride (8 attributes per squad slot)
 # pylint: disable=invalid-name
-SQD0_COL: Final[int]           = UnitColumn.SQD_U0
+SQD_U0_COL: Final[int]         = UnitColumn.SQD_U0
 SQD_NUM0_COL : Final[int]      = UnitColumn.SQD_NUM0
 SQD_DIS0_COL: Final[int]       = UnitColumn.SQD_DIS0
 SQD_DAM0_COL: Final[int]       = UnitColumn.SQD_DAM0
@@ -273,11 +276,11 @@ SQD_EXP0_COL: Final[int]       = UnitColumn.SQD_EXP0
 SQD_EXP_ACCUM0_COL: Final[int] = UnitColumn.SQD_EXP_ACCUM0
 
 
-def gen_unit_column_names() -> List[str]:
+def gen_unit_column_names() -> list[str]:
     """
     Generates the mapping for the UnitColumn IntEnum.
     """
-    cols: List[str] = [
+    cols: list[str] = [
         "id", "name", "type", "nat", "player", "x", "y", "leader", "morale",
         "delay", "hq", "hhq", "combatSupport", "men", "sup", "sNeed", "moved",
         "move", "cur", "motorized", "subTo", "hqFuel", "next", "front", "aNeed",
@@ -300,7 +303,7 @@ def gen_unit_column_names() -> List[str]:
     for i in range(5):
         cols.extend([f"withTurn {i}", f"withDest {i}"])
     # Squad blocks (124 to 379)
-    sqd_attrs: List[str] = ["u", "num", "dis", "dam",
+    sqd_attrs: list[str] = ["u", "num", "dis", "dam",
                             "fat", "fired", "exp", "expAccum"]
     for i in range(SQD_SLOTS):
         for attr in sqd_attrs:

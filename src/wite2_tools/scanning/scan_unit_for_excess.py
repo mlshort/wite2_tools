@@ -25,7 +25,7 @@ Example:
     Scans the unit file and prints a table of all units where `fuel` > 3.5 * `fNeed`.
 """
 import os
-from typing import cast, Dict
+from typing import cast
 
 # Internal package imports
 from wite2_tools.constants import EXCESS_RESOURCE_MULTIPLIER
@@ -53,7 +53,7 @@ def _scan_excess_resource(unit_file_path: str,
     """
     if not os.path.isfile(unit_file_path):
         log.error("Error: The file '%s' was not found.", unit_file_path)
-        return -1
+        return 0
 
     matches_found:int = 0
     total_resources:int = 0
@@ -72,7 +72,7 @@ def _scan_excess_resource(unit_file_path: str,
 
         for item in unit_stream.rows:
             # Cast the yielded item to satisfy static type checkers
-            _, row = cast(tuple[int, Dict[str,str]], item)
+            _, row = cast(tuple[int, dict[str,str]], item)
 
             # 1. Convert to numbers (int) for math comparison
             resource:int = parse_int(row.get(resource_col))
@@ -117,7 +117,7 @@ def _scan_excess_resource(unit_file_path: str,
 
     except (OSError, ValueError, KeyError) as e:
         log.exception("An error occurred during scanning: %s", e)
-        return -1
+        return 0
 
     return matches_found
 

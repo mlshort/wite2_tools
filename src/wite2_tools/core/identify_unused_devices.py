@@ -11,7 +11,7 @@ allowing modders to safely locate unused device IDs for custom content.
 """
 import os
 
-from wite2_tools.generator import get_csv_list_stream
+from wite2_tools.generator import CSVListStream, get_csv_list_stream
 from wite2_tools.utils import (
     get_logger,
     parse_row_int,
@@ -41,15 +41,15 @@ def identify_unused_devices(ground_file_path: str,
 
     if not os.path.isfile(ground_file_path):
         log.error("Error: The file '%s' was not found.", ground_file_path)
-        return -1
+        return 0
 
     if not os.path.isfile(aircraft_file_path):
         log.error("Error: The file '%s' was not found.", aircraft_file_path)
-        return -1
+        return 0
 
     if not os.path.isfile(device_file_path):
         log.error("Error: The file '%s' was not found.", device_file_path)
-        return -1
+        return 0
 
     ground_base_name = os.path.basename(ground_file_path)
     aircraft_base_name = os.path.basename(aircraft_file_path)
@@ -68,7 +68,7 @@ def identify_unused_devices(ground_file_path: str,
 
     # 1. Identify all devices of the specified type from the device file
     try:
-        device_gen = get_csv_list_stream(device_file_path)
+        device_gen: CSVListStream = get_csv_list_stream(device_file_path)
 
         for _, row in device_gen.rows:
             d_id = parse_row_int(row, DevColumn.ID)
@@ -82,7 +82,7 @@ def identify_unused_devices(ground_file_path: str,
 
     except (OSError, IOError, KeyError) as e:
         log.exception("identify_unused_devices failed: %s", e)
-        return -1
+        return 0
 
     if not devices_of_type:
         print(f"No devices of Type {device_type} found in the device file.")
@@ -92,12 +92,12 @@ def identify_unused_devices(ground_file_path: str,
     used_weapon_ids = set()
 
     # Build dynamic lists of weapon column indices using our schemas
-    gnd_wpn_indices = [
+    gnd_wpn_indices:list[int] = [
         GndColumn.WPN_0, GndColumn.WPN_1, GndColumn.WPN_2, GndColumn.WPN_3,
         GndColumn.WPN_4, GndColumn.WPN_5, GndColumn.WPN_6, GndColumn.WPN_7
     ]
     # Base weapons + all Loadout weapons
-    ac_wpn_indices = [
+    ac_wpn_indices:list[int] = [
         AcColumn.WPN_0, AcColumn.WPN_1, AcColumn.WPN_2, AcColumn.WPN_3,
         AcColumn.WPN_4, AcColumn.WPN_5, AcColumn.WPN_6, AcColumn.WPN_7,
         AcColumn.WPN_8, AcColumn.WPN_9,
@@ -124,7 +124,7 @@ def identify_unused_devices(ground_file_path: str,
     ]
 
     # Map the files to their respective column schemas
-    file_mappings = [
+    file_mappings:list[tuple[str, list[int]]] = [
         (ground_file_path, gnd_wpn_indices),
         (aircraft_file_path, ac_wpn_indices)
     ]

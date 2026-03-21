@@ -28,5 +28,5 @@ def test_audit_ground_element_csv_file_not_found()->None:
     """
     issues = audit_ground_element_csv("does_not_exist.csv")
 
-    # The script is designed to return -1 when the path is missing
-    assert issues == -1
+    # The script is designed to return 0 when the path is missing
+    assert issues == 0

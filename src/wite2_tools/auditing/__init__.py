@@ -12,14 +12,15 @@ Key Capabilities:
 * Batch Processing: Automated scanning of multiple target files.
 """
 
-__version__ = "0.6.0"
-__date__ = "2026-03-11"
+__version__ = "0.6.1"
+__date__ = "2026-03-21"
 
 from .audit_unit import audit_unit_csv
 from .audit_ob import audit_ob_csv
 from .audit_ground_element import audit_ground_element_csv
 from .audit_unit_ob_excess import audit_unit_ob_excess
 from .batch_evaluator import (
+    audit_batch,
     scan_and_evaluate_unit_files,
     scan_and_evaluate_ob_files,
 )
@@ -30,6 +31,7 @@ __all__ = [
     "audit_unit_csv",
     "audit_ground_element_csv",
     "audit_unit_ob_excess",
+    "audit_batch",
     "scan_and_evaluate_unit_files",
     "scan_and_evaluate_ob_files",
     "print_undersupported_units"

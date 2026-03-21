@@ -1,5 +1,4 @@
 from enum import IntEnum
-from typing import List, Dict
 
 # pylint: disable=invalid-name
 class AirGroupColumn(IntEnum):
@@ -96,13 +95,13 @@ class AirGroupColumn(IntEnum):
 
 
 
-def gen_airgroup_column_names() -> List[str]:
+def gen_airgroup_column_names() -> list[str]:
     """
     Generates the 87 headers for a _airgroup.csv file dynamically.
     """
 
     # 1. Base Properties (Columns 0 to 76)
-    cols: List[str] = [
+    cols: list[str] = [
         'id', 'name', 'player', 'type', 'airType', 'leader', 'prim', 'subNum',
         'base', 'startBase', 'mission', 'secMission', 'target', 'passenger',
         'transferTo', 'traveled', 'subTo', 'subId', 'maxRg', 'trainedAs',
@@ -126,7 +125,7 @@ def gen_airgroup_column_names() -> List[str]:
 
 def gen_default_airgroup_row(airgroup_id: int = 0,
                              name: str = "",
-                             nat: int = 0) -> List[str]:
+                             nat: int = 0) -> list[str]:
     """
     Generates a default 87-column row for a _airgroup.csv file.
 
@@ -136,10 +135,10 @@ def gen_default_airgroup_row(airgroup_id: int = 0,
         nat (int): The nationality ID (Column 40). Defaults to 0.
 
     Returns:
-        List[str]: A list containing the ID, Name, and zeroes mapped to the remaining slots.
+        list[str]: A list containing the ID, Name, and zeroes mapped to the remaining slots.
     """
     # Create the base row: ID and Name
-    row: List[str] = [str(airgroup_id), name]
+    row: list[str] = [str(airgroup_id), name]
 
     # Fill the remaining 85 columns with zeros
     row.extend(["0"] * 85)
@@ -153,7 +152,7 @@ def gen_default_airgroup_row(airgroup_id: int = 0,
 
 def gen_default_airgroup_dict(airgroup_id: int = 0,
                               name: str = "",
-                              nat: int = 0) -> Dict[str, str]:
+                              nat: int = 0) -> dict[str, str]:
     """
     Generates a default Air Group dictionary mapped to schema headers.
     """

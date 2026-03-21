@@ -28,7 +28,6 @@ Functions
     (for metadata access), followed by enumerated tuples of (index, row_dict).
 """
 import csv
-from typing import List, Dict, Tuple
 from collections.abc import Iterator
 from dataclasses import dataclass
 
@@ -38,8 +37,8 @@ from .config import ENCODING_TYPE
 
 @dataclass
 class CSVDictStream:
-    fieldnames: List[str]
-    rows: Iterator[Tuple[int, Dict[str, str]]]
+    fieldnames: list[str]
+    rows: Iterator[tuple[int, dict[str, str]]]
 
 
 def get_csv_dict_stream(filename: str,
@@ -49,7 +48,7 @@ def get_csv_dict_stream(filename: str,
     reader = csv.DictReader(file)
     fieldnames = reader.fieldnames or []
 
-    def row_gen() -> Iterator[Tuple[int, Dict[str, str]]]:
+    def row_gen() -> Iterator[tuple[int, dict[str, str]]]:
         try:
             for index, row in enumerate(reader, start=enum_start):
                 yield index, row
@@ -64,12 +63,12 @@ class CSVListStream:
     A data class representing a streamed CSV file.
 
     Attributes:
-        header (List[str]): The column headers extracted from the first row of the CSV.
-        rows (Iterator[Tuple[int, List[str]]]): A lazy iterator that yields tuples.
+        header (list[str]): The column headers extracted from the first row of the CSV.
+        rows (Iterator[tuple[int, list[str]]]): A lazy iterator that yields tuples.
             Each tuple contains the row index and the row data (as a list of strings).
     """
-    header: List[str]
-    rows: Iterator[Tuple[int, List[str]]]
+    header: list[str]
+    rows: Iterator[tuple[int, list[str]]]
 
 
 def get_csv_list_stream(filename: str,
@@ -105,12 +104,12 @@ def get_csv_list_stream(filename: str,
         file.close()
         return CSVListStream(header=[], rows=iter([]))
 
-    def row_gen()->Iterator[Tuple[int, List[str]]]:
+    def row_gen()->Iterator[tuple[int, list[str]]]:
         """
         Generates enumerated rows from the CSV reader and ensures the file is closed.
 
         Yields:
-            Tuple[int, List[str]]: The row index and the row contents.
+            tuple[int, list[str]]: The row index and the row contents.
         """
         try:
             for index, row in enumerate(reader, start=enum_start):

@@ -20,8 +20,8 @@ Core Capabilities:
   ID-to-string lookup caching.
 """
 
-__version__ = "0.6.0"
-__date__ = "2026-03-11"
+__version__ = "0.6.1"
+__date__ = "2026-03-21"
 
 # Expose common configuration so other modules can access it easily
 from .logger import get_logger

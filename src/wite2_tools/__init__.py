@@ -6,9 +6,9 @@ manipulating game CSV data (TOE(OB), Unit, and Ground Elements). It
 centralizes configuration, path management, and data generation for
 scenario development and modding.
 """
-__version__ = "0.6.0"
+__version__ = "0.6.1"
 __author__ = "Mark L. Short"
-__date__ = "2026-03-11"
+__date__ = "2026-03-21"
 
 # Import Sub-Packages to expose them at the top level
 from . import auditing

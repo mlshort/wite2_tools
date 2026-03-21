@@ -1,6 +1,6 @@
 
 from pathlib import Path
-from typing import Callable
+from collections.abc import Callable
 
 # Internal package imports
 from wite2_tools.core.group_units_by_ob import UnitData

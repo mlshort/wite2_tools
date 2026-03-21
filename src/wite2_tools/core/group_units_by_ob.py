@@ -37,7 +37,7 @@ Example:
 
 import os
 from collections import defaultdict
-from typing import Union, Dict, List, Tuple
+from collections.abc import Iterable
 from functools import cache
 
 # Internal package imports
@@ -65,7 +65,7 @@ def group_units_by_ob(
     unit_file_path: str,
     active_only: bool = True,
     nat_codes: NatData = None
-) -> Dict[int, List[UnitData]]:
+) -> dict[int, list[UnitData]]:
     """
     Groups units by TOE(OB) ID with optional nationality filtering.
 
@@ -79,7 +79,7 @@ def group_units_by_ob(
                 None.
 
     Returns:
-        Dict[int, List[Unit]]: A dictionary mapping the TOE(OB) ID to a list of
+        dict[int, list[Unit]]: A dictionary mapping the TOE(OB) ID to a list of
                 matching Unit objects.
     """
 
@@ -91,10 +91,10 @@ def group_units_by_ob(
 def _group_units_by_ob(
     unit_file_path: str,
     active_only: bool = True,
-    nat_codes: Union[int, str, Tuple[int, ...], None] = None
-) -> Dict[int, List[UnitData]]:
+    nat_codes: int | str | Iterable[int | str] | None = None
+) -> dict[int, list[UnitData]]:
 
-    ob_ids_to_units: Dict[int, List[UnitData]] = defaultdict(list)
+    ob_ids_to_units: dict[int, list[UnitData]] = defaultdict(list)
 
     # Standardize nation_id to a set for efficient lookup
     nat_filter = normalize_nat_codes(nat_codes)
@@ -144,7 +144,7 @@ def _group_units_by_ob(
     return dict(ob_ids_to_units)
 
 
-def print_unit_table(grouped_data: Dict[int, List[UnitData]]) -> None:
+def print_unit_table(grouped_data: dict[int, list[UnitData]]) -> None:
     """
     Prints a formatted table of all units organized by Type
     """

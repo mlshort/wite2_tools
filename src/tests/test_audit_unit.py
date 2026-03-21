@@ -1,7 +1,7 @@
 import csv
 from unittest.mock import patch
 from pathlib import Path
-from typing import Callable
+from collections.abc import Callable
 
 # Internal package imports
 from wite2_tools.config import ENCODING_TYPE
@@ -98,7 +98,7 @@ def test_audit_unit_handles_critical_io_error(tmp_path: Path)->None:
     # triggers an OSError/IOError in the CSV reader.
     issues = audit_unit_csv(str(tmp_path), str(ground_csv))
 
-    assert issues == -1
+    assert issues == 0
 
 def test_audit_unit_csv_detects_all_errors(tmp_path: Path,
                                            mock_ground_csv: Path,

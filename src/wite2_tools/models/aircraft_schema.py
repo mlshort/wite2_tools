@@ -14,7 +14,7 @@ properties, built-in weapon slots (0-9), and 5 external weapon sets
 (Loadouts: ws0 through ws4).
 """
 from enum import IntEnum
-from typing import List, Dict, Any, Final
+from typing import Any, Final
 
 
 class AcColumn(IntEnum):
@@ -218,13 +218,13 @@ NUM_COLS : Final[int] = len(AcColumn)
 ID_COL : Final[int] = AcColumn.ID
 
 
-def gen_aircraft_column_names() -> List[str]:
+def gen_aircraft_column_names() -> list[str]:
     """
     Generates the 322 headers for a _aircraft.csv file dynamically.
     """
 
     # 1. Base Properties (Columns 0 to 36)
-    cols: List[str] = [
+    cols: list[str] = [
         'id', 'name', 'maxAlt', 'nat', 'sym', 'maxSpeed', 'maxSpeedAlt',
         'zeroAltSpeed', 'maxAltSpeed', 'cruSpeed', 'climb', 'maxLoad',
         'endurance', 'range', 'year', 'mvr', 'armor', 'durab', 'month',
@@ -263,7 +263,7 @@ def gen_aircraft_column_names() -> List[str]:
 
 def gen_default_aircraft_row(aircraft_id: int = 0,
                              name: str = "",
-                             nat: int = 0) -> List[str]:
+                             nat: int = 0) -> list[str]:
     """
     Generates a default 322-column row for a _aircraft.csv file.
 
@@ -273,11 +273,11 @@ def gen_default_aircraft_row(aircraft_id: int = 0,
         nat (int): The nationality ID (Column 3). Defaults to 0.
 
     Returns:
-        List[str]: A list containing the ID, Name, 1 zero, Nationality,
+        list[str]: A list containing the ID, Name, 1 zero, Nationality,
         and 318 zeroes.
     """
     # Create the base row: [ID, Name, maxAlt (0), Nat]
-    row: List[str] = [str(aircraft_id), name, "0", str(nat)]
+    row: list[str] = [str(aircraft_id), name, "0", str(nat)]
 
     # Append 318 zeroes to fill out the remaining columns
     row.extend(["0"] * 318)
@@ -287,7 +287,7 @@ def gen_default_aircraft_row(aircraft_id: int = 0,
 
 def gen_default_aircraft_dict(aircraft_id: int = 0,
                               name: str = "",
-                              nat: int = 0) -> Dict[str, str]:
+                              nat: int = 0) -> dict[str, str]:
     """
     Generates a default Aircraft dictionary mapped to schema headers.
     """

@@ -5,7 +5,6 @@ from wite2_tools.config import ENCODING_TYPE
 from wite2_tools.modifiers import (
     modify_unit_ground_element,
 )
-from wite2_tools.models import UnitColumn
 
 
 def test_modify_unit_ground_element_success(mock_unit_csv: Path) -> None:
@@ -21,7 +20,7 @@ def test_modify_unit_ground_element_success(mock_unit_csv: Path) -> None:
         new_wid=999
     )
 
-    assert updates == 7
+    assert updates == (26, 7)
 
     with open(mock_unit_csv, 'r', encoding=ENCODING_TYPE) as f:
         rows = list(csv.reader(f))

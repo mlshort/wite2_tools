@@ -1,5 +1,4 @@
 import os
-from typing import Dict, Set
 
 from wite2_tools.utils import (
     get_logger,
@@ -20,22 +19,22 @@ def audit_unit_ob_excess(
     unit_file_path: str,
     ob_file_path: str,
     gnd_file_path: str,
-    target_nat: Set[int]
+    target_nat: set[int]
 ) -> int:
     """
     Compares unit equipment to its assigned OB template.
     Prints elements exceeding 125% of the authorized TOE.
     """
     # 1. Map OB IDs to their authorized composition
-    ob_templates: Dict[int, Dict[int, int]] = {}
+    ob_templates: dict[int, dict[int, int]] = {}
 
     if not os.path.isfile(unit_file_path):
         log.error("Error: The file '%s' was not found.", unit_file_path)
-        return -1
+        return 0
 
     if not os.path.isfile(ob_file_path):
         log.error("Error: The file '%s' was not found.", ob_file_path)
-        return -1
+        return 0
 
     ob_stream = get_csv_dict_stream(ob_file_path)
 
@@ -55,7 +54,7 @@ def audit_unit_ob_excess(
 
         ob_count += 1
 
-        composition: Dict[int,int] = {}
+        composition: dict[int,int] = {}
         # OBs use 'sqd X' for ID and 'sqdNum X' for Count (0-31)
         for i in range(MAX_SQUAD_SLOTS):
             o_wid = parse_int(ob_row.get(f'sqd {i}'))

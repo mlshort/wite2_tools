@@ -12,7 +12,9 @@ _ground.csv (Ground Element) Mapping Reference:
 Note: Ground elements link up to _ob.csv slots and down to _device.csv weapons.
 """
 from enum import IntEnum
-from typing import Final, List
+from typing import Final, Self
+
+from wite2_tools.constants import GND_ELEMENT_TYPE_DESCRIPTIONS
 
 class GndColumn(IntEnum):
     """
@@ -110,13 +112,13 @@ MEN_COL: Final[int]   = GndColumn.MEN
 #: Maps to _device.csv -> id (The primary weapon carried)
 WPN0_COL: Final[int]  = GndColumn.WPN_0
 
-def gen_gnd_column_names() -> List[str]:
+def gen_gnd_column_names() -> list[str]:
     """
     Generates the mapping for the GndColumn IntEnum.
     """
 
     # 1. Base properties (Columns 0 to 31)
-    cols: List[str] = [
+    cols: list[str] = [
         'id', 'name', 'id', 'type', 'sym', 'nat', 'maxLoad', 'loadCost',
         'year', 'last', 'lastMonth', 'range', 'speed', 'dur', 'size',
         'relib', 'armor', 'sideArmor', 'topArmor', 'month', 'buildLimit',
@@ -133,29 +135,6 @@ def gen_gnd_column_names() -> List[str]:
             cols.append(f"{prefix} {i}")
 
     return cols
-
-
-def gen_default_gnd_row(elem_id: int = 0,
-                        name: str = "") -> List[str]:
-    """
-    Generates a default 92-column row for a _ground.csv file.
-
-    Args:
-        elem_id (int): The ID for the ground element (Column 0). Defaults to 0.
-        name (str): The name of the element (Column 1). Defaults to empty.
-
-    Returns:
-        List[str]: A list containing the ID, Name, and 90 zeroes.
-    """
-    # Create the base row with the ID and Name
-    row: List[str] = [str(elem_id), name]
-
-    # Append 90 zeroes to fill out the remaining 90 columns
-    # (Properties, Limits, and the 10x Weapon Slots)
-    row.extend(["0"] * 90)
-
-    return row
-
 
 class GrdElementType(IntEnum):
     """
@@ -280,15 +259,32 @@ class GrdElementType(IntEnum):
     MECH_CAV = 117  # New to WiTE2
     MG_SECTION = 118  # Local Modification
 
+    # Mapping based on the WiTE2 Editor/Manual classifications
+    @classmethod
+    def get_description(cls, value: int) -> str:
+        """
+        Returns the description from the ordered sequence.
+        """
+        if 0 <= value < len(GND_ELEMENT_TYPE_DESCRIPTIONS):
+            return GND_ELEMENT_TYPE_DESCRIPTIONS[value]
+        return f"Unk ({value})"
+
     @property
-    def is_armored_infantry_element(self) -> bool:
+    def description(self:Self) -> str:
+        """
+        Returns the description for this Enum instance.
+        """
+        return self.get_description(self.value)
+
+    @property
+    def is_armored_infantry_element(self:Self) -> bool:
         armored_infantry_types = {
             GrdElementType.MECH_INF_SQUAD
         }
         return self in armored_infantry_types
 
     @property
-    def is_light_tank_element(self) -> bool:
+    def is_light_tank_element(self:Self) -> bool:
         _types = {
             GrdElementType.LT_TANK,
             GrdElementType.FOREIGN_LT_TANK,
@@ -297,7 +293,7 @@ class GrdElementType(IntEnum):
         return self in _types
 
     @property
-    def is_medium_tank_element(self) -> bool:
+    def is_medium_tank_element(self:Self) -> bool:
         _types = {
             GrdElementType.MD_TANK,
             GrdElementType.FOREIGN_MD_TANK,
@@ -308,7 +304,7 @@ class GrdElementType(IntEnum):
         return self in _types
 
     @property
-    def is_heavy_tank_element(self) -> bool:
+    def is_heavy_tank_element(self:Self) -> bool:
         _types = {
             GrdElementType.HVY_TANK,
             GrdElementType.HVY_CAVALRY_TANK,
@@ -318,8 +314,9 @@ class GrdElementType(IntEnum):
         }
         return self in _types
 
+
     @property
-    def is_combat_element(self) -> bool:
+    def is_combat_element(self:Self) -> bool:
         """
         Determines if this GroundElementType is a combat unit element.
         Returns False for static infrastructure, factories, and resource pools.

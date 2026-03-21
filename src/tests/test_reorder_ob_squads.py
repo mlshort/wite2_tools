@@ -1,4 +1,4 @@
-from typing import Callable
+from collections.abc import Callable
 from pathlib import Path
 
 # Import the correct schema for OB files
@@ -25,7 +25,7 @@ def test_obrow_reorder_slots_logic() -> None:
     ob.raw[num_base + 2] = "10"
 
     # Re-init to sync the named attributes (e.g., ob.SQD_2) with the raw list we just touched
-    ob.__init__(ob.raw)
+    ob._load_row(ob.raw)
 
     # Verify setup worked
     assert ob.SQD_2 == 500
