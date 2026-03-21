@@ -20,7 +20,6 @@ from .GndRow import GndRow
 from .ob_schema import (
     ObColumn,
     gen_ob_column_names,
-#    gen_default_ob_row,
     ELEM_BASE,
     NUM_BASE,
     NUM_COLS as O_NUM_COLS,
@@ -36,7 +35,7 @@ from .ob_schema import (
 from .unit_schema import (
     UnitColumn,
     gen_unit_column_names,
-    ATTRS_PER_SQD,
+    ATTRS_PER_SQD as U_ATTRS_PER_SQD,
     NUM_COLS as U_NUM_COLS,
     SQD_SLOTS as U_SQD_SLOTS,
     ID_COL as U_ID_COL, TYPE_COL as U_TYPE_COL,
@@ -71,6 +70,7 @@ from .airgroup_schema import AirGroupColumn
 
 __all__ = [
     # --- Ground Entities ---
+    "GndRow",
     "GndColumn",
     "gen_gnd_column_names",
     "gen_default_gnd_row",
@@ -86,7 +86,7 @@ __all__ = [
     "UnitRow",
     "UnitColumn",
     "gen_unit_column_names",
-    "ATTRS_PER_SQD",
+    "U_ATTRS_PER_SQD",
     "U_NUM_COLS",
     "U_SQD_SLOTS",
     "U_ID_COL",
@@ -104,7 +104,6 @@ __all__ = [
     "ObRow",
     "ObColumn",
     "gen_ob_column_names",
-#    "gen_default_ob_row",
     "ELEM_BASE",
     "NUM_BASE",
     "O_NUM_COLS",

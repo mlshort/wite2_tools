@@ -52,10 +52,10 @@ from wite2_tools.models import (
 from wite2_tools.generator import get_csv_list_stream
 from wite2_tools.utils import (
     get_logger,
-    get_nat_abbr,
     parse_row_int,
     parse_row_str
 )
+from wite2_tools.utils.get_name import get_nat_abbr
 
 # Initialize the log for this specific module
 log = get_logger(__name__)

@@ -15,7 +15,7 @@ from wite2_tools.models import (
     # Unit Constants
     UnitRow,
     gen_unit_column_names,
-    ATTRS_PER_SQD, U_SQD_SLOTS,
+    U_ATTRS_PER_SQD, U_SQD_SLOTS,
     U_SQD0_COL, U_SQD_NUM0_COL,
     # OB Constants
     gen_ob_column_names,
@@ -97,8 +97,8 @@ def create_unit_row(
             # U_SQD_NUM0_COL is the start of the Quantity block (Index 54)
             # ATTRS_PER_SQD is usually 1 in the unit file (non-interleaved blocks)
 
-            squad_col_idx = U_SQD0_COL + (slot_idx * ATTRS_PER_SQD)
-            num_col_idx = U_SQD_NUM0_COL + (slot_idx * ATTRS_PER_SQD)
+            squad_col_idx = U_SQD0_COL + (slot_idx * U_ATTRS_PER_SQD)
+            num_col_idx = U_SQD_NUM0_COL + (slot_idx * U_ATTRS_PER_SQD)
 
             unit.raw[squad_col_idx] = str(wid)
             unit.raw[num_col_idx] = str(qty)

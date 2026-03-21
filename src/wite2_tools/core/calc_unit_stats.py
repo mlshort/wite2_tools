@@ -33,7 +33,7 @@ from wite2_tools.models import (
     U_SPT_NEED_COL,
     U_HQ_SUPPORT_COL
 )
-from wite2_tools.constants import (
+from wite2_tools.models.gnd_schema import (
     GrdElementType
 )
 

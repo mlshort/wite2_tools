@@ -36,7 +36,7 @@ class UnitData:
 # EXAMPLE USAGE
 # ==========================================
 if __name__ == "__main__":
-    from wite2_tools.utils.lookups import get_nat_abbr
+    from wite2_tools.utils.get_name import get_nat_abbr
 
     # Example: Creating a new German Panzer Division
     my_unit = UnitData(uid=1054, name="1st Panzer Div", utype=33, nat=1)

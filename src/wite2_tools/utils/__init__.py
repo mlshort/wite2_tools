@@ -31,12 +31,10 @@ from .parsing import (
     parse_str,
     parse_row_str
 )
-from .lookups import (
-    get_nat_abbr,
-    get_hq_type_description,
-    get_device_size_description,
-)
 from .get_name import (
+    get_nat_abbr,
+    get_device_size_description,
+    get_hq_type_description,
     get_ob_name,
     get_ob_suffix,
     get_ob_full_name,

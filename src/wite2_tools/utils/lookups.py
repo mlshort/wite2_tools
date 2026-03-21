@@ -103,15 +103,6 @@ NAT_LOOKUP: Dict[int, str] = {
 }
 
 
-def get_nat_abbr(nat_val: int) -> str:
-    """
-    Retrieves the abbreviation for a specific nat code.
-    Returns 'Unk ' if the code is not found.
-    """
-    result = NAT_LOOKUP.get(nat_val, f"Unk ({nat_val})")
-    return result
-
-
 # Explicitly declared lookup for WiTE2 Nationalities
 # Key: Nation ID (int), Value: Nation Name (str)
 NATION_LOOKUP: Dict[int, str] = {
@@ -242,14 +233,6 @@ HQ_TYPE_LOOKUP: Dict[int, str] = {
     6: "Const (Construction)",
     7: "Amphib (Amphibious)"
 }
-
-
-def get_hq_type_description(type_code: int) -> str:
-    """
-    Retrieves the description for a specific HQ Type code.
-    Returns 'Unk Type' if the code is not found in the dictionary.
-    """
-    return HQ_TYPE_LOOKUP.get(type_code, f"Unk ({type_code})")
 
 
 # Explicitly declared lookup for WiTE2 Ground Element Types
@@ -386,18 +369,6 @@ DEVICE_SIZE_LOOKUP: Dict[int, str] = {
     4: "Md Tanks, Hvy Artillery",
     5: "Hvy/Super Hvy Tanks, Hvy Artillery, Siege Guns/Mortars"
 }
-
-
-def get_device_size_description(size_code: int) -> str:
-    """
-    Returns the descriptive category for a WiTE2 device size code.
-    Handles the 5-10 range as a single category.
-    """
-    # Group sizes 5 through 10 maps into the 'Hvy/Super Hvy' category
-    if 5 <= size_code <= 10:
-        return DEVICE_SIZE_LOOKUP[5]
-
-    return DEVICE_SIZE_LOOKUP.get(size_code, f"Unk ({size_code})")
 
 
 # Explicitly declared lookup for WiTE2 Device Face Types

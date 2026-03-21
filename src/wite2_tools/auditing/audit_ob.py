@@ -29,7 +29,6 @@ from typing import Set, Dict, List
 
 # Internal package imports
 from wite2_tools.generator import CSVListStream, get_csv_list_stream
-from wite2_tools.constants import MAX_SQUAD_SLOTS
 from wite2_tools.utils import (
     get_logger,
     parse_row_int,
@@ -38,16 +37,14 @@ from wite2_tools.utils import (
     format_ref
 )
 from wite2_tools.models import (
+    ObRow,
+    O_SQD_SLOTS,
     O_ID_COL,
     O_NAME_COL,
     O_TYPE_COL,
     O_UPGRADE_COL,
     O_SQD0_COL,
     O_SQD_NUM0_COL,
-    O_FIRSTYEAR_COL,
-    O_FIRSTMONTH_COL,
-    O_LASTYEAR_COL,
-    O_LASTMONTH_COL
 )
 
 # Initialize the log for this specific module
@@ -64,10 +61,11 @@ def is_date_invalid(f_yr:int, f_mo:int, l_yr:int, l_mo:int) -> bool:
 def _check_chronology(ob_id: int, ob_name: str, row: List[str]) -> int:
     """Validates the historical introduction and expiration dates."""
     issues = 0
-    f_year  = parse_row_int(row,O_FIRSTYEAR_COL)
-    f_month = parse_row_int(row,O_FIRSTMONTH_COL)
-    l_year  = parse_row_int(row,O_LASTYEAR_COL)
-    l_month = parse_row_int(row,O_LASTMONTH_COL)
+    ob = ObRow(row)
+    f_year  = ob.FIRST_YEAR #  parse_row_int(row,O_FIRSTYEAR_COL)
+    f_month = ob.FIRST_MONTH #parse_row_int(row,O_FIRSTMONTH_COL)
+    l_year  = ob.LAST_YEAR #parse_row_int(row,O_LASTYEAR_COL)
+    l_month = ob.LAST_MONTH #parse_row_int(row,O_LASTMONTH_COL)
 
     ref = format_ref("TOE(OB)", ob_id, ob_name)
 
@@ -126,7 +124,7 @@ def _check_squad_slots(ob_id: int,
     seen_wids_in_row: Set[int] = set()
     ref = format_ref("TOE(OB)", ob_id, ob_name)
 
-    for i in range(MAX_SQUAD_SLOTS):
+    for i in range(O_SQD_SLOTS):
         sqd_id_col = O_SQD0_COL + i
         sqd_num_col = O_SQD_NUM0_COL + i
 

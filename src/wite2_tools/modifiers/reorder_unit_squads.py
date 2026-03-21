@@ -44,10 +44,6 @@ import os
 from typing import List
 
 # Internal package imports
-from wite2_tools.constants import (
-    MAX_SQUAD_SLOTS,
-    MIN_SQUAD_SLOTS
-)
 from wite2_tools.utils import (
     get_logger,
     parse_int
@@ -55,9 +51,10 @@ from wite2_tools.utils import (
 from wite2_tools.modifiers.base import process_csv_in_place
 from wite2_tools.models import (
     UnitColumn,
+    U_SQD_SLOTS,
     U_ID_COL,
     U_SQD0_COL,
-    ATTRS_PER_SQD
+    U_ATTRS_PER_SQD
 )
 
 # Initialize the logger for this specific module
@@ -94,8 +91,8 @@ def reorder_unit_elems(row: List[str],
 
 
     # Calculate the exact starting index for both slots
-    source_offset = source_slot * ATTRS_PER_SQD
-    target_offset = target_slot * ATTRS_PER_SQD
+    source_offset = source_slot * U_ATTRS_PER_SQD
+    target_offset = target_slot * U_ATTRS_PER_SQD
 
     for base_enum in attribute_bases:
         # Move the data
@@ -139,7 +136,7 @@ def reorder_unit_squads(unit_file_path: str,
         - Compatible with `csv.reader` (list-based) to safely handle files that
           may contain duplicate column headers.
     """
-    if not MIN_SQUAD_SLOTS <= target_slot < MAX_SQUAD_SLOTS:
+    if not 0 <= target_slot < U_SQD_SLOTS:
         log.error("Validation Error: target_slot slot %d is out of bounds "
                   "(0-31).", target_slot)
         return 0
@@ -158,7 +155,7 @@ def reorder_unit_squads(unit_file_path: str,
         uid = parse_int(row[U_ID_COL])
         if target_uid == uid:
 
-            for i in range(MAX_SQUAD_SLOTS):
+            for i in range(U_SQD_SLOTS):
                 current_sqd_col = U_SQD0_COL + (i * 8)
 
                 if current_sqd_col < len(row):

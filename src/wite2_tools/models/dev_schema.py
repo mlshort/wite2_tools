@@ -164,3 +164,56 @@ def gen_default_device_dict(device_id: int = 0,
 
     # Zip the 25 headers together with the 25 default values
     return dict(zip(headers, default_row_list))
+
+
+# pylint: disable=invalid-name
+class DeviceType(IntEnum):
+    """
+    Mapping for the 'type' column in WiTE2's _device.csv.
+    """
+    AIRCRAFT_CANNON = 0
+    MAN_WEAPON = 1
+    SQUAD_WEAPON = 2
+    HVY_SQUAD_WEAPON = 3
+    AA_WEAPON = 4
+    LT_GUN = 5
+    MD_GUN = 6
+    HVY_GUN = 7
+    FLAME = 8
+    AA_ROCKET = 9
+    NAVAL_GUN = 10
+    AIR_TO_AIR_ROCKET = 11
+    INCENDIARY_BOMB = 12
+    GP_BOMB_ROCKET = 13
+    FACTORY = 14
+    DROP_TANK = 15
+    RADAR_DETECTOR = 16
+    RADAR_JAMMER = 17
+    AIR_NAVIGATION = 18
+    AIR_RADAR = 19
+    GROUND_RADAR = 20
+    ELINT = 21
+    BALLOON = 22
+    FLAK = 23
+    TORPEDO = 24
+    DP_GUN = 25
+    ASW = 26
+    MINE = 27
+    CAMERA = 28
+    NAVAL_RADAR = 29
+
+    @classmethod
+    def get_description(cls, value: int) -> str:
+        """Returns the original descriptive string for the type ID."""
+        descriptions = {
+            0: "Aircraft cannon", 1: "Man weapon", 2: "Squad weapon",
+            3: "Hvy squad weapon", 4: "AA weapon", 5: "Lt gun",
+            6: "Md gun", 7: "Hvy gun", 8: "Flame", 9: "AA Rocket",
+            10: "Naval gun", 11: "Air-to-air rocket", 12: "Incendiary bomb",
+            13: "GP bomb/rocket", 14: "Factory", 15: "Drop tank",
+            16: "RADAR detector", 17: "RADAR jammer", 18: "Air navigation",
+            19: "Air RADAR", 20: "Ground RADAR", 21: "ELINT",
+            22: "Balloon", 23: "Flak", 24: "Torpedo", 25: "DP Gun",
+            26: "ASW", 27: "Mine", 28: "Camera", 29: "Naval RADAR"
+        }
+        return descriptions.get(value, "Unknown")

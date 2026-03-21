@@ -34,11 +34,13 @@ from typing import Tuple, List, Any
 import os
 
 # Internal package imports
-from wite2_tools.constants import MAX_GND_WPN_SLOTS
 from wite2_tools.utils import get_logger
 from wite2_tools.utils import parse_int
 from wite2_tools.modifiers.base import process_csv_in_place
-from wite2_tools.models import GndColumn
+from wite2_tools.models import (
+    GndColumn,
+    G_WPN_SLOTS
+)
 
 # Initialize the log for this specific module
 log = get_logger(__name__)
@@ -92,7 +94,7 @@ def remove_ground_weapon_gaps(ground_file_path: str) -> int:
         # The weapon ID is always the first base in our list
         wpn_id_base: int = WPN_BASES[0]
 
-        for i in range(MAX_GND_WPN_SLOTS):
+        for i in range(G_WPN_SLOTS):
             # Direct index access instead of .get()
             wid_val: str = row[wpn_id_base + i]
             wid: int = parse_int(wid_val)
@@ -107,14 +109,14 @@ def remove_ground_weapon_gaps(ground_file_path: str) -> int:
         # Reconstruct what the layout SHOULD look like if compacted
         new_wpn_ids: List[int] = (
             [parse_int(p[0]) for p in valid_packets] +
-            [0] * (MAX_GND_WPN_SLOTS - len(valid_packets))
+            [0] * (G_WPN_SLOTS - len(valid_packets))
         )
 
         if original_wpn_ids == new_wpn_ids:
             return row, False
 
         # 3. REWRITE: Write valid packets back and zero out the rest
-        for i in range(MAX_GND_WPN_SLOTS):
+        for i in range(G_WPN_SLOTS):
             if i < len(valid_packets):
                 # Unpack the saved packet into the specific slot i across all 5 blocks
                 for attr_idx, base in enumerate(WPN_BASES):

@@ -25,10 +25,6 @@ from . config import (
     make_hashable
 )
 
-from . constants import (
-    MAX_SQUAD_SLOTS,
-    MAX_GND_WPN_SLOTS
-)
 from . paths import (
     CONF_OB_FULL_PATH,
     CONF_UNIT_FULL_PATH,
@@ -53,8 +49,6 @@ __all__ = [
     'CONFIG_FILE_NAME',
     'normalize_nat_codes',
     'make_hashable',
-    'MAX_SQUAD_SLOTS',
-    'MAX_GND_WPN_SLOTS',
     'CONF_OB_FULL_PATH',
     'CONF_UNIT_FULL_PATH',
     'CONF_GROUND_FULL_PATH',

@@ -296,3 +296,25 @@ def gen_default_aircraft_dict(aircraft_id: int = 0,
 
     # Zip the 322 headers together with the 322 default values
     return dict(zip(headers, default_row_list))
+
+
+# pylint: disable=invalid-name
+class AircraftType(IntEnum):
+    """
+    Mapping for the 'type' column in _aircraft.csv and
+    'airType' in _airgroup.csv.
+    """
+    FIGHTER = 0
+    FIGHTER_BOMBER = 1
+    NIGHT_FIGHTER = 2
+    TACTICAL_BOMBER = 3
+    LEVEL_BOMBER = 4
+    RECON = 5
+    JET_FIGHTER = 6
+    EW = 7
+    TRANSPORT = 8
+    PATROL = 9
+    FLOAT_PLANE = 10
+    FLOAT_FIGHTER = 11
+    TORPEDO_BOMBER = 12
+    AIR_FRAME = 13  # New for WiTE2

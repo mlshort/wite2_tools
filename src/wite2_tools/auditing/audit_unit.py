@@ -48,7 +48,7 @@ from wite2_tools.models import (
     U_SQD_SLOTS,
     U_SQD0_COL,
     U_SQD_NUM0_COL,
-    ATTRS_PER_SQD
+    U_ATTRS_PER_SQD
 )
 from wite2_tools.utils.get_valid_ids import (
     get_valid_ground_elem_ids,
@@ -128,8 +128,8 @@ def _check_squads(
     fixed = 0
 
     for i in range(U_SQD_SLOTS):
-        sqd_col:int = U_SQD0_COL + (i * ATTRS_PER_SQD)
-        num_col:int = U_SQD_NUM0_COL + (i * ATTRS_PER_SQD)
+        sqd_col:int = U_SQD0_COL + (i * U_ATTRS_PER_SQD)
+        num_col:int = U_SQD_NUM0_COL + (i * U_ATTRS_PER_SQD)
         wid = parse_row_int(row, sqd_col)
         qty = parse_row_int(row, num_col)
 

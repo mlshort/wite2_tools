@@ -65,6 +65,9 @@ from wite2_tools.utils.parsing import (
     parse_row_str
 )
 from wite2_tools.utils.lookups import (
+    DEVICE_SIZE_LOOKUP,
+    HQ_TYPE_LOOKUP,
+    NAT_LOOKUP,
     OB_COMBAT_CLASS_LOOKUP,
     OB_TYPE_LOOKUP,
     NATION_LOOKUP,
@@ -295,3 +298,32 @@ def get_device_face_type_name(face_code: int) -> str:
     Defaults to 'Unk' if the code is outside the 0-12 range.
     """
     return DEVICE_FACE_TYPE_LOOKUP.get(face_code, f"Unk ({face_code})")
+
+
+def get_device_size_description(size_code: int) -> str:
+    """
+    Returns the descriptive category for a WiTE2 device size code.
+    Handles the 5-10 range as a single category.
+    """
+    # Group sizes 5 through 10 maps into the 'Hvy/Super Hvy' category
+    if 5 <= size_code <= 10:
+        return DEVICE_SIZE_LOOKUP[5]
+
+    return DEVICE_SIZE_LOOKUP.get(size_code, f"Unk ({size_code})")
+
+
+def get_hq_type_description(type_code: int) -> str:
+    """
+    Retrieves the description for a specific HQ Type code.
+    Returns 'Unk Type' if the code is not found in the dictionary.
+    """
+    return HQ_TYPE_LOOKUP.get(type_code, f"Unk ({type_code})")
+
+
+def get_nat_abbr(nat_val: int) -> str:
+    """
+    Retrieves the abbreviation for a specific nat code.
+    Returns 'Unk ' if the code is not found.
+    """
+    result = NAT_LOOKUP.get(nat_val, f"Unk ({nat_val})")
+    return result

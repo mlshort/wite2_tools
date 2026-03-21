@@ -33,11 +33,11 @@ from wite2_tools.models import (
     G_MEN_COL
 )
 from wite2_tools.constants import (
-    MAX_GROUND_MEN,
-    GrdElementType
+    MAX_GROUND_MEN
 )
 
 from wite2_tools.generator import get_csv_list_stream
+from wite2_tools.models.gnd_schema import GrdElementType
 from wite2_tools.utils import (
     get_logger,
     get_ground_elem_class_name,

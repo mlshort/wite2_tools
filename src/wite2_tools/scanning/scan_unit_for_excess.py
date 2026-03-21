@@ -31,11 +31,11 @@ from typing import cast, Dict
 from wite2_tools.constants import EXCESS_RESOURCE_MULTIPLIER
 from wite2_tools.generator import get_csv_dict_stream
 from wite2_tools.utils import (
-    get_nat_abbr,
     get_logger,
     parse_int,
     parse_str
 )
+from wite2_tools.utils.get_name import get_nat_abbr
 
 # Initialize the log for this specific module
 log = get_logger(__name__)

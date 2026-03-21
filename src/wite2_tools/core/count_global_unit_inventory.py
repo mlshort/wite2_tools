@@ -37,15 +37,14 @@ from collections import defaultdict
 from typing import Optional, Set, Union, Iterable, Dict
 
 # Internal package imports
-from wite2_tools.constants import MAX_SQUAD_SLOTS
 from wite2_tools.generator import CSVListStream, get_csv_list_stream
 from wite2_tools.utils import get_logger
 from wite2_tools.utils import get_ground_elem_type_name
 from wite2_tools.utils import parse_row_int, format_ref
 from wite2_tools.models import (
-    U_ID_COL,
-    U_NAT_COL,
-    U_TYPE_COL,
+    UnitRow,
+    U_ATTRS_PER_SQD,
+    U_SQD_SLOTS,
     U_SQD0_COL,
     U_SQD_NUM0_COL
 )
@@ -87,10 +86,10 @@ def count_global_unit_inventory(
     try:
         # 2. Iterate through the generator items safely
         for _, row in unit_stream.rows:
-
-            uid = parse_row_int(row, U_ID_COL)
-            u_type = parse_row_int(row, U_TYPE_COL)
-            u_nat = parse_row_int(row, U_NAT_COL)
+            unit = UnitRow(row)
+            uid = unit.ID # parse_row_int(row, U_ID_COL)
+            u_type = unit.TYPE # parse_row_int(row, U_TYPE_COL)
+            u_nat = unit.NAT # parse_row_int(row, U_NAT_COL)
 
             # 3. Proccess Only Active Units & Apply Nat Filter
             if nat_filter is not None and u_nat not in nat_filter:
@@ -100,10 +99,10 @@ def count_global_unit_inventory(
 
             # Iterate through the MAX_SQUAD_SLOTS potential squad slots (sqd.u0
             # to sqd.u31)
-            for i in range(MAX_SQUAD_SLOTS):
+            for i in range(U_SQD_SLOTS):
                 try:
-                    wid = parse_row_int(row, U_SQD0_COL + (i * 8))
-                    squad_quantity = parse_row_int(row, U_SQD_NUM0_COL + (i * 8))
+                    wid = parse_row_int(row, U_SQD0_COL + (i * U_ATTRS_PER_SQD))
+                    squad_quantity = parse_row_int(row, U_SQD_NUM0_COL + (i * U_ATTRS_PER_SQD))
 
                     # If wid > 0, there is a piece of equipment in this slot
                     if wid > 0:
