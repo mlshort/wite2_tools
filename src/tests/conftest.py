@@ -20,6 +20,7 @@ from wite2_tools.models import (
     # OB Constants
     gen_ob_column_names,
     ObColumn, ObRow,
+    O_SQD_SLOTS,
     # Ground Constants
     gen_gnd_column_names,
     gen_default_gnd_row,
@@ -142,7 +143,7 @@ def create_ob_row(
     # Slot Mapping
     if squads:
         for slot_idx, g_id, qty in squads:
-            if 0 <= slot_idx < 32:
+            if 0 <= slot_idx < O_SQD_SLOTS:
                 # We still use raw here because we are dynamically iterating
                 # through the slots using the IntEnum math.
                 row.raw[ObColumn.SQD_0 + slot_idx] = str(g_id)
@@ -261,7 +262,8 @@ def make_unit_csv(tmp_path: Path) -> Callable[..., Path]:
                     # This allows tests to inject custom values for any column
                     for key, val in data.items():
                         if key not in core_fields:
-                            # Use the UnitRow attribute logic to update the raw list
+                            # Use the UnitRow attribute logic to update the raw
+                            # list
                             setattr(unit, key, val)
 
                     # 3. Write the underlying list to the CSV
@@ -348,8 +350,8 @@ def make_aircraft_csv(tmp_path: Path) -> Callable[..., Path]:
                         nat=int(data.get("nat", "1"))
                     )
 
-                    # Dynamically overwrite any specific columns passed in the dict
-                    # (e.g., "wpn 0": "101", "maxSpeed": "550")
+                    # Dynamically overwrite any specific columns passed in the
+                    # dict (e.g., "wpn 0": "101", "maxSpeed": "550")
                     for key, value in data.items():
                         if key not in ["id", "name", "nat"] and key in headers:
                             row[headers.index(key)] = str(value)

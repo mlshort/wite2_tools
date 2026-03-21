@@ -3,7 +3,8 @@ from typing import Any, List, Tuple
 
 from wite2_tools.models.ob_schema import (
     ObColumn,
-    NUM_COLS
+    NUM_COLS,
+    SQD_SLOTS
 )
 
 
@@ -123,7 +124,7 @@ class ObRow:
         sqd_start = ObColumn.SQD_0      # Index 15
         num_start = ObColumn.SQD_NUM_0  # Index 47
 
-        for i in range(32):
+        for i in range(SQD_SLOTS):
             try:
                 # Direct list access using integer offsets
                 ge_id = self._raw[sqd_start + i]
@@ -179,7 +180,7 @@ class ObRow:
         to target_slot (0-31), shifting other elements accordingly.
         """
         # 1. Bounds check (WiTE2 OBs always have 32 slots)
-        if not (0 <= source_slot < 32 and 0 <= target_slot < 32):
+        if not (0 <= source_slot < SQD_SLOTS and 0 <= target_slot < SQD_SLOTS):
             raise IndexError(f"Slot index out of range: {source_slot} -> {target_slot}")
 
         # 2. Identify the starting offsets for the ID and Quantity blocks
@@ -190,7 +191,7 @@ class ObRow:
         ]
 
         for start_idx in attribute_bases:
-            end_idx = start_idx + 32  # The width of the equipment block
+            end_idx = start_idx + SQD_SLOTS  # The width of the equipment block
 
             # Extract the relevant 32 columns as a list segment
             segment = self._raw[start_idx:end_idx]

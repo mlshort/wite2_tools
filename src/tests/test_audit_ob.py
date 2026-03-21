@@ -15,7 +15,8 @@ def test_audit_ob_handles_key_error(tmp_path: Path,
     Targets the KeyError branch by providing a CSV missing required columns.
     """
     unit_csv = tmp_path / "missing_columns.csv"
-    # Note: Pass path as string for now if your audit_ob_csv hasn't been updated to Path
+    # Note: Pass path as string for now if your audit_ob_csv hasn't been updated
+    # to Path
     unit_csv.write_text("wrong_header1,wrong_header2\nval1,val2")
 
     issues = audit_ob_csv(str(unit_csv), str(mock_ground_csv))

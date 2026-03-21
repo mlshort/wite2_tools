@@ -52,7 +52,7 @@ class GndRow:
         Yields (device_id, quantity) by calculating offsets from the
         WPN_0 and WPN_NUM_0 base indices.
         """
-        # Base indices from your GndColumn Enum
+        # Base indices from GndColumn Enum
         wpn_base = GndColumn.WPN_0      # 32
         num_base = GndColumn.WPN_NUM_0  # 42
 
