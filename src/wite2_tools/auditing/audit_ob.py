@@ -61,10 +61,10 @@ def _check_chronology(ob_id: int, ob_name: str, row: list[str]) -> int:
     """Validates the historical introduction and expiration dates."""
     issues = 0
     ob = ObRow(row)
-    f_year  = ob.FIRST_YEAR #  parse_row_int(row,O_FIRSTYEAR_COL)
-    f_month = ob.FIRST_MONTH #parse_row_int(row,O_FIRSTMONTH_COL)
-    l_year  = ob.LAST_YEAR #parse_row_int(row,O_LASTYEAR_COL)
-    l_month = ob.LAST_MONTH #parse_row_int(row,O_LASTMONTH_COL)
+    f_year  = ob.FIRST_YEAR
+    f_month = ob.FIRST_MONTH
+    l_year  = ob.LAST_YEAR
+    l_month = ob.LAST_MONTH
 
     ref = format_ref("TOE(OB)", ob_id, ob_name)
 

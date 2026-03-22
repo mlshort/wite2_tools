@@ -15,7 +15,7 @@ Core Features:
   were actually made, preventing data corruption. If no changes are made or
   an error occurs, the temporary file is cleanly discarded.
 * Memory Efficiency: Streams data row-by-row using the
-  `get_csv_dict_stream`, preventing out-of-memory errors when handling
+  `get_csv_list_stream`, preventing out-of-memory errors when handling
   massive game files.
 * Callback-Driven Logic: Accepts a `row_processor` callback function. This
   cleanly separates the file handling boilerplate from the actual data

@@ -5,7 +5,7 @@ from wite2_tools.models.gnd_schema import (
     WPN_SLOTS,
     NUM_COLS,
     GndColumn,
-    GrdElementType
+    GndElementType
 )
 
 
@@ -44,10 +44,10 @@ class GndRow:
         """
         Parses the raw CSV row using GndColumn indices.
         """
-        self._load_row(row)
+        self.load_row(row)
 
 
-    def _load_row(self: Self, row: list[str]) -> None:
+    def load_row(self: Self, row: list[str]) -> None:
         """
         Internal initialization method to safely parse and load a row,
         avoiding unsound __init__ calls.
@@ -162,7 +162,7 @@ class GndRow:
     def create_default(cls: type[Self],
                        elem_id: int = 0,
                        name: str = "",
-                       g_type: int = GrdElementType.RIFLE_SQUAD) -> Self:
+                       g_type: int = GndElementType.RIFLE_SQUAD) -> Self:
         """
         Generates a default 92-column row for a _ground.csv file.
 

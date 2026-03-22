@@ -34,7 +34,7 @@ from wite2_tools.models import (
     U_HQ_SUPPORT_COL
 )
 from wite2_tools.models.gnd_schema import (
-    GrdElementType
+    GndElementType
 )
 
 # Initialize the logger for this specific module
@@ -231,7 +231,7 @@ def calc_unit_support(ob_file_path: str,
                         if g_elem_type in GND_ELEMENT_DATA and g_elem_qty > 0:
                             data: tuple[str, int, int, str, int] = GND_ELEMENT_DATA[g_elem_type]
 
-                            if g_elem_type == GrdElementType.SUPPORT:
+                            if g_elem_type == GndElementType.SUPPORT:
                                 calc_unit_spt += g_elem_qty
 
                             elem_type_sptNeed = data[2]
@@ -246,7 +246,7 @@ def calc_unit_support(ob_file_path: str,
 
                 if u_vehicles > 0:
                     slot_sptNeed = int(u_vehicles * sptNeed_per_truck / 10)
-                    vehicle_type = GrdElementType.VEHICLE
+                    vehicle_type = GndElementType.VEHICLE
                     print(f"Slot {'-':2}: | {u_vehicles:4} | {'Vehicles':20} | {vehicle_type:4} "
                           f"| {sptNeed_per_truck/10:>8.2f} | {slot_sptNeed:6}")
 

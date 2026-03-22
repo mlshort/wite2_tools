@@ -37,12 +37,13 @@ from wite2_tools.constants import (
 )
 
 from wite2_tools.generator import get_csv_list_stream
-from wite2_tools.models.gnd_schema import GrdElementType
+from wite2_tools.models import (
+    GndElementType,
+    GndRow
+)
 from wite2_tools.utils import (
     get_logger,
-    get_ground_elem_class_name,
-    parse_row_int,
-    parse_row_str
+    get_ground_elem_class_name
 )
 from wite2_tools.utils.formatting import format_ref, audit_msg
 
@@ -87,11 +88,12 @@ def _check_ground_stats(g_id: int,
     ref = format_ref("WID", g_id, g_name)
 
     try:
-        ground_type = parse_row_int(row, G_TYPE_COL)
-        ground_size = parse_row_int(row, G_SIZE_COL)
-        ground_men = parse_row_int(row, G_MEN_COL)
+        gnd = GndRow(row)
+        ground_type = gnd.TYPE #parse_row_int(row, G_TYPE_COL)
+        ground_size = gnd.SIZE #parse_row_int(row, G_SIZE_COL)
+        ground_men = gnd.MEN #parse_row_int(row, G_MEN_COL)
 
-        elem = GrdElementType(ground_type)
+        elem = GndElementType(ground_type)
         if elem.is_combat_element:
 
             if ground_size == 0:
@@ -143,6 +145,7 @@ def audit_ground_element_csv(ground_file_path: str) -> int:
         gnd_stream = get_csv_list_stream(ground_file_path)
 
         for idx, row in gnd_stream.rows:
+            gnd = GndRow(row)
             row_len = len(row)
 
             # Structural Safety Check
@@ -153,8 +156,8 @@ def audit_ground_element_csv(ground_file_path: str) -> int:
                 continue
 
             try:
-                g_id = parse_row_int(row, G_ID_COL)
-                g_name = parse_row_str(row, G_NAME_COL, "Unk")
+                g_id = gnd.ID #parse_row_int(row, G_ID_COL)
+                g_name = gnd.NAME #parse_row_str(row, G_NAME_COL, "Unk")
                 ref = format_ref("WID", g_id, g_name)
 
                 # 1. Uniqueness Check
@@ -165,7 +168,7 @@ def audit_ground_element_csv(ground_file_path: str) -> int:
                 seen_ground_ids.add(g_id)
 
                 # 2. Type and Stat Validation
-                g_type = parse_row_int(row, G_TYPE_COL)
+                g_type = gnd.TYPE #parse_row_int(row, G_TYPE_COL)
                 t_issues, element_class_name = _check_ground_type(
                     g_id, g_name, g_type
                 )

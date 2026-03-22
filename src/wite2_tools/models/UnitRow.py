@@ -24,6 +24,7 @@ class UnitRow:
     Y: int
     MORALE: int
     HHQ: int
+    DELAY: int
     _raw: list[str]
 
     @property
@@ -31,26 +32,26 @@ class UnitRow:
         return self._raw
 
 
-    def __init__(self, row: list[str]) -> None:
+    def __init__(self: Self, row: list[str]) -> None:
         """
         Takes a raw CSV row (list of strings) and parses it using the UnitColumn indices.
         """
         self.load_row(row)
 
 
-    def load_row(self, row: list[str]) -> None:
+    def load_row(self: Self, row: list[str]) -> None:
         # Use super to avoid triggering custom __setattr__ before _raw exists
         super().__setattr__('_raw', row)
         self._refresh_attributes()
 
 
-    def _refresh_attributes(self)->None:
+    def _refresh_attributes(self: Self)->None:
         """
         Maps the raw list to named attributes.
         """
-        row_len = len(self._raw)
+        row_len = len(self.raw)
         for col in UnitColumn:
-            raw_val = self._raw[col.value] if col.value < row_len else "0"
+            raw_val = self.raw[col.value] if col.value < row_len else "0"
 
             val: Any
             try:
@@ -62,7 +63,7 @@ class UnitRow:
             super().__setattr__(col.name, val)
 
 
-    def __getattr__(self, item: str) -> Any:
+    def __getattr__(self: Self, item: str) -> Any:
         normalized_request = item.replace("_", "").upper()
         for actual_key, val in self.__dict__.items():
             normalized_key = actual_key.replace("_", "").upper()
@@ -71,7 +72,7 @@ class UnitRow:
         raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{item}'")
 
 
-    def __setattr__(self, name: str, value: Any) -> None:
+    def __setattr__(self: Self, name: str, value: Any) -> None:
         """
         Ensures that when a class attribute is updated, the underlying
         _raw CSV list is also updated. Supports fuzzy naming.
@@ -89,7 +90,7 @@ class UnitRow:
             normalized_col = col.name.replace("_", "").upper()
             if normalized_col == normalized_request:
                 # Update the raw list
-                self._raw[col] = str(value)
+                self.raw[col] = str(value)
                 return
 
 
@@ -112,14 +113,14 @@ class UnitRow:
 
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any])->Self:
+    def from_dict(cls: type[Self], data: dict[str, Any])->Self:
         # Convert dict to a 380-column list first
         headers = gen_unit_column_names()
         row_list = [str(data.get(h, "0")) for h in headers]
         return cls(row_list)
 
 
-    def reorder_slots(self, source_slot: int, target_slot: int) -> None:
+    def reorder_slots(self: Self, source_slot: int, target_slot: int) -> None:
         """
         Moves an entire squad attribute block (WID, Qty, and other interleaved stats)
         from source_slot to target_slot, shifting other blocks accordingly.
@@ -134,7 +135,7 @@ class UnitRow:
         end_of_blocks = start_idx + (num_slots * stride)
 
         # 1. Extract the section of the list containing all 32 squad blocks
-        all_squad_data = self._raw[start_idx:end_of_blocks]
+        all_squad_data = self.raw[start_idx:end_of_blocks]
 
         # 2. Chunk them into a list of 8-element blocks
         blocks = [all_squad_data[i:i + stride] for i in range(0, len(all_squad_data), stride)]
@@ -144,8 +145,8 @@ class UnitRow:
         blocks.insert(target_slot, block_to_move)
 
         # 4. Flatten and write back to the raw list
-        self._raw[start_idx:end_of_blocks] = [item for sublist in blocks for item in sublist]
+        self.raw[start_idx:end_of_blocks] = [item for sublist in blocks for item in sublist]
 
         # 5. Re-sync attributes (so unit.SQD_0 matches the new list state)
-        self.load_row(self._raw)
+        self.load_row(self.raw)
 

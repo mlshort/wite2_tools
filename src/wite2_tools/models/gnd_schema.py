@@ -136,7 +136,7 @@ def gen_gnd_column_names() -> list[str]:
 
     return cols
 
-class GrdElementType(IntEnum):
+class GndElementType(IntEnum):
     """
     Mapping for the 'type' column in WiTE2's _ground.csv.
     """
@@ -279,38 +279,38 @@ class GrdElementType(IntEnum):
     @property
     def is_armored_infantry_element(self:Self) -> bool:
         armored_infantry_types = {
-            GrdElementType.MECH_INF_SQUAD
+            GndElementType.MECH_INF_SQUAD
         }
         return self in armored_infantry_types
 
     @property
     def is_light_tank_element(self:Self) -> bool:
         _types = {
-            GrdElementType.LT_TANK,
-            GrdElementType.FOREIGN_LT_TANK,
-            GrdElementType.RECON_TANK
+            GndElementType.LT_TANK,
+            GndElementType.FOREIGN_LT_TANK,
+            GndElementType.RECON_TANK
         }
         return self in _types
 
     @property
     def is_medium_tank_element(self:Self) -> bool:
         _types = {
-            GrdElementType.MD_TANK,
-            GrdElementType.FOREIGN_MD_TANK,
-            GrdElementType.FLAME_TANK,
-            GrdElementType.INFANTRY_TANK,
-            GrdElementType.DD_TANK
+            GndElementType.MD_TANK,
+            GndElementType.FOREIGN_MD_TANK,
+            GndElementType.FLAME_TANK,
+            GndElementType.INFANTRY_TANK,
+            GndElementType.DD_TANK
         }
         return self in _types
 
     @property
     def is_heavy_tank_element(self:Self) -> bool:
         _types = {
-            GrdElementType.HVY_TANK,
-            GrdElementType.HVY_CAVALRY_TANK,
-            GrdElementType.HVY_ASSAULT_TANK,
-            GrdElementType.CS_TANK,
-            GrdElementType.CS_INFANTRY_TANK
+            GndElementType.HVY_TANK,
+            GndElementType.HVY_CAVALRY_TANK,
+            GndElementType.HVY_ASSAULT_TANK,
+            GndElementType.CS_TANK,
+            GndElementType.CS_INFANTRY_TANK
         }
         return self in _types
 
@@ -322,30 +322,30 @@ class GrdElementType(IntEnum):
         Returns False for static infrastructure, factories, and resource pools.
         """
         non_combat_types = {
-            GrdElementType.NAVAL_GUN,
-            GrdElementType.NAVAL_ARTILLERY,
-            GrdElementType.CHASSIS,
-            GrdElementType.TROOP_SHIP,      # 94
-            GrdElementType.CARGO_SHIP,      # 95
-            GrdElementType.VEHICLE_REPAIR,  # 96
-            GrdElementType.SUPPLY_DUMP,     # 97
-            GrdElementType.FUEL_DUMP,       # 98
-            GrdElementType.SUPPORT,         # 99
-            GrdElementType.AIR_SUPPORT,     # 100
-            GrdElementType.MANPOWER,              # 101
-            GrdElementType.HVY_INDUSTRY,          # 102
-            GrdElementType.OIL,                   # 103
-            GrdElementType.FUEL,                  # 104
-            GrdElementType.SYNTHETIC_FUEL,        # 105
-            GrdElementType.RESOURCE,              # 106
-            GrdElementType.ARTILLERY_PRODUCTION,  # 107
-            GrdElementType.VEHICLE,               # 108
-            GrdElementType.RAIL_YARD,             # 109
-            GrdElementType.PORT,                  # 110
-            GrdElementType.V_WEAPONS_FACTORY,     # 111
-            GrdElementType.V_WEAPONS_LAUNCHER,    # 112
-            GrdElementType.U_BOAT_FACTORY,        # 113
-            GrdElementType.U_BOAT_PEN             # 114
+            GndElementType.NAVAL_GUN,
+            GndElementType.NAVAL_ARTILLERY,
+            GndElementType.CHASSIS,
+            GndElementType.TROOP_SHIP,      # 94
+            GndElementType.CARGO_SHIP,      # 95
+            GndElementType.VEHICLE_REPAIR,  # 96
+            GndElementType.SUPPLY_DUMP,     # 97
+            GndElementType.FUEL_DUMP,       # 98
+            GndElementType.SUPPORT,         # 99
+            GndElementType.AIR_SUPPORT,     # 100
+            GndElementType.MANPOWER,              # 101
+            GndElementType.HVY_INDUSTRY,          # 102
+            GndElementType.OIL,                   # 103
+            GndElementType.FUEL,                  # 104
+            GndElementType.SYNTHETIC_FUEL,        # 105
+            GndElementType.RESOURCE,              # 106
+            GndElementType.ARTILLERY_PRODUCTION,  # 107
+            GndElementType.VEHICLE,               # 108
+            GndElementType.RAIL_YARD,             # 109
+            GndElementType.PORT,                  # 110
+            GndElementType.V_WEAPONS_FACTORY,     # 111
+            GndElementType.V_WEAPONS_LAUNCHER,    # 112
+            GndElementType.U_BOAT_FACTORY,        # 113
+            GndElementType.U_BOAT_PEN             # 114
         }
 
         return self not in non_combat_types

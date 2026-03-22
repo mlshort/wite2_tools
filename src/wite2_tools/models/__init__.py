@@ -45,6 +45,7 @@ from .unit_schema import (
 )
 from .gnd_schema import (
     GndColumn,
+    GndElementType,
     gen_gnd_column_names,
     NUM_COLS as G_NUM_COLS,
     WPN_SLOTS as G_WPN_SLOTS,
@@ -69,6 +70,7 @@ __all__ = [
     # --- Ground Entities ---
     "GndRow",
     "GndColumn",
+    "GndElementType",
     "gen_gnd_column_names",
     "G_NUM_COLS",
     "G_WPN_SLOTS",
