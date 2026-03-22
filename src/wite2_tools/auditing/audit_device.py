@@ -5,9 +5,8 @@ from typing import Set
 
 from wite2_tools import get_csv_list_stream
 from wite2_tools import ENCODING_TYPE
-from wite2_tools.utils import parse_row_int
 from wite2_tools.utils import get_logger
-from wite2_tools.models import DevColumn
+from wite2_tools.models import DevColumn, DevRow
 
 # Initialize the log for this specific module
 log = get_logger(__name__)
@@ -38,8 +37,9 @@ def apply_anti_armor_fix_with_validation(device_file_path: str,
         for _, row in dev_stream.rows:
 
             try:
-                dev_type = parse_row_int(row, DevColumn.TYPE, -1)
-                dev_pen = parse_row_int(row, DevColumn.PEN)
+                dev = DevRow(row)
+                dev_type = dev.TYPE #parse_row_int(row, DevColumn.TYPE, -1)
+                dev_pen = dev.PEN #parse_row_int(row, DevColumn.PEN)
                 # following is experimental !!
                 # Apply fix for specified types
                 if target_types and dev_type in target_types and dev_pen > 0:

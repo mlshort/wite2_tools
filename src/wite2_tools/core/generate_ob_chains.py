@@ -42,112 +42,95 @@ Example:
     Generates and exports chronological TOE(OB) upgrade chains strictly
     for the German (Nat 1) faction.
 """
-import csv
 import os
-from typing import cast
+import csv
+from typing import Any
 
-# Internal package imports
 from wite2_tools.config import ENCODING_TYPE, NatData, normalize_nat_codes
-from wite2_tools.generator import get_csv_dict_stream
-from wite2_tools.utils import (
-    get_logger,
-    parse_int,
-    parse_str
+from wite2_tools.utils import get_logger
+from wite2_tools.generator import get_csv_list_stream, CSVListStream
+from wite2_tools.models import (
+    ObRow
 )
 
-# Initialize the log for this specific module
 log = get_logger(__name__)
 
 
-# pylint: disable= too-many-locals, too-many-branches, too-many-statements
 def generate_ob_chains(
-    ob_file_path: str,
+    ob_csv_path: str,
     csv_output_path: str,
     txt_output_path: str,
     nat_codes: NatData = None
-) -> int:
+) -> None:
     """
-    Generates TOE(OB) upgrade chains, optionally filtered by a specific
-    nationality code.
+    Parses the _ob.csv file, identifies chronological upgrade sequences
+    for units, and writes the mapped chains to both CSV and TXT files.
 
-    :param ob_file_path: Path to the source _ob.csv
-    :param csv_output_path: Path to save the CSV results
-    :param txt_output_path: Path to save the text results
-    :param nat_codes: Integer or list of integers representing the 'nat'
-                      column value to filter by.
-    :return: The total number of chains generated.
+    Args:
+        ob_csv_path (str): The filepath to the source _ob.csv.
+        csv_output_path (str): The destination filepath for the CSV export.
+        txt_output_path (str): The destination filepath for the TXT export.
+        nation_id (int, optional): An integer ID filtering the output to a
+                                   specific nationality. Defaults to -1 (All).
     """
-    ob_id_to_name_map: dict[int, str] = {}
-    ob_id_to_upgrade_map: dict[int, int] = {}
-    all_ob_ids: set[int] = set()
-    ob_upgrade_ids: set[int] = set()
 
-    if not os.path.isfile(ob_file_path):
-        log.error("Error: The file '%s' was not found.", ob_file_path)
-        return 0
+    if not os.path.isfile(ob_csv_path):
+        log.error("Error: The file '%s' was not found.", ob_csv_path)
+        return
 
-    # Standardize nation_id to a set for efficient lookup
     nat_filter = normalize_nat_codes(nat_codes)
 
-    log.info("Starting TOE(OB) Upgrade Chain Generation from '%s'",
-             os.path.basename(ob_file_path))
+    # 1. First Pass: Map the upgrades and identify the targets
+    ob_id_to_upgrade_map: dict[int, int] = {}
+    ob_id_to_name_map: dict[int, str] = {}
+    all_upgrade_targets: set[int] = set()
 
-    # 1. Read the input _ob CSV and build mappings
-    ob_stream = get_csv_dict_stream(ob_file_path)
+    ob_stream: CSVListStream = get_csv_list_stream(ob_csv_path)
 
-    for item in ob_stream.rows:
-        # Cast the yielded item to satisfy static type checkers
-        _, row = cast(tuple[int, dict[str,str]], item)
-
-        try:
-            # Early Exit: Filter by nationality
-            ob_nat = parse_int(row.get("nat"))
-            if nat_filter is not None and ob_nat not in nat_filter:
-                continue
-
-            ob_type = parse_int(row.get("type"))
-            if ob_type == 0:
-                continue
-
-            ob_id = parse_int(row.get("id"))
-            ob_upgrade_id = parse_int(row.get('upgrade'))
-
-            # Combine ob_name and ob_suffix
-            ob_name = parse_str(row.get('name'), '')
-            ob_suffix = parse_str(row.get('suffix'), '')
-            ob_full_name = f"{ob_name} {ob_suffix}"
-
-            ob_id_to_name_map[ob_id] = ob_full_name
-            all_ob_ids.add(ob_id)
-
-            # If an upgrade exists, map it and track it as a 'target'
-            if ob_upgrade_id != 0:
-                ob_id_to_upgrade_map[ob_id] = ob_upgrade_id
-                ob_upgrade_ids.add(ob_upgrade_id)
-
-        except (ValueError, KeyError):
-            # Skip rows with invalid IDs or missing columns
+    for _, row in ob_stream.rows:
+        ob = ObRow(row)
+        ob_id      = ob.ID
+        ob_name    = ob.NAME
+        ob_suffix  = ob.SUFFIX
+        ob_nat     = ob.NAT
+        ob_type    = ob.TYPE
+        ob_upgrade = ob.UPGRADE
+        full_name = f"{ob_name} {ob_suffix}"
+        # Skip invalid or unassigned rows
+        if ob_id == 0 or ob_name == "" or ob_type == 0:
             continue
 
-    # 2. Identify Roots (IDs that are not the destination of an upgrade)
-    roots: list[int] = sorted(list(all_ob_ids - ob_upgrade_ids))
+        # Skip rows that don't match the requested Nation ID
+        if nat_filter is not None and ob_nat not in nat_filter:
+            continue
 
-    # 3. Trace the chains
-    chains_list = []
-    for root in roots:
-        # Filter out empty entries or structural spacers
-        if not ob_id_to_name_map.get(root):
-            if root not in ob_id_to_upgrade_map:
-                continue
+        # Add this OB to our master tracking dictionaries
+        ob_id_to_name_map[ob_id] = full_name
 
-        chain: list[int | str] = []
+        if ob_upgrade > 0:
+            ob_id_to_upgrade_map[ob_id] = ob_upgrade
+            all_upgrade_targets.add(ob_upgrade)
+
+    # 2. Identify the "Roots" (OBs that are never upgraded INTO)
+    root_obs: list[int] = []
+    for ob_id in ob_id_to_upgrade_map:
+        if ob_id not in all_upgrade_targets:
+            root_obs.append(ob_id)
+
+    log.debug("Found %d roots. Generating chains...", len(root_obs))
+
+    # 3. Trace the paths from each root
+    chains_list: list[dict[str, Any]] = []
+
+    for root in root_obs:
+        chain: list[int] = []
         curr = root
-        visited: set[int] = set()  # Safety check for infinite loops in data
+        visited: set[int] = set()
 
-        while curr != 0 and curr in ob_id_to_name_map:
+        # Follow the upgrade path until we hit 0 or a cycle
+        while curr > 0:
             if curr in visited:
-                chain.append(f"{curr} (LOOP)")
-                log.warning("Infinite loop detected in upgrade "
+                log.warning("Cycle detected during OB path generation. Breaking "
                             "chain at TOE(OB) ID[%d]", curr)
                 break
 
@@ -181,10 +164,8 @@ def generate_ob_chains(
     with open(txt_output_path, mode='w', encoding=ENCODING_TYPE) as f:
         for chain_info in chains_list:
             # We know chain_str is a string, so we can safely write it
-            f.write(str(chain_info['chain_str']) + "\n")
+            # ignoring the Any type hint required for the list of dicts above.
+            f.write(f"{chain_info['chain_str']}\n")
 
-    log.info("Successfully generated %d upgrade chains.", len(chains_list))
-    if nat_codes:
-        log.debug("Filtered by nation_id: %s", nat_filter)
-
-    return len(chains_list)
+    log.info("Success: Saved complete chronological OB mapping chains for "
+             "%d roots.", len(chains_list))

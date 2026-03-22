@@ -25,6 +25,8 @@ class UnitRow:
     MORALE: int
     HHQ: int
     DELAY: int
+    SUPPORT: int
+    SPT_NEED: int
     _raw: list[str]
 
     @property

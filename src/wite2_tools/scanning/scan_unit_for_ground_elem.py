@@ -33,68 +33,72 @@ Example:
     Element 42 are assigned.
 """
 import os
-from typing import cast
 
 # Internal package imports
-from wite2_tools.constants import MAX_SQUAD_SLOTS
-from wite2_tools.generator import get_csv_dict_stream
+from wite2_tools.generator import get_csv_list_stream, CSVListStream
+from wite2_tools.models import (
+    UnitColumn,
+    UnitRow,
+    U_SQD_SLOTS,
+    U_ATTRS_PER_SQD
+)
 from wite2_tools.utils import (
     get_logger,
     get_unit_type_name,
     get_ground_elem_type_name,
-    format_ref,
-    parse_int,
-    parse_str
+    format_ref
 )
+from wite2_tools.utils.parsing import parse_row_int
 
 # Initialize the log for this specific module
 log = get_logger(__name__)
 
 
 def _check_squad_match(
-    row: dict[str,str],
+    row: list[str],
     ob_full_path: str,
     target_wid: int,
     num_squads_filter: int,
     matches_found: int
 ) -> int:
 
-    for i in range(MAX_SQUAD_SLOTS):
-        sqd_id_col = f"sqd.u{i}"
-        sqd_num_col = f"sqd.num{i}"
+    unit = UnitRow(row)
+    for i in range(U_SQD_SLOTS):
+        # Calculate the physical indices for this specific slot
+        wid_idx = UnitColumn.SQD_U0 + (i * U_ATTRS_PER_SQD)
+        cnt_idx = UnitColumn.SQD_NUM0 + (i * U_ATTRS_PER_SQD)
 
-        wid = parse_int(row.get(sqd_id_col))
+        wid = parse_row_int(row, wid_idx)
 
-        # Check if column exists and matches the target ID
-        if sqd_id_col in row and wid == target_wid:
+        # Check if column matches the target ID
+        if wid == target_wid:
+            uname = unit.NAME
+            squad_quantity = parse_row_int(row, cnt_idx)
+            uid = unit.ID
 
-            # Search the row for the new column name and print squad_quantity
-            if sqd_num_col in row:
-                uname = parse_str(row.get("name"), "Unk")
-                squad_quantity = parse_int(row.get(sqd_num_col))
-                uid = parse_int(row.get("id"))
-                # unit 'type' maps to its TOE(OB) ID
-                utype = parse_int(row.get("type"))
-                unit_type_name = get_unit_type_name(ob_full_path, utype)
+            # unit 'type' maps to its TOE(OB) ID
+            utype = unit.TYPE
+            unit_type_name = get_unit_type_name(ob_full_path, utype)
 
-                # Filter by exact quantity if a specific number was provided
-                # (-1 means ANY)
-                if num_squads_filter != -1:
-                    try:
-                        if squad_quantity == num_squads_filter:
-                            print(f"{uid:>6} | {uname:<15.15s} | "
-                                  f"{unit_type_name:<25.25s} | "
-                                  f"{sqd_id_col:<7} | "
-                                  f"'{sqd_num_col}': {squad_quantity}")
-                            matches_found += 1
-                    except ValueError:
-                        continue
-                else:
-                    # Print all matches regardless of quantity
+            # Reconstruct the column name strings for the console output
+            sqd_id_col_name = f"sqd.u{i}"
+            sqd_num_col_name = f"sqd.num{i}"
+
+            # Filter by exact quantity if a specific number was provided
+            # (-1 means ANY)
+            if num_squads_filter != -1:
+                if squad_quantity == num_squads_filter:
                     print(f"{uid:>6} | {uname:<15.15s} | "
-                          f"{unit_type_name:<25.25s} | {sqd_id_col:<7} | "
-                          f"'{sqd_num_col}': {squad_quantity}")
+                          f"{unit_type_name:<25.25s} | "
+                          f"{sqd_id_col_name:<7} | "
+                          f"'{sqd_num_col_name}': {squad_quantity}")
                     matches_found += 1
+            else:
+                # Print all matches regardless of quantity
+                print(f"{uid:>6} | {uname:<15.15s} | "
+                      f"{unit_type_name:<25.25s} | {sqd_id_col_name:<7} | "
+                      f"'{sqd_num_col_name}': {squad_quantity}")
+                matches_found += 1
 
     return matches_found
 
@@ -119,7 +123,7 @@ def scan_unit_for_ground_elem(
     matches_found = 0
 
     try:
-        unit_stream = get_csv_dict_stream(unit_file_path)
+        unit_stream: CSVListStream = get_csv_list_stream(unit_file_path)
 
         scan_str = "ANY" if target_num_squads == -1 else str(target_num_squads)
         ground_elem_name = get_ground_elem_type_name(ground_file_path,
@@ -136,11 +140,9 @@ def scan_unit_for_ground_elem(
         print("-" * 80)
 
         # Iterate through every row
-        for item in unit_stream.rows:
-            _, row = cast(tuple[int, dict[str,str]], item)
-
+        for _, row in unit_stream.rows:
             # Convert to numbers for math comparison
-            utype = parse_int(row.get("type"))
+            utype = parse_row_int(row, UnitColumn.TYPE)
             if utype == 0:
                 continue
 

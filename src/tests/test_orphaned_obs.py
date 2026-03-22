@@ -23,7 +23,9 @@ MOCK_UNIT_DATA: list[list[str]] = [
 ]
 
 def create_mock_stream(data_list: list[list[str]]) -> CSVListStream:
-    """Helper to simulate the CSVStream object returned by get_csv_dict_stream."""
+    """
+    Helper to simulate the CSVStream object returned by get_csv_list_stream.
+    """
     mock_rows = enumerate(data_list[1:], start=1) # Skip header row for iteration
    # fieldnames = list(data_list[0].keys()) if data_list else []
     fieldnames = data_list[0]

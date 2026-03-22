@@ -25,6 +25,7 @@ class DevRow:
     EFFECT: int
     PEN: int
     ACC: int
+    ANTI_ARMOR: int
     _raw: list[str]
 
     @property

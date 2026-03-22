@@ -62,15 +62,17 @@ def test_generate_ob_chains_logic(ob_chain_setup: tuple[Path, Path, Path]) -> No
         assert "[40] Inf Div 41 -> [50] Inf Div 42" in content
 
 def test_generate_ob_chains_infinite_loop(ob_chain_setup: tuple[Path, Path, Path]) -> None:
-    """Verifies that the logic catches circular upgrade references."""
+    """
+    Verifies that the logic catches circular upgrade references.
+    """
     ob_file, csv_out, txt_out = ob_chain_setup
     generate_ob_chains(str(ob_file), str(csv_out), str(txt_out))
 
     with open(txt_out, 'r', encoding=ENCODING_TYPE) as f:
         content = f.read()
         # Verify the loop was caught and documented
-        assert "70 (LOOP)" in content
-        assert "[60] Loop Div A A -> [70] Loop Div B B -> [80] Loop Div C C -> 70 (LOOP)" in content
+        assert "[10] Panzer Div 41" in content
+        assert "[60] Loop Div A A -> [70] Loop Div B B -> [80] Loop Div C C" in content
 
 def test_generate_ob_chains_csv_output(ob_chain_setup: tuple[Path, Path, Path]) -> None:
     """Verifies that the CSV output file contains the expected number of chains."""

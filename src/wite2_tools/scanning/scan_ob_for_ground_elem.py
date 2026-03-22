@@ -28,31 +28,34 @@ Example:
     and the quantity assigned.
 """
 import os
-from typing import cast
 
 # Internal package imports
-from wite2_tools.constants import MAX_SQUAD_SLOTS
-from wite2_tools.generator import get_csv_dict_stream
+from wite2_tools.generator import get_csv_list_stream, CSVListStream
+from wite2_tools.models import (
+    ObColumn,
+    ObRow,
+    O_SQD_SLOTS
+)
 from wite2_tools.utils import (
     get_logger,
     get_ob_type_code_name,
-    parse_int,
-    parse_str
+    format_ref
 )
+from wite2_tools.utils.parsing import parse_row_int
 
 # Initialize the log for this specific module
 log = get_logger(__name__)
 
 
-def scan_ob_for_ground_elem(ob_file_path: str,
-                            target_wid: int) -> int:
+def scan_ob_for_ground_elem(
+    ob_file_path: str,
+    target_wid: int
+) -> int:
     """
-    1. Scans 'sqd' columns for ground_elem_id (WID).
+    1. Scans a _ob CSV 'sqd' columns for ground_elem_id.
     2. If found, finds the corresponding 'sqdNum' column.
-    3. Prints the value of the column.
+    3. Outputs the value.
     """
-    file = os.path.basename(ob_file_path)
-
     if not os.path.isfile(ob_file_path):
         log.error("Error: The file '%s' was not found.", ob_file_path)
         return 0
@@ -60,56 +63,61 @@ def scan_ob_for_ground_elem(ob_file_path: str,
     matches_found = 0
 
     try:
-        ob_stream = get_csv_dict_stream(ob_file_path)
+        ob_stream: CSVListStream = get_csv_list_stream(ob_file_path)
 
-        # Convert inputs to strings to ensure they match CSV text format
-        ground_element_id_str = str(target_wid)
+        # Assuming format_ref is just for formatting the target_wid properly
+        ref = format_ref("WID", target_wid, "Target")
+        print(f"\nScanning '{os.path.basename(ob_file_path)}' for {ref}")
 
-        print(f"\nScanning '{file}' for any instances of "
-              "WID='{ground_element_id_str}'")
         # Print Header for the Console Output
-        print(f"\n{'ID':^6} | {'Name':<20} | {'Type':^9} | "
-              "{'Squad':<6} | {'Value':<10}")
+        print(f"\n{'ID':^6} | {'Name':<20} | {'Type':<9} | "
+              f"{'Squad':<7} | {'Value':<10}")
         print("-" * 80)
 
-        # Iterate through every row using explicit type casting
-        for item in ob_stream.rows:
-            _, row = cast(tuple[int, dict[str,str]], item)
+        # Iterate through every row
+        for _, row in ob_stream.rows:
+            ob = ObRow(row)
 
-            # Convert to numbers for math comparison
-            ob_type = parse_int(row.get("type"))
-            ob_id = parse_int(row.get("id"))
+            ob_type = ob.TYPE
+            ob_id   = ob.ID
 
             if ob_id == 0 or ob_type == 0:
                 # Skip rows where type or id == 0
                 continue
 
             # 2. Search columns 'sqd 0' through 'sqd 31' for the ground_elem_id
-            for i in range(MAX_SQUAD_SLOTS):
-                sqd_id_col = f"sqd {i}"
-                sqd_num_col = f"sqdNum {i}"
+            for i in range(O_SQD_SLOTS):
 
-                # Check if column exists and matches the target ID
-                if sqd_id_col in row:
-                    if row[sqd_id_col] == ground_element_id_str:
-                        ob_name = parse_str(row.get("name"), "")
-                        ob_suffix = parse_str(row.get("suffix"), "")
-                        ob_full_name = f"{ob_name} {ob_suffix}"
-                        sqd_num = parse_int(row.get(sqd_num_col))
+                # Calculate the physical indices for this specific slot
+                wid_idx = ObColumn.SQD_0 + i
+                cnt_idx = ObColumn.SQD_NUM_0 + i
 
-                        ob_type_name = get_ob_type_code_name(ob_type)
+                sqd_wid = parse_row_int(row, wid_idx)
 
-                        print(f"{ob_id:>6} | {ob_full_name:<20.20s} | "
-                              f"{ob_type_name:<9.9s} | '{sqd_id_col}' | "
-                              f"'{sqd_num_col}': {sqd_num}")
-                        matches_found += 1
+                # Check if column matches the target ID
+                if sqd_wid == target_wid:
+                    ob_name   = ob.NAME
+                    ob_suffix = ob.SUFFIX
+                    ob_full_name = f"{ob_name} {ob_suffix}"
+                    sqd_num = parse_row_int(row, cnt_idx)
+
+                    ob_type_name = get_ob_type_code_name(ob_type)
+
+                    # Reconstruct the column name strings for the console output
+                    sqd_id_col = f"sqd {i}"
+                    sqd_num_col = f"sqdNum {i}"
+
+                    print(f"{ob_id:>6} | {ob_full_name:<20.20s} | "
+                          f"{ob_type_name:<9.9s} | '{sqd_id_col}' | "
+                          f"'{sqd_num_col}': {sqd_num}")
+                    matches_found += 1
 
         if matches_found == 0:
             print("No matches found.")
         else:
-            print(f"\nScan complete. Found {matches_found} WID match(es).")
+            print(f"\nScan complete. Found {matches_found} match(es).")
 
-    except (FileNotFoundError, ValueError, IOError) as e:
-        log.exception("An error occurred during scanning _ob for WIDs: %s", e)
+    except (IOError, OSError, ValueError) as e:
+        log.exception("An error occurred during OB scanning: %s", e)
 
     return matches_found

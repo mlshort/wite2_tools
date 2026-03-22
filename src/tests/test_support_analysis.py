@@ -1,31 +1,45 @@
 from unittest.mock import patch, MagicMock
 
-from wite2_tools.models.UnitRow import UnitRow
-from wite2_tools.generator import CSVDictStream
+from wite2_tools.models.UnitRow import UnitRow, gen_unit_column_names
+from wite2_tools.generator import CSVListStream
 from wite2_tools.auditing.support_analysis import print_undersupported_units
 
-# 1. Create Mock Data matching your CSV structure
-MOCK_UNIT_DATA: list[dict[str, str]] = [
-    {"id": "id", "name": "name", "type": "type", "nat": "nat",
-     "support": "support", "sptNeed": "sptNeed"},
-    {"id": "1", "name": "1st Panzer", "type": "1", "nat": "1",
-     "support": "50", "sptNeed": "100"},  # Deficit!
-    {"id": "2", "name": "2nd Panzer", "type": "1", "nat": "1",
-     "support": "100", "sptNeed": "50"},  # Fine
-    {"id": "3", "name": "HQ", "type": "0", "nat": "1",
-     "support": "0", "sptNeed": "0"}              # Ignored/Zeroed
+# Import the schema constants to place our mock data in the correct physical columns
+from wite2_tools.models import UnitColumn
+
+def create_mock_unit_row(uid: str, name: str, utype: str,
+                         nat: str, support: str, spt_need: str) -> list[str]:
+    """
+    Helper to create a fully padded mock physical row for a Unit.
+    """
+
+    row = UnitRow.create_default(int(uid), name, int(utype))
+    row.NAT = int(nat)
+    row.SUPPORT = int(support)
+    row.SPT_NEED = int(spt_need)
+    return row.raw
+
+# 1. Create Mock Data matching the new list structure (No header row needed in the data body)
+MOCK_UNIT_DATA: list[list[str]] = [
+    create_mock_unit_row("1", "1st Panzer", "1", "1", "50", "100"),  # Deficit!
+    create_mock_unit_row("2", "2nd Panzer", "1", "1", "100", "50"),  # Fine
+    create_mock_unit_row("3", "HQ", "0", "1", "0", "0")              # Ignored/Zeroed
 ]
 
-def create_mock_stream(data_list : list[dict[str,str]]) -> CSVDictStream:
-    """Helper to simulate the CSVStream object from your generator."""
-    mock_rows = enumerate(data_list[1:], start=1) # Skip header
-    fieldnames = list(data_list[0].keys())
-    return CSVDictStream(fieldnames=fieldnames, rows=mock_rows)
+def create_mock_stream(data_list: list[list[str]]) -> CSVListStream:
+    """Helper to simulate the CSVListStream object from your generator."""
+    mock_rows = enumerate(data_list, start=1)
 
-# pylint: disable= too-few-public-methods
+    # CSVListStream expects a list of headers and the row iterator.
+    # We pass a dummy header since the logic now relies strictly on physical indices.
+    dummy_headers = gen_unit_column_names()
+    return CSVListStream(header=dummy_headers, rows=mock_rows)
+
+# pylint: disable=too-few-public-methods
 class TestSupportAnalysis:
 
-    @patch("wite2_tools.get_csv_dict_stream")
+    # Update the patch target to the new list stream generator
+    @patch("wite2_tools.get_csv_list_stream")
     def test_print_undersupported_units(self, mock_stream: MagicMock) -> None:
         """Verifies the logic correctly identifies units with deficits."""
 
@@ -34,9 +48,12 @@ class TestSupportAnalysis:
 
         # 2. Replicate the logic you'd use in the main script
         stream = mock_stream("dummy_path.csv")
-    #     typed_units: list[UnitRow] = [UnitRow(**row) for _, row in stream.rows]
-        typed_units: list[UnitRow] = [UnitRow.from_dict(row) for _, row in stream.rows]
-        # 3. Run the function
+
+        # 3. Instantiate UnitRow passing the raw list directly to the constructor
+        # (This replaces the old UnitRow.from_dict() method)
+        typed_units: list[UnitRow] = [UnitRow(row) for _, row in stream.rows]
+
+        # 4. Run the function
         # Since the function just prints, we are ensuring it runs without crashing,
         # but in a real test you might use 'capsys' to read the print output.
         print_undersupported_units(typed_units)

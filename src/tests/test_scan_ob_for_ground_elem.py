@@ -21,7 +21,7 @@ def test_scan_ob_for_ground_elem_success(mock_ob_csv: Path,
 
     # Verify console output format using pytest's capsys
     captured = capsys.readouterr()
-    assert "Found 1 WID match(es)." in captured.out
+    assert "Found 1 match(es)." in captured.out
     assert "'sqd 2'" in captured.out
 
 
